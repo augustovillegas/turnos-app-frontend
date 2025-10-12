@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 96 96" id="Nodejs-Icon-Alt--Streamline-Svg-Logos">
+  <desc>
+    Nodejs Icon Alt Streamline Icon: https://streamlinehq.com
+  </desc>
+  <path fill="url(#a)" d="M50.2308 1.59051c-1.3997-.787346-3.0619-.787346-4.4616 0L8.93902 22.8488c-1.39972.7873-2.18707 2.2745-2.18707 3.8492v42.604c0 1.5747.87483 3.0619 2.18707 3.8492L45.7692 94.4095c1.3997.7873 3.0619.7873 4.4616 0l36.8301-21.2583c1.3998-.7873 2.1871-2.2745 2.1871-3.8492V26.698c0-1.5747-.8748-3.0619-2.1871-3.8492L50.2308 1.59051Z"></path>
+  <mask id="b" width="84" height="94" x="6" y="1" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+    <path fill="#ffffff" d="M50.2308 1.59051c-1.3997-.787346-3.0619-.787346-4.4616 0L8.93902 22.8488c-1.39972.7873-2.18707 2.2745-2.18707 3.8492v42.604c0 1.5747.87483 3.0619 2.18707 3.8492L45.7692 94.4095c1.3997.7873 3.0619.7873 4.4616 0l36.8301-21.2583c1.3998-.7873 2.1871-2.2745 2.1871-3.8492V26.698c0-1.5747-.8748-3.0619-2.1871-3.8492L50.2308 1.59051Z"></path>
+  </mask>
+  <g mask="url(#b)">
+    <path fill="url(#c)" d="M87.1487 22.8485 50.1435 1.59024c-.3499-.17496-.7873-.34993-1.1372-.43741L7.53955 72.1887c.34993.4374.78734.7873 1.22476 1.0497L45.7694 94.4967c1.0498.6124 2.2746.7874 3.4118.4374L88.111 23.7233c-.2625-.3499-.6124-.6124-.9623-.8748Z"></path>
+  </g>
+  <mask id="d" width="84" height="94" x="6" y="1" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+    <path fill="#ffffff" d="M50.2308 1.59051c-1.3997-.787346-3.0619-.787346-4.4616 0L8.93902 22.8488c-1.39972.7873-2.18707 2.2745-2.18707 3.8492v42.604c0 1.5747.87483 3.0619 2.18707 3.8492L45.7692 94.4095c1.3997.7873 3.0619.7873 4.4616 0l36.8301-21.2583c1.3998-.7873 2.1871-2.2745 2.1871-3.8492V26.698c0-1.5747-.8748-3.0619-2.1871-3.8492L50.2308 1.59051Z"></path>
+  </mask>
+  <g mask="url(#d)">
+    <path fill="url(#e)" d="M87.2359 73.1513c1.0497-.6124 1.8371-1.6622 2.187-2.7994L48.831 1.06569c-1.0498-.174967-2.1871-.087484-3.1494.52489L8.93896 22.7614 48.5686 95.0219c.5249-.0874 1.1372-.2624 1.6621-.5249l37.0052-21.3457Z"></path>
+  </g>
+  <defs>
+    <linearGradient id="a" x1="5632.03" x2="1594.94" y1="1644.76" y2="7987.97" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#41873f"></stop>
+      <stop offset=".329" stop-color="#418b3d"></stop>
+      <stop offset=".635" stop-color="#419637"></stop>
+      <stop offset=".932" stop-color="#3fa92d"></stop>
+      <stop offset="1" stop-color="#3fae2a"></stop>
+    </linearGradient>
+    <linearGradient id="c" x1="3494.39" x2="13604.6" y1="5184.79" y2="-308.085" gradientUnits="userSpaceOnUse">
+      <stop offset=".138" stop-color="#41873f"></stop>
+      <stop offset=".403" stop-color="#54a044"></stop>
+      <stop offset=".714" stop-color="#66b848"></stop>
+      <stop offset=".908" stop-color="#6cc04a"></stop>
+    </linearGradient>
+    <linearGradient id="e" x1="-344.289" x2="8178" y1="4702.52" y2="4702.52" gradientUnits="userSpaceOnUse">
+      <stop offset=".092" stop-color="#6cc04a"></stop>
+      <stop offset=".286" stop-color="#66b848"></stop>
+      <stop offset=".597" stop-color="#54a044"></stop>
+      <stop offset=".862" stop-color="#41873f"></stop>
+    </linearGradient>
+  </defs>
+</svg>
