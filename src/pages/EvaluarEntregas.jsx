@@ -1,11 +1,20 @@
+// === Evaluar Entregas ===
+// Panel para revisar, aprobar o rechazar entregables pendientes.
+import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "../context/AppContext";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
+import { SearchBar } from "../components/ui/SearchBar";
+import { Pagination } from "../components/ui/Pagination";
 
 export const EvaluarEntregas = () => {
+  // --- Contexto de datos compartido ---
   const { entregas, setEntregas } = useAppData();
+  const ITEMS_PER_PAGE = 5; // --- Cantidad de entregas por pagina ---
+  const [page, setPage] = useState(1);
  
+  // --- Utilidades para cambiar el estado de una entrega ---
   const actualizarEstado = (id, nuevoEstado) => {
     const nuevas = entregas.map((e) =>
       e.id === id ? { ...e, estado: nuevoEstado } : e
@@ -19,6 +28,40 @@ export const EvaluarEntregas = () => {
   const entregasPendientes = entregas.filter(
     (e) => e.estado === "Pendiente" || !e.estado
   );
+  const [entregasBuscadas, setEntregasBuscadas] = useState(entregasPendientes);
+  const totalPendientes = entregasBuscadas.length;
+
+  // --- Ajusta pagina si cambia la cantidad de pendientes ---
+  useEffect(() => {
+    setEntregasBuscadas(entregasPendientes);
+  }, [entregasPendientes]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((totalPendientes || 0) / ITEMS_PER_PAGE)
+    );
+    setPage((prev) => {
+      if (totalPendientes === 0) return 1;
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalPendientes, ITEMS_PER_PAGE]);
+
+  // --- Paginacion en memoria para mostrar bloques manejables ---
+  const paginatedEntregasPendientes = useMemo(() => {
+    const totalPages =
+      Math.ceil((totalPendientes || 0) / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(Math.max(page, 1), totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: entregasBuscadas.slice(start, start + ITEMS_PER_PAGE),
+      totalItems: totalPendientes,
+      totalPages,
+      currentPage,
+    };
+  }, [entregasBuscadas, totalPendientes, page, ITEMS_PER_PAGE]);
 
   return (
     <div className="p-4">
@@ -26,6 +69,15 @@ export const EvaluarEntregas = () => {
         Evaluar Entregables
       </h2>
 
+      <SearchBar
+        data={entregasPendientes}
+        fields={["sprint", "alumno", "githubLink", "renderLink", "comentarios", "estado"]}
+        placeholder="Buscar entregables"
+        onSearch={(results) => {
+          setEntregasBuscadas(results);
+          setPage(1);
+        }}
+      />
       {/* ---- Versión Desktop ---- */}
       <div className="hidden sm:block">
         <Table
@@ -39,14 +91,14 @@ export const EvaluarEntregas = () => {
             "Estado",
             "Acción",
           ]}
-          data={entregasPendientes}
+          data={paginatedEntregasPendientes.items}
           renderRow={(e) => (
             <>
               <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
                 Sprint {e.sprint}
               </td>
               <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                {e.alumno || "—"}
+                {e.alumno || "Sin asignar"}
               </td>
               <td className="border p-2 text-center dark:border-[#333]">
                 {e.githubLink ? (
@@ -112,7 +164,7 @@ export const EvaluarEntregas = () => {
 
       {/* ---- Versión Mobile (Cards) ---- */}
       <div className="block sm:hidden space-y-4 mt-4 px-2">
-        {entregasPendientes.map((e) => (
+        {paginatedEntregasPendientes.items.map((e) => (
           <div
             key={e.id}
             className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-lg p-4 shadow-md transition-all hover:shadow-lg"
@@ -212,6 +264,13 @@ export const EvaluarEntregas = () => {
           </div>
         ))}
       </div>
+
+      <Pagination
+        totalItems={paginatedEntregasPendientes.totalItems}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={paginatedEntregasPendientes.currentPage}
+        onPageChange={setPage}
+      />
     </div>
   );
 };

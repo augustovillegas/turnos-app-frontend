@@ -1,27 +1,30 @@
-import { createContext, useContext, useLayoutEffect, useEffect } from "react";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+/* eslint-disable react-refresh/only-export-components */
+// === Theme Context ===
+// Controla la clase dark en <html> y guarda la preferencia del usuario.
+import { createContext, useContext, useLayoutEffect, useEffect } from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useLocalStorage("theme", "light");
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
 
   const toggleTheme = () => {
-    setTheme((t) => (t === "light" ? "dark" : "light"));
+    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
   };
 
-  // ✅ Se ejecuta antes del render para aplicar la clase y evitar parpadeo
+  // --- Aplica el tema antes del primer paint para evitar flicker ---
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
   }, [theme]);
 
-  // ✅ Solo se ejecuta una vez si no hay tema guardado
+  // --- Si no hay preferencia guardada, consulta la del sistema ---
   useEffect(() => {
-    if (!localStorage.getItem("theme")) {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
+    if (!localStorage.getItem('theme')) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'dark' : 'light');
     }
   }, [setTheme]);
 
@@ -33,7 +36,3 @@ export const ThemeProvider = ({ children }) => {
 };
 
 export const useTheme = () => useContext(ThemeContext);
-
-
-
-

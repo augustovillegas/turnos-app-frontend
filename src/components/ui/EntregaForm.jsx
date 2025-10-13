@@ -9,6 +9,7 @@ export const EntregaForm = ({
   setGithubLink,
   setRenderLink,
   setComentarios,
+  errors = {},
   onAgregar,
 }) => {
   return (
@@ -25,6 +26,11 @@ export const EntregaForm = ({
             <option key={s} value={s}>{`Sprint ${s}`}</option>
           ))}
         </select>
+        {errors.sprint && (
+          <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+            {errors.sprint}
+          </p>
+        )}
       </div>
       <div className="mb-3">
         <label className="block text-sm font-bold mb-1 dark:text-gray-200">Link de GitHub *</label>
@@ -35,6 +41,11 @@ export const EntregaForm = ({
           value={githubLink}
           onChange={(e) => setGithubLink(e.target.value)}
         />
+        {errors.githubLink && (
+          <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+            {errors.githubLink}
+          </p>
+        )}
       </div>
       <div className="mb-3">
         <label className="block text-sm font-bold mb-1 dark:text-gray-200">Link de Render</label>
@@ -45,6 +56,11 @@ export const EntregaForm = ({
           value={renderLink}
           onChange={(e) => setRenderLink(e.target.value)}
         />
+        {errors.renderLink && (
+          <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+            {errors.renderLink}
+          </p>
+        )}
       </div>
       <div className="mb-3">
         <label className="block text-sm font-bold mb-1 dark:text-gray-200">Comentarios</label>

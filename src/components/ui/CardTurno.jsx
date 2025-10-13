@@ -1,9 +1,16 @@
 import { Button } from "./Button";
 import { Status } from "./Status";
 
-export const CardTurno = ({ turno, onSolicitar, onCancelar, onAprobar, onRechazar }) => {
+export const CardTurno = ({
+  turno,
+  onSolicitar,
+  onCancelar,
+  onAprobar,
+  onRechazar,
+  disabled = false,
+}) => {
   return (
-    <div className="border-2 border-[#111827] dark:border-[#333] rounded-md p-3 bg-white dark:bg-[#1E1E1E] shadow-md space-y-2">
+    <div className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-3 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
       <div className="flex justify-between">
         <p className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Review {turno.review}
@@ -27,7 +34,7 @@ export const CardTurno = ({ turno, onSolicitar, onCancelar, onAprobar, onRechaza
             href={turno.zoomLink}
             target="_blank"
             rel="noreferrer"
-            className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+            className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             Enlace Zoom
           </a>
@@ -37,22 +44,42 @@ export const CardTurno = ({ turno, onSolicitar, onCancelar, onAprobar, onRechaza
       {(onSolicitar || onCancelar || onAprobar || onRechazar) && (
         <div className="flex justify-end gap-2">
           {onSolicitar && turno.estado === "Disponible" && (
-            <Button variant="primary" className="w-full" onClick={onSolicitar}>
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={onSolicitar}
+              disabled={disabled}
+            >
               Solicitar turno
             </Button>
           )}
           {onCancelar && turno.estado === "Solicitado" && (
-            <Button variant="secondary" className="w-full" onClick={onCancelar}>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={onCancelar}
+              disabled={disabled}
+            >
               Cancelar solicitud
             </Button>
           )}
           {onAprobar && turno.estado === "Solicitado" && (
-            <Button variant="success" className="w-full" onClick={onAprobar}>
+            <Button
+              variant="success"
+              className="w-full"
+              onClick={onAprobar}
+              disabled={disabled}
+            >
               Aprobar
             </Button>
           )}
           {onRechazar && turno.estado === "Solicitado" && (
-            <Button variant="danger" className="w-full" onClick={onRechazar}>
+            <Button
+              variant="danger"
+              className="w-full"
+              onClick={onRechazar}
+              disabled={disabled}
+            >
               Rechazar
             </Button>
           )}

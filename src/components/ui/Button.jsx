@@ -4,9 +4,11 @@ export const Button = ({
   type = "button",
   onClick,
   className = "",
+  disabled = false,
+  ...rest
 }) => {
   const base =
-    "px-3 py-1 rounded-md font-bold border-2 shadow-md transition-colors duration-300";
+    "px-3 py-1 rounded-md font-bold border-2 shadow-md transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed";
   const styles = {
     primary:
       "bg-[#FFD700] text-black border-[#111827] hover:opacity-90 dark:bg-[#C9A300] dark:text-white dark:border-[#555]",
@@ -22,7 +24,9 @@ export const Button = ({
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       className={`${base} ${styles[variant]} ${className}`}
+      {...rest}
     >
       {children}
     </button>

@@ -1,4 +1,6 @@
-import { useState } from "react";
+// === Dashboard Alumno ===
+// Panel del estudiante: solicitar turnos, ver historial y cargar entregables.
+import { useEffect, useMemo, useState } from "react";
 import { SideBar } from "../components/layout/SideBar";
 import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
@@ -8,20 +10,47 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { CardTurno } from "../components/ui/CardTurno";
 import { EntregaForm } from "../components/ui/EntregaForm";
 import { CardEntrega } from "../components/ui/CardEntrega";
+import { SearchBar } from '../components/ui/SearchBar';
+import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
+import { showToast } from "../utils/feedback/toasts";
+import { win98Alert } from "../utils/feedback/alerts";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+} from "../utils/turnos/form";
+import { useAuth } from "../context/AuthContext";
 
 export const DashboardAlumno = () => {
+  // --- Contexto compartido y autenticacion del alumno ---
   // App context
-  const { turnos, setTurnos, entregas, setEntregas } = useAppData();
+  const {
+    turnos,
+    updateTurno,
+    turnosLoading,
+    entregas,
+    setEntregas,
+    loadTurnos,
+    loadEntregas,
+  } = useAppData();
+  const { user, token } = useAuth();
 
+  // --- Estado local: pestaña activa y formularios de entregas ---
   const [active, setActive] = useState("turnos");
   const [filtroReview, setFiltroReview] = useState("todos");
+  const [processingTurno, setProcessingTurno] = useState(null);
 
   const [sprint, setSprint] = useState("");
   const [githubLink, setGithubLink] = useState("");
   const [renderLink, setRenderLink] = useState("");
   const [comentarios, setComentarios] = useState("");
+  const [entregaErrors, setEntregaErrors] = useState({});
+  const ITEMS_PER_PAGE = 5;
+  const [pageTurnosDisponibles, setPageTurnosDisponibles] = useState(1);
+  const [pageMisTurnos, setPageMisTurnos] = useState(1);
+  const [pageEntregas, setPageEntregas] = useState(1);
 
+  // --- Items de navegacion lateral del dashboard ---
   const items = [
     { id: "turnos", label: "Solicitar turnos", icon: "/icons/calendar-1.png" },
     {
@@ -36,24 +65,96 @@ export const DashboardAlumno = () => {
     },
   ];
 
-  const solicitarTurno = (index) => {
-    const nuevosTurnos = [...turnos];
-    if (nuevosTurnos[index].estado === "Disponible") {
-      nuevosTurnos[index].estado = "Solicitado";
-      setTurnos(nuevosTurnos);
+  // --- Acciones sobre solicitudes de turnos ---
+  const solicitarTurno = async (turno) => {
+    if (!turno || turno.estado !== "Disponible") return;
+    setProcessingTurno(turno.id);
+    try {
+      const payload = buildTurnoPayloadFromForm({
+        ...formValuesFromTurno(turno),
+        review: turno.review,
+        comentarios: turno.comentarios || "",
+        estado: "Solicitado",
+      });
+      await updateTurno(turno.id, payload);
+      showToast("Turno solicitado correctamente.");
+    } catch (error) {
+      showToast(error.message || "No se pudo solicitar el turno.", "error");
+    } finally {
+      setProcessingTurno(null);
     }
   };
 
-  const cancelarTurno = (index) => {
-    const nuevosTurnos = [...turnos];
-    if (nuevosTurnos[index].estado === "Solicitado") {
-      nuevosTurnos[index].estado = "Disponible";
-      setTurnos(nuevosTurnos);
+  // --- Carga inicial de turnos y entregas ---
+  useEffect(() => {
+    if (!user || !token) return;
+    const alumnoId = user._id ?? user.id ?? user.uid;
+    if (!alumnoId) return;
+
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          loadTurnos({ userId: alumnoId }),
+          loadEntregas({ alumnoId }),
+        ]);
+      } catch (error) {
+        console.error("Error al cargar los datos del alumno", error);
+        showToast("No se pudieron cargar tus datos.", "error");
+      }
+    };
+
+    fetchData();
+  }, [user, token, loadTurnos, loadEntregas]);
+
+  const cancelarTurno = async (turno) => {
+    if (!turno || turno.estado !== "Solicitado") return;
+    const result = await win98Alert({
+      title: "Cancelar solicitud",
+      text: `¿Cancelar la solicitud para la sala ${turno.sala}?`,
+      swalIcon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, cancelar",
+      cancelButtonText: "Seguir",
+    });
+    if (!result.isConfirmed) return;
+
+    setProcessingTurno(turno.id);
+    try {
+      const payload = buildTurnoPayloadFromForm({
+        ...formValuesFromTurno(turno),
+        review: turno.review,
+        comentarios: turno.comentarios || "",
+        estado: "Disponible",
+      });
+      await updateTurno(turno.id, payload);
+      showToast("Solicitud cancelada.");
+    } catch (error) {
+      showToast(error.message || "No se pudo cancelar la solicitud.", "error");
+    } finally {
+      setProcessingTurno(null);
     }
   };
 
+  // --- Gestion de nuevas entregas cargadas por el alumno ---
   const handleAgregarEntrega = () => {
-    if (!githubLink.trim() || !sprint) return;
+    const validation = {};
+    if (!sprint) {
+      validation.sprint = "Seleccioná el sprint a entregar.";
+    }
+    if (!githubLink.trim()) {
+      validation.githubLink = "Ingresá el enlace del repositorio.";
+    } else if (!githubLink.startsWith("http")) {
+      validation.githubLink = "El enlace de GitHub debe ser válido.";
+    }
+    if (renderLink && !renderLink.startsWith("http")) {
+      validation.renderLink = "El enlace de deploy debe ser válido.";
+    }
+
+    if (Object.keys(validation).length > 0) {
+      setEntregaErrors(validation);
+      showToast("Revisá los datos de la entrega.", "warning");
+      return;
+    }
 
     const nueva = {
       id: Date.now(),
@@ -64,13 +165,16 @@ export const DashboardAlumno = () => {
       reviewStatus: "A revisar",
     };
 
+    setEntregaErrors({});
     setEntregas([...entregas, nueva]);
+    showToast("Entrega registrada correctamente.");
     setSprint("");
     setGithubLink("");
     setRenderLink("");
     setComentarios("");
   };
 
+  // --- Columnas para la tabla de turnos disponibles ---
   const columns = [
     "Review",
     "Fecha",
@@ -80,6 +184,7 @@ export const DashboardAlumno = () => {
     "Estado",
     "Acción",
   ];
+  // --- Columnas para la tabla de mis turnos ---
   const columnsMisTurnos = [
     "Review",
     "Fecha",
@@ -90,6 +195,7 @@ export const DashboardAlumno = () => {
     "Acción",
   ];
 
+  // --- Utilidad comun para aplicar el filtro de review ---
   const aplicarFiltro = (lista) => {
     if (filtroReview === "todos") return lista;
     return lista.filter((t) => t.review === Number(filtroReview));
@@ -105,6 +211,120 @@ export const DashboardAlumno = () => {
   );
 
   const turnosDisponibles = aplicarFiltro(turnos);
+  const [turnosDisponiblesBuscados, setTurnosDisponiblesBuscados] = useState(turnosDisponibles);
+  const [turnosHistorialBuscados, setTurnosHistorialBuscados] = useState(turnosHistorial);
+  const [entregasBuscadas, setEntregasBuscadas] = useState(entregas);
+
+  const totalTurnosDisponibles = turnosDisponiblesBuscados.length;
+  const totalTurnosHistorial = turnosHistorialBuscados.length;
+  const totalEntregas = entregasBuscadas.length;
+
+  useEffect(() => {
+    setPageTurnosDisponibles(1);
+    setPageMisTurnos(1);
+  }, [filtroReview]);
+
+  useEffect(() => {
+    setTurnosDisponiblesBuscados(turnosDisponibles);
+  }, [turnosDisponibles]);
+
+  useEffect(() => {
+    setTurnosHistorialBuscados(turnosHistorial);
+  }, [turnosHistorial]);
+
+  useEffect(() => {
+    setEntregasBuscadas(entregas);
+  }, [entregas]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((totalTurnosDisponibles || 0) / ITEMS_PER_PAGE)
+    );
+    setPageTurnosDisponibles((prev) => {
+      if (totalTurnosDisponibles === 0) return 1;
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalTurnosDisponibles, ITEMS_PER_PAGE]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((totalTurnosHistorial || 0) / ITEMS_PER_PAGE)
+    );
+    setPageMisTurnos((prev) => {
+      if (totalTurnosHistorial === 0) return 1;
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalTurnosHistorial, ITEMS_PER_PAGE]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((totalEntregas || 0) / ITEMS_PER_PAGE)
+    );
+    setPageEntregas((prev) => {
+      if (totalEntregas === 0) return 1;
+      if (prev > totalPages) return totalPages;
+      if (prev < 1) return 1;
+      return prev;
+    });
+  }, [totalEntregas, ITEMS_PER_PAGE]);
+
+  const paginatedTurnosDisponibles = useMemo(() => {
+    const totalPages =
+      Math.ceil((totalTurnosDisponibles || 0) / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(
+      Math.max(pageTurnosDisponibles, 1),
+      totalPages
+    );
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: turnosDisponiblesBuscados.slice(start, start + ITEMS_PER_PAGE),
+      totalItems: totalTurnosDisponibles,
+      totalPages,
+      currentPage,
+    };
+  }, [
+    turnosDisponiblesBuscados,
+    totalTurnosDisponibles,
+    pageTurnosDisponibles,
+    ITEMS_PER_PAGE,
+  ]);
+
+  const paginatedTurnosHistorial = useMemo(() => {
+    const totalPages =
+      Math.ceil((totalTurnosHistorial || 0) / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(Math.max(pageMisTurnos, 1), totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: turnosHistorialBuscados.slice(start, start + ITEMS_PER_PAGE),
+      totalItems: totalTurnosHistorial,
+      totalPages,
+      currentPage,
+    };
+  }, [
+    turnosHistorialBuscados,
+    totalTurnosHistorial,
+    pageMisTurnos,
+    ITEMS_PER_PAGE,
+  ]);
+
+  const paginatedEntregas = useMemo(() => {
+    const totalPages = Math.ceil((totalEntregas || 0) / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(Math.max(pageEntregas, 1), totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: entregasBuscadas.slice(start, start + ITEMS_PER_PAGE),
+      totalItems: totalEntregas,
+      totalPages,
+      currentPage,
+    };
+  }, [entregasBuscadas, totalEntregas, pageEntregas, ITEMS_PER_PAGE]);
 
   return (
     <div className="flex min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
@@ -120,18 +340,24 @@ export const DashboardAlumno = () => {
               Listado de Turnos Disponibles
             </h2>
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+            <SearchBar
+              data={turnosDisponibles}
+              fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
+              placeholder="Buscar turnos disponibles"
+              onSearch={(results) => {
+                setTurnosDisponiblesBuscados(results);
+                setPageTurnosDisponibles(1);
+              }}
+            />
 
             {/* Tabla Desktop */}
             <div className="hidden sm:block">
               <Table
                 columns={columns}
-                data={turnosDisponibles}
+                data={paginatedTurnosDisponibles.items}
                 minWidth="min-w-[680px]"
                 containerClass="px-4"
                 renderRow={(t) => {
-                  const indexReal = t.id
-                    ? turnos.findIndex((x) => x.id === t.id)
-                    : turnos.findIndex((x) => x === t);
                   return (
                     <>
                       <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
@@ -165,7 +391,8 @@ export const DashboardAlumno = () => {
                           <Button
                             variant="primary"
                             className="py-1"
-                            onClick={() => solicitarTurno(indexReal)}
+                            onClick={() => solicitarTurno(t)}
+                            disabled={turnosLoading || processingTurno === t.id}
                           >
                             Solicitar turno
                           </Button>
@@ -174,7 +401,8 @@ export const DashboardAlumno = () => {
                           <Button
                             variant="secondary"
                             className="py-1"
-                            onClick={() => cancelarTurno(indexReal)}
+                            onClick={() => cancelarTurno(t)}
+                            disabled={turnosLoading || processingTurno === t.id}
                           >
                             Cancelar solicitud
                           </Button>
@@ -188,21 +416,23 @@ export const DashboardAlumno = () => {
 
             {/* Tarjetas Mobile */}
             <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {turnosDisponibles.map((t) => {
-                const indexReal = t.id
-                  ? turnos.findIndex((x) => x.id === t.id)
-                  : turnos.findIndex((x) => x === t);
-                return (
-                  <CardTurno
-                    key={t.id}
-                    turno={t}
-                    // La prop CardTurno no está definida, pero mantengo la lógica de llamado
-                    onSolicitar={() => solicitarTurno(indexReal)}
-                    onCancelar={() => cancelarTurno(indexReal)}
-                  />
-                );
-              })}
+              {paginatedTurnosDisponibles.items.map((t) => (
+                <CardTurno
+                  key={t.id}
+                  turno={t}
+                  onSolicitar={() => solicitarTurno(t)}
+                  onCancelar={() => cancelarTurno(t)}
+                  disabled={turnosLoading || processingTurno === t.id}
+                />
+              ))}
             </div>
+
+            <Pagination
+              totalItems={paginatedTurnosDisponibles.totalItems}
+              itemsPerPage={ITEMS_PER_PAGE}
+              currentPage={paginatedTurnosDisponibles.currentPage}
+              onPageChange={setPageTurnosDisponibles}
+            />
           </>
         )}
 
@@ -214,12 +444,22 @@ export const DashboardAlumno = () => {
             <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6 transition-colors duration-300">
               Mis Turnos
             </h2>
+            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
 
+            <SearchBar
+              data={turnosHistorial}
+              fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
+              placeholder="Buscar en mis turnos"
+              onSearch={(results) => {
+                setTurnosHistorialBuscados(results);
+                setPageMisTurnos(1);
+              }}
+            />
             {/* Tabla Desktop */}
             <div className="hidden sm:block">
               <Table
                 columns={columnsMisTurnos}
-                data={turnosHistorial}
+                data={paginatedTurnosHistorial.items}
                 minWidth="min-w-[680px]"
                 containerClass="px-4"
                 renderRow={(t) => (
@@ -255,12 +495,8 @@ export const DashboardAlumno = () => {
                         <Button
                           variant="secondary"
                           className="py-1"
-                          onClick={() => {
-                            const indexReal = turnos.findIndex(
-                              (x) => x.id === t.id
-                            );
-                            cancelarTurno(indexReal);
-                          }}
+                          onClick={() => cancelarTurno(t)}
+                          disabled={turnosLoading || processingTurno === t.id}
                         >
                           Cancelar turno
                         </Button>
@@ -273,23 +509,22 @@ export const DashboardAlumno = () => {
 
             {/* Tarjetas Mobile */}
             <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {turnosHistorial.map((t) => {
-                const indexReal = turnos.findIndex((x) => x.id === t.id);
-                return (
-                  <CardTurno
-                    key={t.id}
-                    turno={t}
-                    onCancelar={() => {
-                      const nuevos = [...turnos];
-                      if (nuevos[indexReal].estado === "Solicitado") {
-                        nuevos[indexReal].estado = "Disponible";
-                        setTurnos(nuevos);
-                      }
-                    }}
-                  />
-                );
-              })}
+              {paginatedTurnosHistorial.items.map((t) => (
+                <CardTurno
+                  key={t.id}
+                  turno={t}
+                  onCancelar={() => cancelarTurno(t)}
+                  disabled={turnosLoading || processingTurno === t.id}
+                />
+              ))}
             </div>
+
+            <Pagination
+              totalItems={paginatedTurnosHistorial.totalItems}
+              itemsPerPage={ITEMS_PER_PAGE}
+              currentPage={paginatedTurnosHistorial.currentPage}
+              onPageChange={setPageMisTurnos}
+            />
           </>
         )}
 
@@ -312,9 +547,19 @@ export const DashboardAlumno = () => {
               setGithubLink={setGithubLink}
               setRenderLink={setRenderLink}
               setComentarios={setComentarios}
+              errors={entregaErrors}
               onAgregar={handleAgregarEntrega}
             />
 
+            <SearchBar
+              data={entregas}
+              fields={["sprint", "githubLink", "renderLink", "comentarios", "reviewStatus"]}
+              placeholder="Buscar entregas"
+              onSearch={(results) => {
+                setEntregasBuscadas(results);
+                setPageEntregas(1);
+              }}
+            />
             {/* ✅ Versión Desktop: tabla de entregas */}
             <div className="hidden sm:block">
               <Table
@@ -326,7 +571,7 @@ export const DashboardAlumno = () => {
                   "Estado",
                   "Acción",
                 ]}
-                data={entregas}
+                data={paginatedEntregas.items}
                 renderRow={(e) => (
                   <>
                     <td className="border p-2 dark:border-[#333] dark:text-gray-200">
@@ -368,10 +613,17 @@ export const DashboardAlumno = () => {
                           variant="danger"
                           className="py-1"
                           onClick={() => {
-                            const nuevas = entregas.filter(
-                              (ent) => ent.id !== e.id
-                            );
-                            setEntregas(nuevas);
+                            if (
+                              window.confirm(
+                                "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
+                              )
+                            ) {
+                              const nuevas = entregas.filter(
+                                (ent) => ent.id !== e.id
+                              );
+                              setEntregas(nuevas);
+                              showToast("Entrega cancelada.", "info");
+                            }
                           }}
                         >
                           Cancelar
@@ -385,25 +637,39 @@ export const DashboardAlumno = () => {
 
             {/* ✅ Versión Mobile: tarjetas CardEntrega */}
             <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {entregas.length === 0 ? (
+              {paginatedEntregas.totalItems === 0 ? (
                 <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
                   No hay entregas registradas.
                 </p>
               ) : (
-                entregas.map((entrega) => (
+                paginatedEntregas.items.map((entrega) => (
                   <CardEntrega
                     key={entrega.id}
                     entrega={entrega}
                     onCancelar={() => {
-                      const nuevas = entregas.filter(
-                        (e) => e.id !== entrega.id
-                      );
-                      setEntregas(nuevas);
+                      if (
+                        window.confirm(
+                          "¿Estás seguro de cancelar esta entrega?"
+                        )
+                      ) {
+                        const nuevas = entregas.filter(
+                          (e) => e.id !== entrega.id
+                        );
+                        setEntregas(nuevas);
+                        showToast("Entrega cancelada.", "info");
+                      }
                     }}
                   />
                 ))
               )}
             </div>
+
+            <Pagination
+              totalItems={paginatedEntregas.totalItems}
+              itemsPerPage={ITEMS_PER_PAGE}
+              currentPage={paginatedEntregas.currentPage}
+              onPageChange={setPageEntregas}
+            />
           </>
         )}
 
@@ -415,3 +681,4 @@ export const DashboardAlumno = () => {
     </div>
   );
 };
+
