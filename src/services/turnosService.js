@@ -1,6 +1,6 @@
 // === Turnos Service ===
 // Clientes HTTP para CRUD de turnos.
-import { apiClient, withLatency } from "./apiClient";
+import { apiClient } from "./apiClient";
 
 const RESOURCE = "/turnos";
 
@@ -17,26 +17,26 @@ const mapTurnoPayload = (payload) => ({
 });
 
 export const getTurnos = (params = {}) =>
-  withLatency(apiClient.get(RESOURCE, { params })).then(
-    (response) => response.data ?? []
-  );
+  apiClient
+    .get(RESOURCE, { params })
+    .then((response) => response.data ?? []);
 
 export const getTurnoById = (id) =>
-  withLatency(apiClient.get(`${RESOURCE}/${id}`)).then(
-    (response) => response.data
-  );
+  apiClient
+    .get(`${RESOURCE}/${id}`)
+    .then((response) => response.data);
 
 export const createTurno = (payload) =>
-  withLatency(apiClient.post(RESOURCE, mapTurnoPayload(payload))).then(
-    (response) => response.data
-  );
+  apiClient
+    .post(RESOURCE, mapTurnoPayload(payload))
+    .then((response) => response.data);
 
 export const updateTurno = (id, payload) =>
-  withLatency(apiClient.put(`${RESOURCE}/${id}`, mapTurnoPayload(payload))).then(
-    (response) => response.data
-  );
+  apiClient
+    .put(`${RESOURCE}/${id}`, mapTurnoPayload(payload))
+    .then((response) => response.data);
 
 export const deleteTurno = (id) =>
-  withLatency(apiClient.delete(`${RESOURCE}/${id}`)).then(
-    (response) => response.data
-  );
+  apiClient
+    .delete(`${RESOURCE}/${id}`)
+    .then((response) => response.data);

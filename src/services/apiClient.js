@@ -1,27 +1,24 @@
 import axios from "axios";
 
-/**
- * Cliente HTTP centralizado para la aplicación.
- * Se conecta directamente al servidor desplegado en Render.
- * 
- * Si existe la variable de entorno VITE_API_URL, se usará como prioridad.
- * En caso contrario, usará la URL de Render por defecto.
- */
+const FALLBACK_BASE_URL =
+  "https://servidor-turnosapp-dip-fullstack.onrender.com";
 
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL;
+// Resolve backend base URL prioritising the Vite override.
+const sanitizeBaseUrl = (value) =>
+  value?.replace(/\/+$/, "") || "";
+
+const baseURL = sanitizeBaseUrl(
+  import.meta.env?.VITE_API_BASE_URL || FALLBACK_BASE_URL
+);
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/**
- * Interceptor de solicitudes
- * Agrega automáticamente el token JWT si está guardado en localStorage.
- */
+// Attach JWT automatically if it exists in localStorage.
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -33,15 +30,12 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/**
- * Interceptor de respuestas
- * Maneja errores comunes (401, 403, etc.) de forma uniforme.
- */
+// Uniformly handle common auth errors.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn("[apiClient] Sesión expirada o token inválido");
+      console.warn("[apiClient] Sesion expirada o token invalido");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
@@ -49,4 +43,3 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
