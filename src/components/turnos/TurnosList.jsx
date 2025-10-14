@@ -100,10 +100,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
           <div>
             <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
               Gestion de Turnos
-            </h1>
-            <p className="text-sm text-[#111827] dark:text-gray-300">
-              CRUD completo integrado con Mock API usando Axios.
-            </p>
+            </h1>          
           </div>
           <Button
             variant="primary"
