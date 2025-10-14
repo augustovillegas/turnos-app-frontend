@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:full": "node ./test/run-tests.js"
+    "test:full": "node ./test/run-tests.js",
+    "build": "vite build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
