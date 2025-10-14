@@ -1,74 +1,52 @@
-// =======================
-// API CLIENT CONFIGURATION
-// =======================
-// Este archivo configura la conexion automatica con el servidor de Render.
-// Si Render no responde en 60 segundos, cambia al backend local.
-
 import axios from "axios";
 
-export const RENDER_URL = "https://servidor-turnosapp-dip-fullstack.onrender.com";
-export const LOCAL_URL = "http://localhost:5000";
-const DIAL_UP_TIMEOUT_MS = 60000;
+/**
+ * Cliente HTTP centralizado para la aplicación.
+ * Se conecta directamente al servidor desplegado en Render.
+ * 
+ * Si existe la variable de entorno VITE_API_URL, se usará como prioridad.
+ * En caso contrario, usará la URL de Render por defecto.
+ */
 
-
-let serverBaseURL = RENDER_URL;
-let apiBaseURL = `${serverBaseURL}`;
+const BASE_URL =
+  import.meta.env.VITE_API_URL; // 🔹 Cambia esta URL por la de tu backend en Render
 
 export const apiClient = axios.create({
-  baseURL: apiBaseURL,
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-const applyBaseURL = (nextServerBaseURL) => {
-  serverBaseURL = nextServerBaseURL;
-  apiBaseURL = `${nextServerBaseURL}`;
-  apiClient.defaults.baseURL = apiBaseURL;
-};
-
-// =======================
-// Funcion: Verifica conexion con Render
-// =======================
-export async function checkServerConnection() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DIAL_UP_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${RENDER_URL}/api/auth/ping`, {
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Ping a Render respondio con estado ${response.status ?? "desconocido"}`
-      );
+/**
+ * Interceptor de solicitudes
+ * Agrega automáticamente el token JWT si está guardado en localStorage.
+ */
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-    applyBaseURL(RENDER_URL);
-    console.log("[dial-up] Conectado a Render");
-  } catch (error) {
-    console.warn(
-      "[dial-up] Render no respondio en 60s. Usando localhost.",
-      error
-    );
-    applyBaseURL(LOCAL_URL);
-  } finally {
-    clearTimeout(timeoutId);
+/**
+ * Interceptor de respuestas
+ * Maneja errores comunes (401, 403, etc.) de forma uniforme.
+ */
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.warn("[apiClient] Sesión expirada o token inválido");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
   }
+);
 
-  return serverBaseURL;
-}
-
-export const withLatency = (promise, delayMs = 0) => {
-  if (!delayMs) {
-    return promise;
-  }
-
-  return Promise.all([
-    promise,
-    new Promise((resolve) => setTimeout(resolve, delayMs)),
-  ]).then(([result]) => result);
-};
-
-export default apiClient;

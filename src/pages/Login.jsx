@@ -3,11 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { showToast } from "../utils/feedback/toasts";
 import { useAuth } from "../context/AuthContext";
-import {
-  apiClient,
-  checkServerConnection,
-  LOCAL_URL,
-} from "../services/apiClient";
+import { apiClient } from "../services/apiClient";
 import { DialUpModal } from "../components/ui/DialUpModal";
 
 export const Login = () => {
@@ -23,10 +19,9 @@ export const Login = () => {
     event.preventDefault();
     if (submitting) return;
 
-    // 🔹 Mostrar modal inmediatamente con sonido dial-up
     setSubmitting(true);
     setLoadingServer(true);
-    setModalMessage("Conectando con la base de datos...");
+    setModalMessage("Conectando con el servidor remoto...");
 
     try {
       console.log("[Login] Enviando solicitud de autenticacion", { email });
@@ -49,20 +44,6 @@ export const Login = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      // 🔹 Mantener el modal activo durante la conexión con el backend remoto
-      setModalMessage(
-        "Despertando el servidor remoto, puede demorar unos segundos..."
-      );
-      const targetBase = await checkServerConnection();
-
-      if (targetBase === LOCAL_URL) {
-        showToast(
-          "Render sigue dormido. Cambiamos al backend local automaticamente.",
-          "warning"
-        );
-      }
-
-      // 🔹 Navegar cuando todo está listo
       const role = data.user?.role;
       if (role === "alumno") navigate("/dashboard/alumno");
       else if (role === "profesor") navigate("/dashboard/profesor");
@@ -81,7 +62,6 @@ export const Login = () => {
         "Error de autenticacion";
       showToast(message, "error");
     } finally {
-      // 🔹 Darle tiempo al sonido a terminar naturalmente
       setTimeout(() => {
         setLoadingServer(false);
         setSubmitting(false);
@@ -172,4 +152,3 @@ export const Login = () => {
     </div>
   );
 };
-
