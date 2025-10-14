@@ -23,13 +23,14 @@ export const Login = () => {
     event.preventDefault();
     if (submitting) return;
 
+    // 🔹 Mostrar modal inmediatamente con sonido dial-up
     setSubmitting(true);
+    setLoadingServer(true);
+    setModalMessage("Conectando con la base de datos...");
+
     try {
       console.log("[Login] Enviando solicitud de autenticacion", { email });
-      const response = await apiClient.post("/auth/login", {
-        email,
-        password,
-      });
+      const response = await apiClient.post("/auth/login", { email, password });
 
       console.log("[Login] Respuesta recibida", {
         status: response?.status,
@@ -37,13 +38,10 @@ export const Login = () => {
       });
 
       const data = response?.data;
-      if (!data) {
-        throw new Error("Respuesta invalida del servidor");
-      }
+      if (!data) throw new Error("Respuesta invalida del servidor");
 
       if (!data?.user?.isApproved) {
         showToast("Tu cuenta aun no fue aprobada.", "warning");
-        setSubmitting(false);
         return;
       }
 
@@ -51,7 +49,7 @@ export const Login = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      setLoadingServer(true);
+      // 🔹 Mantener el modal activo durante la conexión con el backend remoto
       setModalMessage(
         "Despertando el servidor remoto, puede demorar unos segundos..."
       );
@@ -64,16 +62,12 @@ export const Login = () => {
         );
       }
 
+      // 🔹 Navegar cuando todo está listo
       const role = data.user?.role;
-      if (role === "alumno") {
-        navigate("/dashboard/alumno");
-      } else if (role === "profesor") {
-        navigate("/dashboard/profesor");
-      } else if (role === "superadmin") {
-        navigate("/dashboard/superadmin");
-      } else {
-        navigate("/");
-      }
+      if (role === "alumno") navigate("/dashboard/alumno");
+      else if (role === "profesor") navigate("/dashboard/profesor");
+      else if (role === "superadmin") navigate("/dashboard/superadmin");
+      else navigate("/");
     } catch (error) {
       console.error("[Login] Error al autenticar", {
         status: error?.response?.status,
@@ -87,8 +81,11 @@ export const Login = () => {
         "Error de autenticacion";
       showToast(message, "error");
     } finally {
-      setSubmitting(false);
-      setLoadingServer(false);
+      // 🔹 Darle tiempo al sonido a terminar naturalmente
+      setTimeout(() => {
+        setLoadingServer(false);
+        setSubmitting(false);
+      }, 1500);
     }
   };
 
@@ -104,7 +101,7 @@ export const Login = () => {
       <div className="bg-[#E5E5E5] dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-md shadow-lg max-w-md mx-4 overflow-hidden transition-colors duration-300">
         <div className="bg-[#1E3A8A] dark:bg-[#0A2E73] text-white flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm">Iniciar sesion</span>
+            <span className="font-bold text-sm">Iniciar sesión</span>
           </div>
         </div>
 
@@ -133,20 +130,22 @@ export const Login = () => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-[#111827] dark:text-gray-200 mb-1">
-                  Contrasena
+                  Contraseña
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Escribe tu contrasena"
+                  placeholder="Escribe tu contraseña"
                   className="w-full border-2 border-[#111827] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:focus:ring-[#B8860B] transition-colors duration-300"
                   disabled={submitting}
                   required
                 />
               </div>
+
               <div className="flex gap-2 mt-2">
                 <Button
                   variant="primary"
@@ -154,7 +153,7 @@ export const Login = () => {
                   className="flex-1"
                   disabled={submitting}
                 >
-                  {submitting ? "Ingresando..." : "Aceptar"}
+                  {submitting ? "Procesando..." : "Aceptar"}
                 </Button>
                 <Button
                   variant="secondary"
@@ -173,3 +172,4 @@ export const Login = () => {
     </div>
   );
 };
+

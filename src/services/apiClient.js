@@ -6,14 +6,13 @@
 
 import axios from "axios";
 
-export const RENDER_URL =
-  "https://servidor-turnosapp-dip-fullstack.onrender.com";
+export const RENDER_URL = "https://servidor-turnosapp-dip-fullstack.onrender.com";
 export const LOCAL_URL = "http://localhost:5000";
 const DIAL_UP_TIMEOUT_MS = 60000;
-const API_PREFIX = "/api";
+
 
 let serverBaseURL = RENDER_URL;
-let apiBaseURL = `${serverBaseURL}${API_PREFIX}`;
+let apiBaseURL = `${serverBaseURL}`;
 
 export const apiClient = axios.create({
   baseURL: apiBaseURL,
@@ -24,7 +23,7 @@ export const apiClient = axios.create({
 
 const applyBaseURL = (nextServerBaseURL) => {
   serverBaseURL = nextServerBaseURL;
-  apiBaseURL = `${nextServerBaseURL}${API_PREFIX}`;
+  apiBaseURL = `${nextServerBaseURL}`;
   apiClient.defaults.baseURL = apiBaseURL;
 };
 
