@@ -4,7 +4,6 @@ import { ThemeButton } from "../ui/ThemeButton";
 export const Footer = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
