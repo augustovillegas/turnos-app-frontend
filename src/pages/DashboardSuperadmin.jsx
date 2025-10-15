@@ -35,7 +35,7 @@ export const DashboardSuperadmin = () => {
   } = useAppData();
   const { user, token } = useAuth();
 
-  // --- Estado local: pesta�as y proceso actual ---
+  // --- Estado local: pestañas y proceso actual ---
   const [active, setActive] = useState("usuarios");
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
@@ -119,7 +119,8 @@ export const DashboardSuperadmin = () => {
 
   // --- Usuarios esperando aprobacion ---
   const usuariosPendientes = usuarios.filter((u) => u.estado === "Pendiente");
-  const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] = useState(usuariosPendientes);
+  const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] =
+    useState(usuariosPendientes);
 
   const aplicarFiltro = (lista) => {
     if (filtroReview === "todos") return lista;
@@ -130,7 +131,8 @@ export const DashboardSuperadmin = () => {
   const turnosSolicitados = aplicarFiltro(
     turnos.filter((t) => t.estado === "Solicitado")
   );
-  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] = useState(turnosSolicitados);
+  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] =
+    useState(turnosSolicitados);
   const totalTurnosSolicitados = turnosSolicitadosBuscados.length;
   const totalUsuariosPendientes = usuariosPendientesBuscados.length;
 
@@ -247,157 +249,230 @@ export const DashboardSuperadmin = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCIÓN: TURNOS SOLICITADOS
+            SECCIÓN: SOLICITUDES
         ========================== */}
         {active === "turnos" && (
-          <>
-            <h2 className="mb-6 text-2xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
-              Solicitudes de Turnos
-            </h2>
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+            {/* 🎨 Ajuste visual: Se reemplaza el fragmento <> por un contenedor alineado con padding y colores consistentes */}
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              {/* 🎨 Ajuste visual: Se mantiene el mismo estilo de encabezado que en los dashboards de alumno/profesor */}
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
+                  Solicitudes de Turnos
+                </h2>
+              </div>
 
-            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
 
-            <div className="hidden sm:block">
-              <Table
-                columns={[
-                  "Review",
-                  "Fecha",
-                  "Horario",
-                  "Sala",
-                  "Zoom",
-                  "Estado",
-                  "Acción",
-                ]}
-                data={paginatedTurnosSolicitados.items}
-                renderRow={(t) => (
-                  <>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.review}
-                    </td>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.fecha}
-                    </td>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.horario}
-                    </td>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.sala}
-                    </td>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                      {t.zoomLink && (
-                        <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                          <img
-                            src="/icons/video_-2.png"
-                            alt="Zoom"
-                            className="mx-auto h-5 w-5 hover:opacity-80"
-                          />
-                        </a>
-                      )}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      <Status status={t.estado} />
-                    </td>
-                    <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                      {t.estado === "Solicitado" && (
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="success"
-                            className="py-1"
-                            onClick={() => aprobarTurno(t)}
-                            disabled={turnosLoading || processingTurno === t.id}
-                          >
-                            Aprobar
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="py-1"
-                            onClick={() => rechazarTurno(t)}
-                            disabled={turnosLoading || processingTurno === t.id}
-                          >
-                            Rechazar
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </>
+              {/* Tabla Desktop */}
+              <div className="hidden sm:block">
+                <Table
+                  columns={[
+                    "Review",
+                    "Fecha",
+                    "Horario",
+                    "Sala",
+                    "Zoom",
+                    "Estado",
+                    "Acción",
+                  ]}
+                  data={paginatedTurnosSolicitados.items}
+                  minWidth="min-w-[680px]" // 🎨 Ajuste visual: mantiene consistencia con tablas del dashboard alumno
+                  containerClass="px-4"
+                  renderRow={(t) => (
+                    <>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.review}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.fecha}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.horario}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.sala}
+                      </td>
+                      <td className="border p-2 text-center dark:border-[#333]">
+                        {t.zoomLink && (
+                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                            <img
+                              src="/icons/video_-2.png"
+                              alt="Zoom"
+                              className="mx-auto h-5 w-5 hover:opacity-80"
+                            />
+                          </a>
+                        )}
+                      </td>
+                      <td className="border p-2 text-center dark:border-[#333]">
+                        <Status status={t.estado} />
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                        {t.estado === "Solicitado" && (
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="success"
+                              className="py-1"
+                              onClick={() => aprobarTurno(t)}
+                              disabled={
+                                turnosLoading || processingTurno === t.id
+                              }
+                            >
+                              Aprobar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="py-1"
+                              onClick={() => rechazarTurno(t)}
+                              disabled={
+                                turnosLoading || processingTurno === t.id
+                              }
+                            >
+                              Rechazar
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </>
+                  )}
+                />
+              </div>
+
+              {/* Tarjetas Mobile */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {paginatedTurnosSolicitados.totalItems === 0 ? (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay solicitudes pendientes.
+                  </p>
+                ) : (
+                  paginatedTurnosSolicitados.items.map((t) => (
+                    <CardTurno
+                      key={t.id}
+                      turno={t}
+                      onAprobar={() => aprobarTurno(t)}
+                      onRechazar={() => rechazarTurno(t)}
+                      disabled={turnosLoading || processingTurno === t.id}
+                    />
+                  ))
                 )}
+              </div>
+
+              {/* 🎨 Ajuste visual: Espaciado y paginación alineados con el resto de dashboards */}
+              <Pagination
+                totalItems={paginatedTurnosSolicitados.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedTurnosSolicitados.currentPage}
+                onPageChange={setPageTurnosSolicitados}
               />
             </div>
-
-            <div className="mt-4 block space-y-4 px-2 sm:hidden">
-              {paginatedTurnosSolicitados.totalItems === 0 ? (
-                <p className="text-sm text-gray-100 dark:text-gray-300">
-                  No hay solicitudes pendientes.
-                </p>
-              ) : (
-                paginatedTurnosSolicitados.items.map((t) => (
-                  <CardTurno
-                    key={t.id}
-                    turno={t}
-                    onAprobar={() => aprobarTurno(t)}
-                    onRechazar={() => rechazarTurno(t)}
-                    disabled={turnosLoading || processingTurno === t.id}
-                  />
-                ))
-              )}
-            </div>
-
-            <Pagination
-              totalItems={paginatedTurnosSolicitados.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedTurnosSolicitados.currentPage}
-              onPageChange={setPageTurnosSolicitados}
-            />
-          </>
+          </div>
         )}
-
         {/* =========================
             SECCIÓN: GESTIÓN USUARIOS
         ========================== */}
         {active === "usuarios" && (
-          <>
-            <h2 className="mb-6 text-2xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
-              Usuarios Pendientes
-            </h2>
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+            {/* 🎨 Ajuste visual: contenedor principal alineado con padding consistente */}
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              {/* 🎨 Título unificado */}
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
+                  Usuarios Pendientes
+                </h2>
+              </div>
 
-                        <SearchBar
-              data={usuariosPendientesBuscados}
-              fields={["nombre", "rol", "estado"]}
-              placeholder="Buscar usuarios pendientes"
-              onSearch={(results) => {
-                setUsuariosPendientesBuscados(results);
-                setPageUsuariosPendientes(1);
-              }}
-            />
-            <div className="hidden sm:block">
-              <Table
-                columns={["Nombre", "Rol", "Estado", "Acción"]}
-                data={paginatedUsuariosPendientes.items}
-                renderRow={(u) => {
-                  const indexReal = usuarios.findIndex((x) => x === u);
-                  return (
-                    <>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.nombre}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.rol}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <Status status={u.estado} />
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <div className="flex items-center justify-center gap-2">
+              <SearchBar
+                data={usuariosPendientesBuscados}
+                fields={["nombre", "rol", "estado"]}
+                placeholder="Buscar usuarios pendientes"
+                onSearch={(results) => {
+                  setUsuariosPendientesBuscados(results);
+                  setPageUsuariosPendientes(1);
+                }}
+              />
+
+              {/* Tabla Desktop */}
+              <div className="hidden sm:block">
+                <Table
+                  columns={["Nombre", "Rol", "Estado", "Acción"]}
+                  data={paginatedUsuariosPendientes.items}
+                  minWidth="min-w-[680px]" // 🎨 Consistencia con las tablas de otras secciones
+                  containerClass="px-4"
+                  renderRow={(u) => {
+                    const indexReal = usuarios.findIndex((x) => x === u);
+                    return (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.nombre}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.rol}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Status status={u.estado} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="success"
+                              className="py-1"
+                              onClick={() => aprobarUsuario(indexReal)}
+                            >
+                              Aprobar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="py-1"
+                              onClick={() => {
+                                const nuevos = [...usuarios];
+                                nuevos[indexReal].estado = "Rechazado";
+                                setUsuarios(nuevos);
+                              }}
+                            >
+                              Rechazar
+                            </Button>
+                          </div>
+                        </td>
+                      </>
+                    );
+                  }}
+                />
+              </div>
+
+              {/* Tarjetas Mobile */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {paginatedUsuariosPendientes.totalItems === 0 ? (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay usuarios pendientes por aprobar.
+                  </p>
+                ) : (
+                  paginatedUsuariosPendientes.items.map((u, idx) => {
+                    const indexReal = usuarios.findIndex((x) => x === u);
+                    return (
+                      <div
+                        key={u.id || `${u.nombre}-${idx}`}
+                        className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                            {u.nombre}
+                          </h3>
+                          <Status status={u.estado} />
+                        </div>
+                        <p className="text-sm text-[#111827] dark:text-gray-200">
+                          <strong>Rol:</strong> {u.rol}
+                        </p>
+                        <div className="grid grid-cols-1 gap-2">
                           <Button
                             variant="success"
-                            className="py-1"
+                            className="w-full py-1"
                             onClick={() => aprobarUsuario(indexReal)}
                           >
                             Aprobar
                           </Button>
                           <Button
                             variant="danger"
-                            className="py-1"
+                            className="w-full py-1"
                             onClick={() => {
                               const nuevos = [...usuarios];
                               nuevos[indexReal].estado = "Rechazado";
@@ -407,68 +482,21 @@ export const DashboardSuperadmin = () => {
                             Rechazar
                           </Button>
                         </div>
-                      </td>
-                    </>
-                  );
-                }}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* 🎨 Paginación alineada visualmente */}
+              <Pagination
+                totalItems={paginatedUsuariosPendientes.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedUsuariosPendientes.currentPage}
+                onPageChange={setPageUsuariosPendientes}
               />
             </div>
-
-            <div className="mt-4 space-y-4 px-2 sm:hidden">
-              {paginatedUsuariosPendientes.totalItems === 0 ? (
-                <p className="text-sm text-gray-100 dark:text-gray-300">
-                  No hay usuarios pendientes por aprobar.
-                </p>
-              ) : (
-                paginatedUsuariosPendientes.items.map((u, idx) => {
-                  const indexReal = usuarios.findIndex((x) => x === u);
-                  return (
-                    <div
-                      key={u.id || `${u.nombre}-${idx}`}
-                      className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                          {u.nombre}
-                        </h3>
-                        <Status status={u.estado} />
-                      </div>
-                      <p className="text-sm text-[#111827] dark:text-gray-200">
-                        <strong>Rol:</strong> {u.rol}
-                      </p>
-                      <div className="grid grid-cols-1 gap-2">
-                        <Button
-                          variant="success"
-                          className="w-full py-1"
-                          onClick={() => aprobarUsuario(indexReal)}
-                        >
-                          Aprobar
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="w-full py-1"
-                          onClick={() => {
-                            const nuevos = [...usuarios];
-                            nuevos[indexReal].estado = "Rechazado";
-                            setUsuarios(nuevos);
-                          }}
-                        >
-                          Rechazar
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <Pagination
-              totalItems={paginatedUsuariosPendientes.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedUsuariosPendientes.currentPage}
-              onPageChange={setPageUsuariosPendientes}
-            />
-          </>
+          </div>
         )}
 
         {/* =========================
