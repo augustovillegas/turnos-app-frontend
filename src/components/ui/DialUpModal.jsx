@@ -57,7 +57,7 @@ export const DialUpModal = ({ show, message }) => {
         <img
           src="/icons/network_internet.png"
           alt="Conectando con el servidor"
-          className="w-20 h-20 drop-shadow-md"
+          className="w-20 h-20 drop-shadow-md animate-pulse"
         />
 
         {/* 🔹 Texto con efecto parpadeante */}
