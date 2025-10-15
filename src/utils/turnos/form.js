@@ -16,16 +16,23 @@ const formatHorario = (startIso, endIso) => {
   return `${start} - ${end}`;
 };
 
+const normalizeFecha = (value) => {
+  if (!value) return "";
+  if (value.includes("/")) {
+    const [day, month, year] = value.split("/");
+    if (day && month && year) {
+      return `${year}-${ensureTwoDigits(month)}-${ensureTwoDigits(day)}`;
+    }
+  }
+  return value;
+};
+
 export const buildTurnoPayloadFromForm = (values) => {
   // Construye el payload listo para enviar al backend a partir del formulario.
   const start = buildIsoDate(values.fecha, values.horaInicio);
   const end = buildIsoDate(values.fecha, values.horaFin);
 
-  const fecha = new Date(values.fecha).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const fecha = normalizeFecha(values.fecha);
 
   return {
     review: Number(values.review),

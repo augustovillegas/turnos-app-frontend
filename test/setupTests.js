@@ -31,6 +31,33 @@ const logLine = (message) => {
 const isTestTask = (task) =>
   Boolean(task) && (task.type === "test" || task?.meta?.type === "test");
 
+// --- Mock de localStorage/sessionStorage para entorno Node ---
+const createStorageMock = () => {
+  let store = new Map();
+  return {
+    getItem: (key) => {
+      const value = store.get(String(key));
+      return value === undefined ? null : value;
+    },
+    setItem: (key, value) => {
+      store.set(String(key), String(value));
+    },
+    removeItem: (key) => {
+      store.delete(String(key));
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (index) => Array.from(store.keys())[Number(index)] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+};
+
+globalThis.localStorage = createStorageMock();
+globalThis.sessionStorage = createStorageMock();
+
 // --- Polyfills necesarios para jsdom ---
 if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = () => ({
