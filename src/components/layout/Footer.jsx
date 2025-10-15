@@ -17,8 +17,7 @@ export const Footer = () => {
   }, [open]);
 
   const menuItems = [
-    { label: "Iniciar sesión", href: "/login" },
-    { label: "Registrarme", href: "/register" },
+    { label: "Iniciar sesión", href: "/login" },    
     { label: "Contacto", href: "/contacto" },
   ];
 

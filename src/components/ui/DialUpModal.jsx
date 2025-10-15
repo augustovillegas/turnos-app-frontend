@@ -46,13 +46,12 @@ export const DialUpModal = ({ show, message }) => {
     <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50 transition-colors duration-300">
       <div
         className="
-          bg-[#E5E5E5] dark:bg-[#1E1E1E]
-          border-2 border-[#111827] dark:border-[#333]
-          rounded-xl shadow-2xl px-8 py-6
-          flex flex-col items-center space-y-5
-          transition-all duration-300
-          animate-pulse
-        "
+    bg-[#E5E5E5] dark:bg-[#1E1E1E]
+    border-2 border-[#111827] dark:border-[#333]
+    rounded-xl shadow-2xl px-8 py-6
+    flex flex-col items-center space-y-5
+    transition-all duration-300
+  "
       >
         {/* 🔹 Ícono principal */}
         <img
@@ -61,8 +60,8 @@ export const DialUpModal = ({ show, message }) => {
           className="w-20 h-20 drop-shadow-md"
         />
 
-        {/* 🔹 Texto */}
-        <p className="text-base font-semibold text-[#111827] dark:text-gray-200 text-center leading-relaxed">
+        {/* 🔹 Texto con efecto parpadeante */}
+        <p className="text-base font-semibold text-[#111827] dark:text-gray-200 text-center leading-relaxed animate-pulse">
           {message}
         </p>
 
@@ -71,19 +70,15 @@ export const DialUpModal = ({ show, message }) => {
           type="button"
           onClick={() => setMuted((v) => !v)}
           className="
-            bg-[#1E3A8A] dark:bg-[#017F82]
-            hover:brightness-110
-            rounded-full p-3
-            transition shadow-md
-          "
-          aria-label={muted ? 'Activar sonido' : 'Silenciar sonido'}
+      bg-[#1E3A8A] dark:bg-[#017F82]
+      hover:brightness-110
+      rounded-full p-3
+      transition shadow-md
+    "
+          aria-label={muted ? "Activar sonido" : "Silenciar sonido"}
         >
           <img
-            src={
-              muted
-                ? "/icons/speakerOff.png"
-                : "/icons/speakerOn.png"
-            }
+            src={muted ? "/icons/speakerOff.png" : "/icons/speakerOn.png"}
             alt={muted ? "Sonido desactivado" : "Sonido activado"}
             className="w-6 h-6 filter brightness-110"
           />
