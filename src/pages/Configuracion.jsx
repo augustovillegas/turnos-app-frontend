@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { useSound } from "../context/SoundContext"; 
 import { Button } from "../components/ui/Button";
 
 export const Configuracion = () => {
   const { theme, toggleTheme } = useTheme();
+  const { muted, toggleMute } = useSound(); 
   const [activeTab, setActiveTab] = useState("perfil");
 
   return (
@@ -55,6 +57,7 @@ export const Configuracion = () => {
             <h3 className="text-xl font-semibold mb-3 dark:text-gray-100">
               Preferencias
             </h3>
+
             <div className="flex items-center justify-between mb-4">
               <span className="text-gray-700 dark:text-gray-300">
                 Tema actual:
@@ -63,9 +66,42 @@ export const Configuracion = () => {
                 {theme === "dark" ? "Oscuro" : "Claro"}
               </span>
             </div>
-            <Button variant="primary" onClick={toggleTheme}>
-              Cambiar tema
-            </Button>
+
+            <div className="flex items-center gap-3">
+              <Button variant="primary" onClick={toggleTheme}>
+                Cambiar tema
+              </Button>
+
+              {/* 🔊 Botón de sonido sincronizado globalmente */}
+              <button
+                onClick={toggleMute}
+                aria-label={muted ? "Activar sonido" : "Silenciar sonido"}
+                className="
+                  flex items-center justify-center
+                  w-[34px] h-[34px]
+                  bg-[#E5E5E5] dark:bg-[#2A2A2A]
+                  border-2 
+                  border-t-white border-l-white 
+                  border-b-[#808080] border-r-[#808080]
+                  dark:border-t-[#555] dark:border-l-[#555]
+                  dark:border-b-[#222] dark:border-r-[#222]
+                  active:border-t-[#808080] active:border-l-[#808080]
+                  active:border-b-white active-border-r-white
+                  dark:active-border-t-[#222] dark:active-border-l-[#222]
+                  dark:active-border-b-[#666] dark:active-border-r-[#666]
+                  rounded-sm
+                  cursor-pointer transition-all
+                "
+              >
+                <img
+                  src={
+                    muted ? "/icons/speakerOff.png" : "/icons/speakerOn.png"
+                  }
+                  alt={muted ? "Sonido desactivado" : "Sonido activado"}
+                  className="w-4 h-4"
+                />
+              </button>
+            </div>
           </div>
         )}
 

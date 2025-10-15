@@ -73,34 +73,6 @@ export const Footer = () => {
               <li className="border-t border-[#808080] dark:border-[#444]">
                 <div className="p-2 flex justify-center items-center gap-3">
                   <ThemeButton />
-
-                  <button
-                    onClick={() => setMuted((v) => !v)}
-                    aria-label={muted ? "Activar sonido" : "Silenciar sonido"}
-                    className="
-    flex items-center justify-center
-    aspect-square h-8
-    bg-[#E5E5E5] dark:bg-[#2A2A2A]
-    border-2 
-    border-t-white border-l-white 
-    border-b-[#808080] border-r-[#808080]
-    dark:border-t-[#555] dark:border-l-[#555]
-    dark:border-b-[#222] dark:border-r-[#222]
-    active:border-t-[#808080] active:border-l-[#808080]
-    active:border-b-white active:border-r-white
-    dark:active:border-t-[#222] dark:active:border-l-[#222]
-    dark:active:border-b-[#666] dark:active:border-r-[#666]
-    cursor-pointer transition-all
-  "
-                  >
-                    <img
-                      src={
-                        muted ? "/icons/speakerOff.png" : "/icons/speakerOn.png"
-                      }
-                      alt={muted ? "Sonido desactivado" : "Sonido activado"}
-                      className="w-4 h-4"
-                    />
-                  </button>
                 </div>
               </li>
             </ul>
