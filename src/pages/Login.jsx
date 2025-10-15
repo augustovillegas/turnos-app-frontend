@@ -72,6 +72,7 @@ export const Login = () => {
   const handleCancel = () => {
     setEmail("");
     setPassword("");
+    navigate("/");
   };
 
   return (

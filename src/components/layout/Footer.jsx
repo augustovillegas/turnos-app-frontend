@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { ThemeButton } from "../ui/ThemeButton";
 
 export const Footer = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -17,8 +19,8 @@ export const Footer = () => {
   }, [open]);
 
   const menuItems = [
-    { label: "Iniciar sesión", href: "/login" },
-    { label: "Contacto", href: "/contacto" },
+    { label: "Iniciar sesión", path: "/login" },
+    { label: "Contacto", path: "/contacto" },
   ];
 
   return (
@@ -60,13 +62,15 @@ export const Footer = () => {
             <ul className="flex flex-col">
               {menuItems.map((item) => (
                 <li key={item.label}>
-                  <a
-                    href={item.href}
-                    className="block px-4 py-2 text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white transition"
-                    onClick={() => setOpen(false)}
+                  <button
+                    onClick={() => {
+                      navigate(item.path);
+                      setOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white transition"
                   >
                     {item.label}
-                  </a>
+                  </button>
                 </li>
               ))}
               <li className="border-t border-[#808080] dark:border-[#444]">

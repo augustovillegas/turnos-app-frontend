@@ -14,13 +14,8 @@ import { showToast } from "../../utils/feedback/toasts";
 
 export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
-  const {
-    turnos,
-    loadTurnos,
-    removeTurno,
-    turnosLoading,
-    turnosError,
-  } = useAppData();
+  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } =
+    useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -100,7 +95,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
           <div>
             <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
               Gestion de Turnos
-            </h1>          
+            </h1>
           </div>
           <Button
             variant="primary"
@@ -114,7 +109,14 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
         <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
         <SearchBar
           data={turnosFiltrados}
-          fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
+          fields={[
+            "sala",
+            "fecha",
+            "horario",
+            "estado",
+            "review",
+            "comentarios",
+          ]}
           placeholder="Buscar por sala, fecha o estado"
           onSearch={(results) => {
             setTurnosBuscados(results);
@@ -160,18 +162,15 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                 <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
                   {turno.sala}
                 </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333]">
-                  {turno.zoomLink ? (
-                    <a
-                      href={turno.zoomLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
-                    >
-                      Abrir link
+                <td className="border p-2 text-center dark:border-[#333]">
+                  {turno.zoomLink && (
+                    <a href={turno.zoomLink} target="_blank" rel="noreferrer">
+                      <img
+                        src="/icons/video_-2.png"
+                        alt="Zoom"
+                        className="w-5 h-5 mx-auto hover:opacity-80"
+                      />
                     </a>
-                  ) : (
-                    "-"
                   )}
                 </td>
                 <td className="border border-[#111827] p-2 dark:border-[#333]">
@@ -241,6 +240,3 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
     </div>
   );
 };
-
-
-
