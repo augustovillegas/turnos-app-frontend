@@ -10,7 +10,7 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { CardTurno } from "../components/ui/CardTurno";
 import { EntregaForm } from "../components/ui/EntregaForm";
 import { CardEntrega } from "../components/ui/CardEntrega";
-import { SearchBar } from '../components/ui/SearchBar';
+import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
@@ -211,8 +211,10 @@ export const DashboardAlumno = () => {
   );
 
   const turnosDisponibles = aplicarFiltro(turnos);
-  const [turnosDisponiblesBuscados, setTurnosDisponiblesBuscados] = useState(turnosDisponibles);
-  const [turnosHistorialBuscados, setTurnosHistorialBuscados] = useState(turnosHistorial);
+  const [turnosDisponiblesBuscados, setTurnosDisponiblesBuscados] =
+    useState(turnosDisponibles);
+  const [turnosHistorialBuscados, setTurnosHistorialBuscados] =
+    useState(turnosHistorial);
   const [entregasBuscadas, setEntregasBuscadas] = useState(entregas);
 
   const totalTurnosDisponibles = turnosDisponiblesBuscados.length;
@@ -335,41 +337,66 @@ export const DashboardAlumno = () => {
             SECCIÓN: TURNOS DISPONIBLES
         ========================== */}
         {active === "turnos" && (
-          <>
-            <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6 transition-colors duration-300">
-              Listado de Turnos Disponibles
-            </h2>
-            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-            <SearchBar
-              data={turnosDisponibles}
-              fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
-              placeholder="Buscar turnos disponibles"
-              onSearch={(results) => {
-                setTurnosDisponiblesBuscados(results);
-                setPageTurnosDisponibles(1);
-              }}
-            />
+          <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100 rounded-lg shadow-md">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Listado de Turnos Disponibles
+                </h1>
+              </div>
 
-            {/* Tabla Desktop */}
-            <div className="hidden sm:block">
-              <Table
-                columns={columns}
-                data={paginatedTurnosDisponibles.items}
-                minWidth="min-w-[680px]"
-                containerClass="px-4"
-                renderRow={(t) => {
-                  return (
+              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+
+              <SearchBar
+                data={turnosDisponibles}
+                fields={[
+                  "sala",
+                  "fecha",
+                  "horario",
+                  "estado",
+                  "review",
+                  "comentarios",
+                ]}
+                placeholder="Buscar turnos disponibles"
+                onSearch={(results) => {
+                  setTurnosDisponiblesBuscados(results);
+                  setPageTurnosDisponibles(1);
+                }}
+              />
+
+              {turnosLoading && (
+                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Cargando turnos disponibles...
+                </p>
+              )}
+
+              {/* Tabla Desktop */}
+              <div className="hidden sm:block">
+                <Table
+                  columns={[
+                    "Review",
+                    "Fecha",
+                    "Horario",
+                    "Sala",
+                    "Zoom",
+                    "Estado",
+                    "Acción",
+                  ]}
+                  data={paginatedTurnosDisponibles.items}
+                  minWidth="min-w-[680px]"
+                  containerClass="px-4"
+                  renderRow={(t) => (
                     <>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
                         {t.review}
                       </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
                         {t.fecha}
                       </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
                         {t.horario}
                       </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
                         {t.sala}
                       </td>
                       <td className="border p-2 text-center dark:border-[#333]">
@@ -383,10 +410,10 @@ export const DashboardAlumno = () => {
                           </a>
                         )}
                       </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                         <Status status={t.estado || "Disponible"} />
                       </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                         {t.estado === "Disponible" && (
                           <Button
                             variant="primary"
@@ -409,276 +436,339 @@ export const DashboardAlumno = () => {
                         )}
                       </td>
                     </>
-                  );
-                }}
+                  )}
+                />
+              </div>
+
+              {/* Tarjetas Mobile */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {paginatedTurnosDisponibles.totalItems === 0 ? (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay turnos disponibles.
+                  </p>
+                ) : (
+                  paginatedTurnosDisponibles.items.map((t) => (
+                    <CardTurno
+                      key={t.id}
+                      turno={t}
+                      onSolicitar={() => solicitarTurno(t)}
+                      onCancelar={() => cancelarTurno(t)}
+                      disabled={turnosLoading || processingTurno === t.id}
+                    />
+                  ))
+                )}
+              </div>
+
+              <Pagination
+                totalItems={paginatedTurnosDisponibles.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedTurnosDisponibles.currentPage}
+                onPageChange={setPageTurnosDisponibles}
               />
             </div>
-
-            {/* Tarjetas Mobile */}
-            <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {paginatedTurnosDisponibles.items.map((t) => (
-                <CardTurno
-                  key={t.id}
-                  turno={t}
-                  onSolicitar={() => solicitarTurno(t)}
-                  onCancelar={() => cancelarTurno(t)}
-                  disabled={turnosLoading || processingTurno === t.id}
-                />
-              ))}
-            </div>
-
-            <Pagination
-              totalItems={paginatedTurnosDisponibles.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedTurnosDisponibles.currentPage}
-              onPageChange={setPageTurnosDisponibles}
-            />
-          </>
+          </div>
         )}
 
         {/* =========================
             SECCIÓN: MIS TURNOS
         ========================== */}
         {active === "mis-turnos" && (
-          <>
-            <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6 transition-colors duration-300">
-              Mis Turnos
-            </h2>
-            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+          <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100 rounded-lg shadow-md">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Mis Turnos
+                </h1>
+              </div>
 
-            <SearchBar
-              data={turnosHistorial}
-              fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
-              placeholder="Buscar en mis turnos"
-              onSearch={(results) => {
-                setTurnosHistorialBuscados(results);
-                setPageMisTurnos(1);
-              }}
-            />
-            {/* Tabla Desktop */}
-            <div className="hidden sm:block">
-              <Table
-                columns={columnsMisTurnos}
-                data={paginatedTurnosHistorial.items}
-                minWidth="min-w-[680px]"
-                containerClass="px-4"
-                renderRow={(t) => (
-                  <>
-                    <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.review}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.fecha}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.horario}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                      {t.sala}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      {t.zoomLink && (
-                        <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                          <img
-                            src="/icons/video_-2.png"
-                            alt="Zoom"
-                            className="w-5 h-5 mx-auto hover:opacity-80"
-                          />
-                        </a>
-                      )}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      <Status status={t.estado || "-"} />
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      {t.estado === "Solicitado" && (
-                        <Button
-                          variant="secondary"
-                          className="py-1"
-                          onClick={() => cancelarTurno(t)}
-                          disabled={turnosLoading || processingTurno === t.id}
-                        >
-                          Cancelar turno
-                        </Button>
-                      )}
-                    </td>
-                  </>
+              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+
+              <SearchBar
+                data={turnosHistorial}
+                fields={[
+                  "sala",
+                  "fecha",
+                  "horario",
+                  "estado",
+                  "review",
+                  "comentarios",
+                ]}
+                placeholder="Buscar en mis turnos"
+                onSearch={(results) => {
+                  setTurnosHistorialBuscados(results);
+                  setPageMisTurnos(1);
+                }}
+              />
+
+              {turnosLoading && (
+                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Cargando tus turnos...
+                </p>
+              )}
+
+              {/* Tabla Desktop */}
+              <div className="hidden sm:block">
+                <Table
+                  columns={[
+                    "Review",
+                    "Fecha",
+                    "Horario",
+                    "Sala",
+                    "Zoom",
+                    "Estado",
+                    "Acción",
+                  ]}
+                  data={paginatedTurnosHistorial.items}
+                  minWidth="min-w-[680px]"
+                  containerClass="px-4"
+                  renderRow={(t) => (
+                    <>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.review}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.fecha}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.horario}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {t.sala}
+                      </td>
+                      <td className="border p-2 text-center dark:border-[#333]">
+                        {t.zoomLink ? (
+                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                            <img
+                              src="/icons/video_-2.png"
+                              alt="Zoom"
+                              className="w-5 h-5 mx-auto hover:opacity-80"
+                            />
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                        <Status status={t.estado || "-"} />
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                        {t.estado === "Solicitado" && (
+                          <Button
+                            variant="secondary"
+                            className="py-1"
+                            onClick={() => cancelarTurno(t)}
+                            disabled={turnosLoading || processingTurno === t.id}
+                          >
+                            Cancelar turno
+                          </Button>
+                        )}
+                      </td>
+                    </>
+                  )}
+                />
+              </div>
+
+              {/* Tarjetas Mobile */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {paginatedTurnosHistorial.totalItems === 0 ? (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No tenés turnos registrados.
+                  </p>
+                ) : (
+                  paginatedTurnosHistorial.items.map((t) => (
+                    <CardTurno
+                      key={t.id}
+                      turno={t}
+                      onCancelar={() => cancelarTurno(t)}
+                      disabled={turnosLoading || processingTurno === t.id}
+                    />
+                  ))
                 )}
+              </div>
+
+              <Pagination
+                totalItems={paginatedTurnosHistorial.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedTurnosHistorial.currentPage}
+                onPageChange={setPageMisTurnos}
               />
             </div>
-
-            {/* Tarjetas Mobile */}
-            <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {paginatedTurnosHistorial.items.map((t) => (
-                <CardTurno
-                  key={t.id}
-                  turno={t}
-                  onCancelar={() => cancelarTurno(t)}
-                  disabled={turnosLoading || processingTurno === t.id}
-                />
-              ))}
-            </div>
-
-            <Pagination
-              totalItems={paginatedTurnosHistorial.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedTurnosHistorial.currentPage}
-              onPageChange={setPageMisTurnos}
-            />
-          </>
+          </div>
         )}
 
         {/* =========================
             SECCIÓN: ENTREGABLES
         ========================== */}
         {active === "Entregables" && (
-          <>
-            <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6 transition-colors duration-300">
-              Entregables (Trabajos Prácticos)
-            </h2>
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              {/* ====== TÍTULO ====== */}
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Entregables (Trabajos Prácticos)
+                </h1>
+              </div>
 
-            {/* ✅ Formulario modularizado */}
-            <EntregaForm
-              sprint={sprint}
-              githubLink={githubLink}
-              renderLink={renderLink}
-              comentarios={comentarios}
-              setSprint={setSprint}
-              setGithubLink={setGithubLink}
-              setRenderLink={setRenderLink}
-              setComentarios={setComentarios}
-              errors={entregaErrors}
-              onAgregar={handleAgregarEntrega}
-            />
+              {/* ====== FORMULARIO SIN DOBLE FONDO ====== */}
+              <EntregaForm
+                sprint={sprint}
+                githubLink={githubLink}
+                renderLink={renderLink}
+                comentarios={comentarios}
+                setSprint={setSprint}
+                setGithubLink={setGithubLink}
+                setRenderLink={setRenderLink}
+                setComentarios={setComentarios}
+                errors={entregaErrors}
+                onAgregar={handleAgregarEntrega}
+              />
 
-            <SearchBar
-              data={entregas}
-              fields={["sprint", "githubLink", "renderLink", "comentarios", "reviewStatus"]}
-              placeholder="Buscar entregas"
-              onSearch={(results) => {
-                setEntregasBuscadas(results);
-                setPageEntregas(1);
-              }}
-            />
-            {/* ✅ Versión Desktop: tabla de entregas */}
-            <div className="hidden sm:block">
-              <Table
-                columns={[
-                  "Sprint",
-                  "GitHub",
-                  "Render",
-                  "Comentarios",
-                  "Estado",
-                  "Acción",
+              {/* ====== BUSCADOR ====== */}
+              <SearchBar
+                data={entregas}
+                fields={[
+                  "sprint",
+                  "githubLink",
+                  "renderLink",
+                  "comentarios",
+                  "reviewStatus",
                 ]}
-                data={paginatedEntregas.items}
-                renderRow={(e) => (
-                  <>
-                    <td className="border p-2 dark:border-[#333] dark:text-gray-200">
-                      {e.sprint}
-                    </td>
-                    <td className="border p-2 dark:border-[#333]">
-                      <a
-                        href={e.githubLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-                      >
-                        {e.githubLink}
-                      </a>
-                    </td>
-                    <td className="border p-2 dark:border-[#333]">
-                      {e.renderLink ? (
+                placeholder="Buscar entregas"
+                onSearch={(results) => {
+                  setEntregasBuscadas(results);
+                  setPageEntregas(1);
+                }}
+              />
+
+              {/* ====== MENSAJE SIN REGISTROS ====== */}
+              {entregasBuscadas.length === 0 && (
+                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  No hay entregas registradas aún.
+                </p>
+              )}
+
+              {/* ====== TABLA DESKTOP ====== */}
+              <div className="hidden sm:block">
+                <Table
+                  columns={[
+                    "Sprint",
+                    "GitHub",
+                    "Render",
+                    "Comentarios",
+                    "Estado",
+                    "Acción",
+                  ]}
+                  data={paginatedEntregas.items}
+                  minWidth="min-w-[680px]"
+                  containerClass="px-4"
+                  renderRow={(e) => (
+                    <>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {e.sprint}
+                      </td>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
                         <a
-                          href={e.renderLink}
+                          href={e.githubLink}
                           target="_blank"
                           rel="noreferrer"
                           className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                         >
-                          {e.renderLink}
+                          {e.githubLink}
                         </a>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="border p-2 dark:border-[#333] dark:text-gray-200">
-                      {e.comentarios || "-"}
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      <Status status={e.reviewStatus} />
-                    </td>
-                    <td className="border p-2 text-center dark:border-[#333]">
-                      {e.reviewStatus === "A revisar" && (
-                        <Button
-                          variant="danger"
-                          className="py-1"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
-                              )
-                            ) {
-                              const nuevas = entregas.filter(
-                                (ent) => ent.id !== e.id
-                              );
-                              setEntregas(nuevas);
-                              showToast("Entrega cancelada.", "info");
-                            }
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                      )}
-                    </td>
-                  </>
+                      </td>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                        {e.renderLink ? (
+                          <a
+                            href={e.renderLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                          >
+                            {e.renderLink}
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {e.comentarios || "-"}
+                      </td>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                        <Status status={e.reviewStatus} />
+                      </td>
+                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                        {e.reviewStatus === "A revisar" && (
+                          <Button
+                            variant="danger"
+                            className="py-1"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
+                                )
+                              ) {
+                                const nuevas = entregas.filter(
+                                  (ent) => ent.id !== e.id
+                                );
+                                setEntregas(nuevas);
+                                showToast("Entrega cancelada.", "info");
+                              }
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                      </td>
+                    </>
+                  )}
+                />
+              </div>
+
+              {/* ====== TARJETAS MOBILE ====== */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {paginatedEntregas.totalItems === 0 ? (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay entregas registradas.
+                  </p>
+                ) : (
+                  paginatedEntregas.items.map((entrega) => (
+                    <CardEntrega
+                      key={entrega.id}
+                      entrega={entrega}
+                      onCancelar={() => {
+                        if (
+                          window.confirm(
+                            "¿Estás seguro de cancelar esta entrega?"
+                          )
+                        ) {
+                          const nuevas = entregas.filter(
+                            (e) => e.id !== entrega.id
+                          );
+                          setEntregas(nuevas);
+                          showToast("Entrega cancelada.", "info");
+                        }
+                      }}
+                    />
+                  ))
                 )}
+              </div>
+
+              {/* ====== PAGINACIÓN ====== */}
+              <Pagination
+                totalItems={paginatedEntregas.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedEntregas.currentPage}
+                onPageChange={setPageEntregas}
               />
             </div>
-
-            {/* ✅ Versión Mobile: tarjetas CardEntrega */}
-            <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {paginatedEntregas.totalItems === 0 ? (
-                <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                  No hay entregas registradas.
-                </p>
-              ) : (
-                paginatedEntregas.items.map((entrega) => (
-                  <CardEntrega
-                    key={entrega.id}
-                    entrega={entrega}
-                    onCancelar={() => {
-                      if (
-                        window.confirm(
-                          "¿Estás seguro de cancelar esta entrega?"
-                        )
-                      ) {
-                        const nuevas = entregas.filter(
-                          (e) => e.id !== entrega.id
-                        );
-                        setEntregas(nuevas);
-                        showToast("Entrega cancelada.", "info");
-                      }
-                    }}
-                  />
-                ))
-              )}
-            </div>
-
-            <Pagination
-              totalItems={paginatedEntregas.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedEntregas.currentPage}
-              onPageChange={setPageEntregas}
-            />
-          </>
+          </div>
         )}
 
         {/* =========================
             SECCIÓN: CONFIGURACION
         ========================== */}
-         {active === "config" && <Configuracion />}
+        {active === "config" && <Configuracion />}
       </div>
     </div>
   );
 };
-
