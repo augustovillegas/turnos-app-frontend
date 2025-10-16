@@ -14,12 +14,9 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import { win98Alert } from "../utils/feedback/alerts";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../utils/turnos/form";
+import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
+import { useModal } from "../context/ModalContext";
 
 export const DashboardAlumno = () => {
   // --- Contexto compartido y autenticacion del alumno ---
@@ -34,6 +31,7 @@ export const DashboardAlumno = () => {
     loadEntregas,
   } = useAppData();
   const { user, token } = useAuth();
+  const { showModal } = useModal();
 
   // --- Estado local: pestaña activa y formularios de entregas ---
   const [active, setActive] = useState("turnos");
@@ -106,33 +104,39 @@ export const DashboardAlumno = () => {
     fetchData();
   }, [user, token, loadTurnos, loadEntregas]);
 
-  const cancelarTurno = async (turno) => {
+  const handleCancelarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
-    const result = await win98Alert({
-      title: "Cancelar solicitud",
-      text: `¿Cancelar la solicitud para la sala ${turno.sala}?`,
-      swalIcon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, cancelar",
-      cancelButtonText: "Seguir",
-    });
-    if (!result.isConfirmed) return;
 
-    setProcessingTurno(turno.id);
-    try {
-      const payload = buildTurnoPayloadFromForm({
-        ...formValuesFromTurno(turno),
-        review: turno.review,
-        comentarios: turno.comentarios || "",
-        estado: "Disponible",
-      });
-      await updateTurno(turno.id, payload);
-      showToast("Solicitud cancelada.");
-    } catch (error) {
-      showToast(error.message || "No se pudo cancelar la solicitud.", "error");
-    } finally {
-      setProcessingTurno(null);
-    }
+    // Mostramos el modal global con tipo "warning" y texto dinámico
+    showModal({
+      type: "warning",
+      title: "Cancelar solicitud",
+      message: `¿Cancelar la solicitud para la sala ${turno.sala}?`,
+
+      // onConfirm: lo que sucede si el usuario confirma la acción
+      onConfirm: async () => {
+        setProcessingTurno(turno.id);
+
+        try {
+          const payload = buildTurnoPayloadFromForm({
+            ...formValuesFromTurno(turno),
+            review: turno.review,
+            comentarios: turno.comentarios || "",
+            estado: "Disponible", // 🔁 se revierte el estado del turno
+          });
+
+          await updateTurno(turno.id, payload);
+          showToast("Solicitud cancelada."); // Notificación visual
+        } catch (error) {
+          showToast(
+            error.message || "No se pudo cancelar la solicitud.",
+            "error"
+          );
+        } finally {
+          setProcessingTurno(null);
+        }
+      },
+    });
   };
 
   // --- Gestion de nuevas entregas cargadas por el alumno ---
@@ -428,7 +432,7 @@ export const DashboardAlumno = () => {
                           <Button
                             variant="secondary"
                             className="py-1"
-                            onClick={() => cancelarTurno(t)}
+                            onClick={() => handleCancelarTurno(t)}
                             disabled={turnosLoading || processingTurno === t.id}
                           >
                             Cancelar solicitud
@@ -452,7 +456,7 @@ export const DashboardAlumno = () => {
                       key={t.id}
                       turno={t}
                       onSolicitar={() => solicitarTurno(t)}
-                      onCancelar={() => cancelarTurno(t)}
+                      onCancelar={() => handleCancelarTurno(t)}
                       disabled={turnosLoading || processingTurno === t.id}
                     />
                   ))
