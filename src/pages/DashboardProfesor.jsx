@@ -13,11 +13,8 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import { win98Alert } from "../utils/feedback/alerts";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../utils/turnos/form";
+import { useModal } from "../context/ModalContext";
+import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
 
@@ -34,6 +31,7 @@ export const DashboardProfesor = () => {
     loadEntregas,
   } = useAppData();
   const { user, token } = useAuth();
+  const { showModal } = useModal();
 
   // --- Estado local: panel activo y operacion actual ---
   const [active, setActive] = useState("solicitudes");
@@ -65,34 +63,35 @@ export const DashboardProfesor = () => {
   };
 
   // --- Maneja rechazos explicitos de solicitudes ---
-  const rechazarTurno = async (turno) => {
-    if (!turno || turno.estado !== "Solicitado") return;
-    const result = await win98Alert({
-      title: "Rechazar turno",
-      text: `¿Confirmás el rechazo del turno para la sala ${turno.sala}?`,
-      swalIcon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, rechazar",
-      cancelButtonText: "Volver",
-    });
-    if (!result.isConfirmed) return;
+  const rechazarTurno = (turno) => {
+  if (!turno || turno.estado !== "Solicitado") return;
 
-    setProcessingTurno(turno.id);
-    try {
-      const payload = buildTurnoPayloadFromForm({
-        ...formValuesFromTurno(turno),
-        review: turno.review,
-        comentarios: turno.comentarios || "",
-        estado: "Rechazado",
-      });
-      await updateTurno(turno.id, payload);
-      showToast("Turno rechazado.");
-    } catch (error) {
-      showToast(error.message || "No se pudo rechazar el turno.", "error");
-    } finally {
-      setProcessingTurno(null);
-    }
-  };
+  showModal({
+    type: "warning",
+    title: "Rechazar turno",
+    message: `¿Confirmás el rechazo del turno para la sala ${turno.sala}?`,
+
+    // Acción que se ejecuta al confirmar
+    onConfirm: async () => {
+      setProcessingTurno(turno.id);
+      try {
+        const payload = buildTurnoPayloadFromForm({
+          ...formValuesFromTurno(turno),
+          review: turno.review,
+          comentarios: turno.comentarios || "",
+          estado: "Rechazado",
+        });
+
+        await updateTurno(turno.id, payload);
+        showToast("Turno rechazado correctamente.");
+      } catch (error) {
+        showToast(error.message || "No se pudo rechazar el turno.", "error");
+      } finally {
+        setProcessingTurno(null);
+      }
+    },
+  });
+};
 
   // ---- Gestión de usuarios ----
   // --- Operaciones de gestion sobre usuarios pendientes ---
