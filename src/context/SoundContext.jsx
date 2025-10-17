@@ -10,9 +10,9 @@ export const SoundProvider = ({ children }) => {
 
   const toggleMute = () => setMuted((prev) => !prev);
 
-  // 🔄 persistir en localStorage
+  // Guarda la preferencia de sonido en localStorage
   useEffect(() => {
-    localStorage.setItem("muted", muted);
+    localStorage.setItem("muted", muted ? "true" : "false");
   }, [muted]);
 
   return (
@@ -23,4 +23,3 @@ export const SoundProvider = ({ children }) => {
 };
 
 export const useSound = () => useContext(SoundContext);
-

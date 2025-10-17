@@ -14,9 +14,14 @@ import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
 import { useModal } from "../context/ModalContext";
-import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+} from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
+import { Skeleton } from "../components/ui/Skeleton";
+import { useLoading } from "../context/LoadingContext";
 
 export const DashboardProfesor = () => {
   // --- Contexto y permisos del profesor ---
@@ -32,6 +37,7 @@ export const DashboardProfesor = () => {
   } = useAppData();
   const { user, token } = useAuth();
   const { showModal } = useModal();
+  const { isLoading } = useLoading();
 
   // --- Estado local: panel activo y operacion actual ---
   const [active, setActive] = useState("solicitudes");
@@ -64,34 +70,34 @@ export const DashboardProfesor = () => {
 
   // --- Maneja rechazos explicitos de solicitudes ---
   const rechazarTurno = (turno) => {
-  if (!turno || turno.estado !== "Solicitado") return;
+    if (!turno || turno.estado !== "Solicitado") return;
 
-  showModal({
-    type: "warning",
-    title: "Rechazar turno",
-    message: `¿Confirmás el rechazo del turno para la sala ${turno.sala}?`,
+    showModal({
+      type: "warning",
+      title: "Rechazar turno",
+      message: `¿Confirmás el rechazo del turno para la sala ${turno.sala}?`,
 
-    // Acción que se ejecuta al confirmar
-    onConfirm: async () => {
-      setProcessingTurno(turno.id);
-      try {
-        const payload = buildTurnoPayloadFromForm({
-          ...formValuesFromTurno(turno),
-          review: turno.review,
-          comentarios: turno.comentarios || "",
-          estado: "Rechazado",
-        });
+      // Acción que se ejecuta al confirmar
+      onConfirm: async () => {
+        setProcessingTurno(turno.id);
+        try {
+          const payload = buildTurnoPayloadFromForm({
+            ...formValuesFromTurno(turno),
+            review: turno.review,
+            comentarios: turno.comentarios || "",
+            estado: "Rechazado",
+          });
 
-        await updateTurno(turno.id, payload);
-        showToast("Turno rechazado correctamente.");
-      } catch (error) {
-        showToast(error.message || "No se pudo rechazar el turno.", "error");
-      } finally {
-        setProcessingTurno(null);
-      }
-    },
-  });
-};
+          await updateTurno(turno.id, payload);
+          showToast("Turno rechazado correctamente.");
+        } catch (error) {
+          showToast(error.message || "No se pudo rechazar el turno.", "error");
+        } finally {
+          setProcessingTurno(null);
+        }
+      },
+    });
+  };
 
   // ---- Gestión de usuarios ----
   // --- Operaciones de gestion sobre usuarios pendientes ---
@@ -114,7 +120,8 @@ export const DashboardProfesor = () => {
   const turnosSolicitados = aplicarFiltro(
     turnos.filter((t) => t.estado === "Solicitado")
   );
-  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] = useState(turnosSolicitados);
+  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] =
+    useState(turnosSolicitados);
   const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] =
     useState(usuariosPendientes);
   const totalSolicitudes = turnosSolicitadosBuscados.length;
@@ -160,8 +167,7 @@ export const DashboardProfesor = () => {
 
   // --- Paginacion de solicitudes para tableros desktop/mobile ---
   const paginatedTurnosSolicitados = useMemo(() => {
-    const totalPages =
-      Math.ceil((totalSolicitudes || 0) / ITEMS_PER_PAGE) || 1;
+    const totalPages = Math.ceil((totalSolicitudes || 0) / ITEMS_PER_PAGE) || 1;
     const currentPage = Math.min(Math.max(pageSolicitudes, 1), totalPages);
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return {
@@ -262,6 +268,14 @@ export const DashboardProfesor = () => {
             </h2>
 
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+
+            {(turnosLoading || isLoading("turnos")) && (
+              <div className="flex flex-col gap-2 my-4">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} height="1.25rem" />
+                ))}
+              </div>
+            )}
 
             <SearchBar
               data={turnosSolicitados}

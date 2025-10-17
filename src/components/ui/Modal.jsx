@@ -3,16 +3,21 @@ import { useEffect, useRef } from "react";
 export const Modal = ({
   title = "¿Estás seguro que deseas realizar esta acción?",
   message = "Esta operación no se puede deshacer.",
-  type = "warning", // success | error | warning | info
+  type = "warning", 
   children,
   onClose,
   onConfirm,
 }) => {
   const modalRef = useRef(null);
+  const lastFocusedElement = useRef(null);
 
-  // Manejo de foco al abrir
+  // Manejo de foco al abrir y restaurar al cerrar
   useEffect(() => {
+    lastFocusedElement.current = document.activeElement;
     if (modalRef.current) modalRef.current.focus();
+    return () => {
+      if (lastFocusedElement.current) lastFocusedElement.current.focus();
+    };
   }, []);
 
   const handleConfirm = () => {
@@ -40,6 +45,8 @@ export const Modal = ({
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="modal-title"
+      aria-describedby="modal-description"
     >
       <div
         ref={modalRef}
@@ -52,10 +59,16 @@ export const Modal = ({
         <div className="flex items-start gap-3 mb-4">
           <img src={icons[type]} alt={type} className="w-10 h-10 mt-1" />
           <div>
-            <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD] text-lg mb-1">
+            <h3
+              id="modal-title"
+              className="font-bold text-[#1E3A8A] dark:text-[#93C5FD] text-lg mb-1"
+            >
               {title}
             </h3>
-            <p className="text-[#111827] dark:text-gray-300 text-sm">
+            <p
+              id="modal-description"
+              className="text-[#111827] dark:text-gray-300 text-sm"
+            >
               {message}
             </p>
           </div>
@@ -71,12 +84,14 @@ export const Modal = ({
         <div className="flex justify-end mt-4 space-x-3">
           <button
             onClick={onClose}
+            aria-label="Cancelar acción"
             className="bg-[#DC2626] dark:bg-[#991B1B] text-white px-3 py-1 rounded border-2 border-[#111827] dark:border-[#555] active:translate-x-[2px] active:translate-y-[2px]"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
+            aria-label="Confirmar acción"
             className="bg-[#FFD700] dark:bg-[#C9A300] text-black dark:text-white px-3 py-1 rounded border-2 border-[#111827] dark:border-[#555] active:translate-x-[2px] active:translate-y-[2px]"
           >
             Confirmar

@@ -5,6 +5,7 @@ import { AppProvider } from "./AppContext";
 import { ThemeProvider } from "./ThemeContext";
 import { SoundProvider } from "./SoundContext";
 import { ModalProvider } from "./ModalContext";
+import { LoadingProvider } from "./LoadingContext";
 
 // Envuelve ambos contextos, para mantener un punto de entrada limpio.
 export const AppProviders = ({ children }) => (
@@ -12,7 +13,9 @@ export const AppProviders = ({ children }) => (
     <ThemeProvider>
       <SoundProvider>
         <ModalProvider>
-          <AppProvider>{children}</AppProvider>
+          <LoadingProvider>
+            <AppProvider>{children}</AppProvider>
+          </LoadingProvider>
         </ModalProvider>
       </SoundProvider>
     </ThemeProvider>

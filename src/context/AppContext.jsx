@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useAuth } from "./AuthContext";
+import { useLoading } from "./LoadingContext";
 import {
   getTurnos,
   getTurnoById as apiGetTurnoById,
@@ -60,15 +61,17 @@ export const AppProvider = ({ children }) => {
   const [usuarios, setUsuarios] = useLocalStorage("usuarios", []);
   const [turnosLoading, setTurnosLoading] = useState(false);
   const [turnosError, setTurnosError] = useState(null);
+  const [entregasError, setEntregasError] = useState(null);
+  const [usuariosError, setUsuariosError] = useState(null);
   const { user, token } = useAuth();
+  const { start, stop } = useLoading();
 
   // --- Setter seguro para mantener los turnos normalizados ---
   const setTurnos = useCallback(
     (next) =>
       setTurnosState((prev) => {
         const previous = normalizeCollection(prev);
-        const resolved =
-          typeof next === "function" ? next(previous) : next;
+        const resolved = typeof next === "function" ? next(previous) : next;
         return normalizeCollection(resolved);
       }),
     [setTurnosState]
@@ -78,17 +81,21 @@ export const AppProvider = ({ children }) => {
   // --- Limpia caches cuando la sesión expira ---
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === "turnos") {
-        const value = event.newValue ? JSON.parse(event.newValue) : [];
-        setTurnos(value);
-      }
-      if (event.key === "entregas") {
-        const value = event.newValue ? JSON.parse(event.newValue) : [];
-        setEntregas(Array.isArray(value) ? value : []);
-      }
-      if (event.key === "usuarios") {
-        const value = event.newValue ? JSON.parse(event.newValue) : [];
-        setUsuarios(Array.isArray(value) ? value : []);
+      try {
+        if (event.key === "turnos") {
+          const value = event.newValue ? JSON.parse(event.newValue) : [];
+          setTurnos(value);
+        }
+        if (event.key === "entregas") {
+          const value = event.newValue ? JSON.parse(event.newValue) : [];
+          setEntregas(Array.isArray(value) ? value : []);
+        }
+        if (event.key === "usuarios") {
+          const value = event.newValue ? JSON.parse(event.newValue) : [];
+          setUsuarios(Array.isArray(value) ? value : []);
+        }
+      } catch (error) {
+        console.error("No se pudo sincronizar datos desde storage", error);
       }
     };
 
@@ -101,9 +108,11 @@ export const AppProvider = ({ children }) => {
     async (params = {}) => {
       if (!token) {
         setTurnos([]);
+        setTurnosError(null);
         return [];
       }
       setTurnosLoading(true);
+       start("turnos");
       try {
         const remoteTurnos = await getTurnos(params);
         const normalized = normalizeCollection(remoteTurnos);
@@ -113,59 +122,70 @@ export const AppProvider = ({ children }) => {
       } catch (error) {
         console.error("Error al cargar turnos", error);
         setTurnosError(error.message);
-        setTurnos([]);
-        return [];
+        return normalizeCollection(turnosState);
       } finally {
         setTurnosLoading(false);
+        stop("turnos");
       }
     },
-    [setTurnos, token]
+    [setTurnos, token, start, stop, turnosState]
   );
 
   const loadEntregas = useCallback(
     async (params = {}) => {
       if (!token) {
         setEntregas([]);
+        setEntregasError(null);
         return [];
       }
+      start("entregas");
       try {
         const data = await getEntregas(params);
         const normalized = normalizeCollection(data);
         setEntregas(normalized);
+        setEntregasError(null);
         return normalized;
       } catch (error) {
         console.error("Error al cargar entregas", error);
-        setEntregas([]);
-        return [];
+        setEntregasError(error.message);
+        return Array.isArray(entregas) ? entregas : [];
+      } finally {
+        stop("entregas");
       }
     },
-    [token, setEntregas]
+    [token, setEntregas, start, stop, entregas]
   );
 
   const loadUsuarios = useCallback(
     async (params = {}) => {
       if (!token) {
         setUsuarios([]);
+        setUsuariosError(null);
         return [];
       }
+      start("usuarios");
       try {
         const data = await getUsuarios(params);
         const normalized = normalizeCollection(data);
         setUsuarios(normalized);
+        setUsuariosError(null);
         return normalized;
       } catch (error) {
         console.error("Error al cargar usuarios", error);
-        setUsuarios([]);
-        return [];
+        setUsuariosError(error.message);
+        return Array.isArray(usuarios) ? usuarios : [];
+      } finally {
+        stop("usuarios");
       }
     },
-    [token, setUsuarios]
+    [token, setUsuarios, start, stop, usuarios]
   );
 
   // --- CRUD de turnos disponible para dashboards ---
   const createTurno = useCallback(
     async (payload) => {
       setTurnosLoading(true);
+      start("turnos");
       try {
         const nuevo = await apiCreateTurno(payload);
         const normalized = normalizeItem(nuevo);
@@ -181,14 +201,16 @@ export const AppProvider = ({ children }) => {
         throw error;
       } finally {
         setTurnosLoading(false);
+        stop("turnos");
       }
     },
-    [setTurnos]
+    [setTurnos, start, stop]
   );
 
   const updateTurno = useCallback(
     async (id, payload) => {
       setTurnosLoading(true);
+      start("turnos");
       try {
         const actualizado = await apiUpdateTurno(id, payload);
         const normalized = normalizeItem(actualizado);
@@ -208,14 +230,16 @@ export const AppProvider = ({ children }) => {
         throw error;
       } finally {
         setTurnosLoading(false);
+        stop("turnos");
       }
     },
-    [setTurnos]
+    [setTurnos, start, stop]
   );
 
   const removeTurno = useCallback(
     async (id) => {
       setTurnosLoading(true);
+      start("turnos");
       try {
         await apiDeleteTurno(id);
         setTurnos((prev) =>
@@ -230,9 +254,10 @@ export const AppProvider = ({ children }) => {
         throw error;
       } finally {
         setTurnosLoading(false);
+        stop("turnos");
       }
     },
-    [setTurnos]
+    [setTurnos, start, stop]
   );
 
   const findTurnoById = useCallback(
@@ -243,6 +268,7 @@ export const AppProvider = ({ children }) => {
       if (cached) return cached;
 
       setTurnosLoading(true);
+      start("turnos");
       try {
         const remote = await apiGetTurnoById(id);
         const normalized = normalizeItem(remote);
@@ -251,9 +277,7 @@ export const AppProvider = ({ children }) => {
           setTurnos((prev) => {
             if (
               Array.isArray(prev) &&
-              prev.some(
-                (turno) => String(turno.id) === String(targetId)
-              )
+              prev.some((turno) => String(turno.id) === String(targetId))
             ) {
               return prev.map((turno) =>
                 String(turno.id) === String(targetId) ? normalized : turno
@@ -271,9 +295,10 @@ export const AppProvider = ({ children }) => {
         throw error;
       } finally {
         setTurnosLoading(false);
+        stop("turnos");
       }
     },
-    [turnosState, setTurnos]
+    [turnosState, setTurnos, start, stop]
   );
 
   useEffect(() => {
@@ -281,8 +306,20 @@ export const AppProvider = ({ children }) => {
       setTurnos([]);
       setEntregas([]);
       setUsuarios([]);
+      setTurnosError(null);
+      setEntregasError(null);
+      setUsuariosError(null);
     }
-  }, [token, user, setTurnos, setEntregas, setUsuarios]);
+  }, [
+    token,
+    user,
+    setTurnos,
+    setEntregas,
+    setUsuarios,
+    setTurnosError,
+    setEntregasError,
+    setUsuariosError,
+  ]);
 
   // --- Métricas agregadas para paneles y badges ---
   const { totalTurnosSolicitados, totalEntregas, totalUsuarios } = useMemo(
@@ -317,6 +354,8 @@ export const AppProvider = ({ children }) => {
         findTurnoById,
         turnosLoading,
         turnosError,
+        entregasError,
+        usuariosError,
       }}
     >
       {children}

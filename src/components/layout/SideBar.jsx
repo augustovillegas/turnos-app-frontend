@@ -44,6 +44,8 @@ export const SideBar = ({ items = [], onSelect, active }) => {
                    hover:opacity-90 transition-all duration-300
                    dark:border-[#444] dark:bg-[#B8860B]"
         aria-label={open ? "Cerrar panel" : "Abrir panel"}
+        aria-expanded={open}
+        aria-controls="sidebar-panel"
       >
         <i
           className={`bi ${
@@ -57,11 +59,13 @@ export const SideBar = ({ items = [], onSelect, active }) => {
         <div
           className="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300"
           onClick={() => setOpen(false)}
+          aria-hidden="true"
         ></div>
       )}
 
       {/* Sidebar deslizable */}
       <aside
+        id="sidebar-panel"
         ref={sidebarRef}
         className={`fixed top-0 left-0 z-50 h-full w-64 
                     bg-[#C0C0C0] dark:bg-[#1A1A1A] 
@@ -69,6 +73,8 @@ export const SideBar = ({ items = [], onSelect, active }) => {
                     shadow-2xl flex flex-col
                     transition-transform duration-300 ease-in-out
                     ${open ? "translate-x-0" : "-translate-x-full"}`}
+        role="navigation"
+        aria-label="Menú lateral"
       >
         {/* Encabezado */}
         <div className="bg-[#1E3A8A] dark:bg-[#0A2E73] text-white font-bold text-sm flex items-center gap-2 px-4 py-3">
@@ -77,7 +83,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
         </div>
 
         {/* Opciones */}
-        <nav className="flex-1 flex flex-col">
+        <nav className="flex-1 flex flex-col" aria-label="Secciones del panel">
           {items.map((item) => (
             <button
               key={item.id}
@@ -90,6 +96,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
                             ? "bg-[#FFD700] text-black dark:bg-[#B8860B] dark:text-white font-bold"
                             : "text-[#111827] dark:text-gray-200"
                         }`}
+              aria-current={active === item.id ? "page" : undefined}
             >
               <img src={item.icon} alt={item.label} className="w-5 h-5" />
               {item.label}
@@ -109,10 +116,11 @@ export const SideBar = ({ items = [], onSelect, active }) => {
                           ? "bg-[#FFD700] text-black dark:bg-[#B8860B] dark:text-white font-bold"
                           : "text-[#111827] dark:text-gray-200"
                       }`}
+            aria-current={active === "config" ? "page" : undefined}
           >
             <img
               src="/icons/settings_gear-2.png"
-              alt="config"
+              alt="Configuración"
               className="w-5 h-5"
             />
             Configuración
@@ -126,7 +134,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
           >
             <img
               src="/icons/users_key-4.png"
-              alt="logout"
+              alt="Cerrar sesión"
               className="w-5 h-5"
             />
             Cerrar sesión

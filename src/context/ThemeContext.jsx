@@ -1,35 +1,47 @@
 /* eslint-disable react-refresh/only-export-components */
 // === Theme Context ===
 // Controla la clase dark en <html> y guarda la preferencia del usuario.
-import { createContext, useContext, useLayoutEffect, useEffect } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useEffect,
+  useCallback,
+} from "react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
 const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useLocalStorage('theme', 'light');
+const systemPreference = () => {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 
-  const toggleTheme = () => {
-    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
-  };
+export const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useLocalStorage("theme", systemPreference());
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+  }, [setTheme]);
 
   // --- Aplica el tema antes del primer paint para evitar flicker ---
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') root.classList.add('dark');
-    else root.classList.remove('dark');
+    if (theme === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
   }, [theme]);
 
   // --- Si no hay preferencia guardada, consulta la del sistema ---
   useEffect(() => {
-    if (!localStorage.getItem('theme')) {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
+    if (!localStorage.getItem("theme")) {
+      setTheme(systemPreference());
     }
   }, [setTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

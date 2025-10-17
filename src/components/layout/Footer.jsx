@@ -25,6 +25,8 @@ export const Footer = () => {
 
   return (
     <footer
+      role="contentinfo"
+      aria-label="Información del sitio y navegación principal"
       className="
         fixed bottom-0 left-0 w-full h-10 z-50
         bg-[#C0C0C0] dark:bg-[#1E1E1E]
@@ -36,6 +38,10 @@ export const Footer = () => {
       <div className="relative flex items-center gap-2" ref={menuRef}>
         <button
           onClick={() => setOpen(!open)}
+          aria-haspopup="true"
+          aria-expanded={open}
+          aria-controls="footer-menu"
+          aria-label="Abrir menú principal"
           className="flex items-center gap-2 px-3 py-1
                      bg-[#E5E5E5] dark:bg-[#2A2A2A] border-2 
                      border-t-white border-l-white 
@@ -46,7 +52,7 @@ export const Footer = () => {
                      active:border-t-[#808080] active:border-l-[#808080] 
                      active:border-b-white active:border-r-white
                      dark:active:border-t-[#222] dark:active:border-l-[#222]
-                     dark:active:border-b-[#666] dark:active:border-r-[#666]
+                     dark:active:border-b-[#666] dark:active-border-r-[#666]
                      transition-all"
         >
           <span className="font-bold text-[#111827] dark:text-gray-200">
@@ -55,7 +61,10 @@ export const Footer = () => {
         </button>
 
         {open && (
-          <div className="absolute bottom-10 left-0 w-48 bg-[#E5E5E5] dark:bg-[#2A2A2A] border-2 border-[#111827] dark:border-[#555] shadow-lg rounded-md overflow-hidden animate-fadeIn">
+          <div
+            id="footer-menu"
+            className="absolute bottom-10 left-0 w-48 bg-[#E5E5E5] dark:bg-[#2A2A2A] border-2 border-[#111827] dark:border-[#555] shadow-lg rounded-md overflow-hidden animate-fadeIn"
+          >
             <div className="bg-[#1E3A8A] dark:bg-[#0A2E73] text-white px-3 py-1 font-bold text-sm">
               Menú
             </div>
@@ -97,6 +106,7 @@ export const Footer = () => {
           href="https://www.linkedin.com/in/augustovillegas/"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Desarrollador Augusto Villegas en LinkedIn (abre en una nueva pestaña)"
         >
           Dev. Augusto Villegas
         </a>
@@ -104,3 +114,4 @@ export const Footer = () => {
     </footer>
   );
 };
+

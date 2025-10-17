@@ -10,6 +10,8 @@ export const Status = ({ status }) => {
 
   return (
     <span
+      role="status"
+      aria-live="polite"
       className={`px-4 py-1 rounded text-xs font-bold border-2 border-[#111827] dark:border-[#333] shadow-sm 
                   transition-all duration-500 ease-in-out transform hover:scale-105  
                   ${styles[status] || "bg-gray-300 text-black dark:bg-[#333] dark:text-gray-200"}`}
@@ -18,5 +20,6 @@ export const Status = ({ status }) => {
     </span>
   );
 };
+
 
 

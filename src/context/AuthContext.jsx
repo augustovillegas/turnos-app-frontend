@@ -6,7 +6,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // --- Estado inicial: recupera usuario guardado si existe ---
+  // --- Estado inicial: recupera usuario y token guardados si existen ---
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem("user");
     try {
@@ -16,8 +16,7 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
   });
-
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
 
   // --- Propaga cambios de sesión entre pestañas ---
   useEffect(() => {
@@ -34,8 +33,11 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
         }
       }
-      if (event.key === "token" && !event.newValue) {
-        setUser(null);
+      if (event.key === "token") {
+        setToken(event.newValue || null);
+        if (!event.newValue) {
+          setUser(null);
+        }
       }
     };
 
@@ -43,15 +45,37 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
+  const setSession = (nextToken, nextUser) => {
+    if (nextToken) {
+      localStorage.setItem("token", nextToken);
+      setToken(nextToken);
+    } else {
+      localStorage.removeItem("token");
+      setToken(null);
+    }
+
+    if (nextUser) {
+      localStorage.setItem("user", JSON.stringify(nextUser));
+      setUser(nextUser);
+    } else {
+      localStorage.removeItem("user");
+      setUser(null);
+    }
+  };
+
+  const login = (nextToken, nextUser) => {
+    setSession(nextToken, nextUser);
+  };
+
   const logout = () => {
     // --- Limpia credenciales y reinicia sesión ---
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+    setSession(null, null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, token, logout }}>
+    <AuthContext.Provider
+      value={{ user, setUser, token, setSession, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

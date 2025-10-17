@@ -13,13 +13,15 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import { win98Alert } from "../utils/feedback/alerts";
+import { useModal } from "../context/ModalContext";
 import {
   buildTurnoPayloadFromForm,
   formValuesFromTurno,
 } from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
+import { Skeleton } from "../components/ui/Skeleton";
+import { useLoading } from "../context/LoadingContext";
 
 export const DashboardSuperadmin = () => {
   // --- Contexto global con acceso a todo el sistema ---
@@ -34,6 +36,8 @@ export const DashboardSuperadmin = () => {
     loadUsuarios,
   } = useAppData();
   const { user, token } = useAuth();
+  const { showModal } = useModal();
+  const { isLoading } = useLoading();
 
   // --- Estado local: pestañas y proceso actual ---
   const [active, setActive] = useState("usuarios");
@@ -64,33 +68,34 @@ export const DashboardSuperadmin = () => {
   };
 
   // --- Maneja rechazos cuando el turno no continua ---
-  const rechazarTurno = async (turno) => {
+  const rechazarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
-    const result = await win98Alert({
-      title: "Rechazar turno",
-      text: `¿Rechazar el turno solicitado para la sala ${turno.sala}?`,
-      swalIcon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, rechazar",
-      cancelButtonText: "Volver",
-    });
-    if (!result.isConfirmed) return;
 
-    setProcessingTurno(turno.id);
-    try {
-      const payload = buildTurnoPayloadFromForm({
-        ...formValuesFromTurno(turno),
-        review: turno.review,
-        comentarios: turno.comentarios || "",
-        estado: "Rechazado",
-      });
-      await updateTurno(turno.id, payload);
-      showToast("Turno rechazado.");
-    } catch (error) {
-      showToast(error.message || "No se pudo rechazar el turno.", "error");
-    } finally {
-      setProcessingTurno(null);
-    }
+    showModal({
+      type: "warning",
+      title: "Rechazar turno",
+      message: `¿Rechazar el turno solicitado para la sala ${turno.sala}?`,
+
+      // Acción ejecutada al confirmar
+      onConfirm: async () => {
+        setProcessingTurno(turno.id);
+        try {
+          const payload = buildTurnoPayloadFromForm({
+            ...formValuesFromTurno(turno),
+            review: turno.review,
+            comentarios: turno.comentarios || "",
+            estado: "Rechazado",
+          });
+
+          await updateTurno(turno.id, payload);
+          showToast("Turno rechazado correctamente.");
+        } catch (error) {
+          showToast(error.message || "No se pudo rechazar el turno.", "error");
+        } finally {
+          setProcessingTurno(null);
+        }
+      },
+    });
   };
 
   // --- Carga inicial de datos globales ---
@@ -264,6 +269,14 @@ export const DashboardSuperadmin = () => {
 
               <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
 
+              {(turnosLoading || isLoading("turnos")) && (
+                <div className="flex flex-col gap-2 my-4">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} height="1.25rem" />
+                  ))}
+                </div>
+              )}
+
               {/* Tabla Desktop */}
               <div className="hidden sm:block">
                 <Table
@@ -380,6 +393,14 @@ export const DashboardSuperadmin = () => {
                   Usuarios Pendientes
                 </h2>
               </div>
+
+              {isLoading("usuarios") && (
+                <div className="flex flex-col gap-2 my-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} height="1.25rem" />
+                  ))}
+                </div>
+              )}
 
               <SearchBar
                 data={usuariosPendientesBuscados}

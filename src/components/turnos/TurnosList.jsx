@@ -9,17 +9,18 @@ import { ReviewFilter } from "../ui/ReviewFilter";
 import { CardTurnosCreados } from "../ui/CardTurnosCreados";
 import { Pagination } from "../ui/Pagination";
 import { SearchBar } from "../ui/SearchBar";
-import { win98Alert } from "../../utils/feedback/alerts";
+import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
 
 export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
-  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } =
-    useAppData();
+  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } = useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
+
+  const { showModal } = useModal();
 
   useEffect(() => {
     loadTurnos();
@@ -65,27 +66,23 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   );
 
   // --- Eliminacion con confirmacion estilo Win98 ---
-  const confirmarEliminacion = async (turno) => {
-    try {
-      const result = await win98Alert({
-        title: "Eliminar turno",
-        text: `Seguro que deseas eliminar la sala ${turno.sala}?`,
-        swalIcon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Si, eliminar",
-        cancelButtonText: "Cancelar",
-      });
-
-      if (!result.isConfirmed) return;
-
-      setProcessingId(turno.id);
-      await removeTurno(turno.id);
-      showToast("Turno eliminado con exito.");
-    } catch (error) {
-      showToast(error.message || "No se pudo eliminar el turno.", "error");
-    } finally {
-      setProcessingId(null);
-    }
+  const confirmarEliminacion = (turno) => {
+    showModal({
+      type: "warning", 
+      title: "Eliminar turno",
+      message: `¿Seguro que deseas eliminar la sala ${turno.sala}?`,
+      onConfirm: async () => {
+        setProcessingId(turno.id);
+        try {
+          await removeTurno(turno.id);
+          showToast("Turno eliminado con éxito.");
+        } catch (error) {
+          showToast(error.message || "No se pudo eliminar el turno.", "error");
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   return (

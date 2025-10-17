@@ -20,11 +20,16 @@ export const Button = ({
       "bg-[#E5E5E5] text-black border-[#111827] hover:opacity-90 dark:bg-[#2A2A2A] dark:text-gray-200 dark:border-[#444]",
   };
 
+  // Si el botón no tiene texto visible, generar una etiqueta accesible
+  const ariaLabel =
+    typeof children === "string" ? undefined : rest["aria-label"] || "Botón";
+
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={`${base} ${styles[variant]} ${className}`}
       {...rest}
     >

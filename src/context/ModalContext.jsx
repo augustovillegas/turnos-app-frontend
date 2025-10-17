@@ -1,18 +1,20 @@
 import { createContext, useContext, useState, useCallback } from "react";
-import { Modal } from "../components/ui/Modal"; // Ajustar path según tu estructura
+import { Modal } from "../components/ui/Modal";
 
 const ModalContext = createContext();
 
+const initialState = {
+  isOpen: false,
+  type: "info",
+  title: "",
+  message: "",
+  onConfirm: null,
+  onClose: null,
+  children: null,
+};
+
 export const ModalProvider = ({ children }) => {
-  const [modalData, setModalData] = useState({
-    isOpen: false,
-    type: "info",
-    title: "",
-    message: "",
-    onConfirm: null,
-    onClose: null,
-    children: null,
-  });
+  const [modalData, setModalData] = useState(initialState);
 
   const showModal = useCallback(
     ({ type = "info", title = "", message = "", onConfirm, onClose, children }) => {
@@ -30,7 +32,12 @@ export const ModalProvider = ({ children }) => {
   );
 
   const closeModal = useCallback(() => {
-    setModalData((prev) => ({ ...prev, isOpen: false }));
+    setModalData((prev) => {
+      if (typeof prev.onClose === "function") {
+        prev.onClose();
+      }
+      return { ...initialState };
+    });
   }, []);
 
   const handleConfirm = useCallback(() => {
@@ -47,7 +54,7 @@ export const ModalProvider = ({ children }) => {
           message={modalData.message}
           type={modalData.type}
           onConfirm={handleConfirm}
-          onClose={modalData.onClose || closeModal}
+          onClose={closeModal}
         >
           {modalData.children}
         </Modal>

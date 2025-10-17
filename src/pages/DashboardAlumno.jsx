@@ -14,9 +14,14 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+} from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
+import { useLoading } from "../context/LoadingContext";
+import { Skeleton } from "../components/ui/Skeleton";
 
 export const DashboardAlumno = () => {
   // --- Contexto compartido y autenticacion del alumno ---
@@ -32,6 +37,7 @@ export const DashboardAlumno = () => {
   } = useAppData();
   const { user, token } = useAuth();
   const { showModal } = useModal();
+  const { isLoading } = useLoading();
 
   // --- Estado local: pestaña activa y formularios de entregas ---
   const [active, setActive] = useState("turnos");
@@ -368,10 +374,12 @@ export const DashboardAlumno = () => {
                 }}
               />
 
-              {turnosLoading && (
-                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                  Cargando turnos disponibles...
-                </p>
+              {(turnosLoading || isLoading("turnos")) && (
+                <div className="flex flex-col gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} height="1.25rem" />
+                  ))}
+                </div>
               )}
 
               {/* Tabla Desktop */}
