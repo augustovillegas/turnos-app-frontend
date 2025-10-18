@@ -51,10 +51,14 @@ export const Login = () => {
         data: error?.response?.data,
         message: error?.message,
       });
+      const isNetworkError =
+        error?.code === "ERR_NETWORK" || error?.message === "Network Error";
       const message =
         error?.friendlyMessage ||
         error?.response?.data?.message ||
-        error?.message ||
+        (isNetworkError
+          ? "No se pudo conectar con el servidor. Verifica tu conexi��n e intentalo nuevamente."
+          : error?.message) ||
         "Error de autenticacion";
       showToast(message, "error");
     } finally {

@@ -248,8 +248,8 @@ export const DashboardProfesor = () => {
   const handleSidebarSelect = (id) => {
     if (id === "logout") {
       logout();
-      navigate("/login");
-      showToast("Sesión cerrada correctamente.", "info");
+      navigate("/", { replace: true });
+      showToast("Sesion cerrada correctamente.", "info");
       return;
     }
     setActive(id);

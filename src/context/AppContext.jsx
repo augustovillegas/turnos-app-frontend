@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useCallback,
+  useRef,
   useState,
 } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
@@ -60,22 +61,69 @@ const normalizeItem = (item) => {
 const normalizeCollection = (collection) =>
   Array.isArray(collection) ? collection.map(normalizeItem) : [];
 
+const TURNOS_STORAGE_KEY = "App-turnos";
+
+const DEFAULT_TURNOS_SEED = normalizeCollection([
+  {
+    id: "seed-turno-1",
+    review: 1,
+    fecha: "2025-10-25",
+    horario: "09:00 - 09:30",
+    sala: "Sala Remota 1",
+    zoomLink: "https://zoom.us/j/111111111",
+    estado: "Disponible",
+    start: "2025-10-25T12:00:00.000Z",
+    end: "2025-10-25T12:30:00.000Z",
+    comentarios: "Turno de muestra para onboarding.",
+  },
+  {
+    id: "seed-turno-2",
+    review: 2,
+    fecha: "2025-10-26",
+    horario: "10:00 - 10:45",
+    sala: "Sala Remota 2",
+    zoomLink: "https://zoom.us/j/222222222",
+    estado: "Disponible",
+    start: "2025-10-26T13:00:00.000Z",
+    end: "2025-10-26T13:45:00.000Z",
+    comentarios: "Revisión funcional con el equipo profesor.",
+  },
+  {
+    id: "seed-turno-3",
+    review: 3,
+    fecha: "2025-10-27",
+    horario: "11:30 - 12:00",
+    sala: "Cowork Presencial 1",
+    zoomLink: "https://zoom.us/j/333333333",
+    estado: "Disponible",
+    start: "2025-10-27T14:30:00.000Z",
+    end: "2025-10-27T15:00:00.000Z",
+    comentarios: "Espacio presencial para consultas de integración.",
+  },
+]);
+
 const AppContext = createContext();
 
 // --- Provider principal: expone estado compartido y acciones ---
 
 export const AppProvider = ({ children }) => {
   // --- Estado persistido en localStorage + banderas de carga/errores ---
-  const [turnosState, setTurnosState] = useLocalStorage("turnos", []);
+  const [turnosState, setTurnosState] = useLocalStorage(
+    TURNOS_STORAGE_KEY,
+    DEFAULT_TURNOS_SEED
+  );
   const [entregas, setEntregas] = useLocalStorage("entregas", []);
   const [usuarios, setUsuarios] = useLocalStorage("usuarios", []);
-  const [turnosLoading, setTurnosLoading] = useState(false);
   const [turnosError, setTurnosError] = useState(null);
   const [entregasError, setEntregasError] = useState(null);
   const [usuariosError, setUsuariosError] = useState(null);
   const { user, token } = useAuth();
-  const { start, stop } = useLoading();
+  const { start, stop, isLoading } = useLoading();
   const { pushError } = useError();
+
+  const turnosRef = useRef(normalizeCollection(turnosState));
+  const entregasRef = useRef(normalizeCollection(entregas));
+  const usuariosRef = useRef(normalizeCollection(usuarios));
 
   const notifyError = useCallback(
     (message, error, title = "Error en la operación") => {
@@ -99,18 +147,79 @@ export const AppProvider = ({ children }) => {
       setTurnosState((prev) => {
         const previous = normalizeCollection(prev);
         const resolved = typeof next === "function" ? next(previous) : next;
-        return normalizeCollection(resolved);
+        const normalized = normalizeCollection(resolved);
+        turnosRef.current = normalized;
+        return normalized;
       }),
     [setTurnosState]
   );
+
+  useEffect(() => {
+    turnosRef.current = normalizeCollection(turnosState);
+  }, [turnosState]);
+
+  const seededTurnosRef = useRef(false);
+
+  useEffect(() => {
+    if (seededTurnosRef.current) return;
+    if (typeof window === "undefined") return;
+    seededTurnosRef.current = true;
+
+    try {
+      const storage = window.localStorage;
+      const legacyRaw = storage.getItem("turnos");
+
+      if (legacyRaw && !storage.getItem(TURNOS_STORAGE_KEY)) {
+        storage.setItem(TURNOS_STORAGE_KEY, legacyRaw);
+        const legacyParsed = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
+          setTurnos(legacyParsed);
+          return;
+        }
+      }
+
+      const currentRaw = storage.getItem(TURNOS_STORAGE_KEY);
+      if (!currentRaw || currentRaw === "[]") {
+        storage.setItem(
+          TURNOS_STORAGE_KEY,
+          JSON.stringify(DEFAULT_TURNOS_SEED)
+        );
+        setTurnos(DEFAULT_TURNOS_SEED);
+      }
+    } catch (error) {
+      console.error("No se pudo inicializar la coleccion App-turnos", error);
+      setTurnos(DEFAULT_TURNOS_SEED);
+    }
+  }, [setTurnos]);
+
+  useEffect(() => {
+    entregasRef.current = normalizeCollection(entregas);
+  }, [entregas]);
+
+  useEffect(() => {
+    usuariosRef.current = normalizeCollection(usuarios);
+  }, [usuarios]);
 
   // --- Sincroniza cambios de almacenamiento entre pestañas ---
   // --- Limpia caches cuando la sesión expira ---
   useEffect(() => {
     const handleStorageChange = (event) => {
       try {
-        if (event.key === "turnos") {
-          const value = event.newValue ? JSON.parse(event.newValue) : [];
+        if (event.key === TURNOS_STORAGE_KEY || event.key === "turnos") {
+          const rawValue = event.newValue;
+          const value = rawValue ? JSON.parse(rawValue) : [];
+
+          if (
+            event.key === "turnos" &&
+            typeof window !== "undefined" &&
+            window.localStorage
+          ) {
+            window.localStorage.setItem(
+              TURNOS_STORAGE_KEY,
+              rawValue || "[]"
+            );
+          }
+
           setTurnos(value);
         }
         if (event.key === "entregas") {
@@ -134,11 +243,12 @@ export const AppProvider = ({ children }) => {
   const loadTurnos = useCallback(
     async (params = {}) => {
       if (!token) {
-        setTurnos([]);
+        const fallback = normalizeCollection(DEFAULT_TURNOS_SEED);
+        turnosRef.current = fallback;
+        setTurnos(fallback);
         setTurnosError(null);
-        return [];
+        return fallback;
       }
-      setTurnosLoading(true);
        start("turnos");
       try {
         const remoteTurnos = await getTurnos(params);
@@ -150,13 +260,12 @@ export const AppProvider = ({ children }) => {
         console.error("Error al cargar turnos", error);
         setTurnosError(error.message);
         notifyError("No se pudieron cargar los turnos.", error, "Error al cargar turnos");
-        return normalizeCollection(turnosState);
+        return turnosRef.current;
       } finally {
-        setTurnosLoading(false);
         stop("turnos");
       }
     },
-    [setTurnos, token, start, stop, turnosState, notifyError]
+    [setTurnos, token, start, stop, notifyError]
   );
 
   const loadEntregas = useCallback(
@@ -164,6 +273,7 @@ export const AppProvider = ({ children }) => {
       if (!token) {
         setEntregas([]);
         setEntregasError(null);
+        entregasRef.current = [];
         return [];
       }
       start("entregas");
@@ -177,19 +287,20 @@ export const AppProvider = ({ children }) => {
         console.error("Error al cargar entregas", error);
         setEntregasError(error.message);
         notifyError("No se pudieron cargar las entregas.", error, "Error al cargar entregas");
-        return Array.isArray(entregas) ? entregas : [];
+        return entregasRef.current;
       } finally {
         stop("entregas");
       }
     },
-    [token, setEntregas, start, stop, entregas, notifyError]
+    [token, setEntregas, start, stop, notifyError]
   );
 
-const loadUsuarios = useCallback(
-  async (params = {}) => {
-    if (!token) {
-      setUsuarios([]);
-      setUsuariosError(null);
+  const loadUsuarios = useCallback(
+    async (params = {}) => {
+      if (!token) {
+        setUsuarios([]);
+        setUsuariosError(null);
+        usuariosRef.current = [];
         return [];
       }
       start("usuarios");
@@ -203,12 +314,12 @@ const loadUsuarios = useCallback(
         console.error("Error al cargar usuarios", error);
         setUsuariosError(error.message);
         notifyError("No se pudieron cargar los usuarios.", error, "Error al cargar usuarios");
-        return Array.isArray(usuarios) ? usuarios : [];
+        return usuariosRef.current;
       } finally {
         stop("usuarios");
       }
     },
-    [token, setUsuarios, start, stop, usuarios, notifyError]
+    [token, setUsuarios, start, stop, notifyError]
   );
 
   const createEntrega = useCallback(
@@ -240,7 +351,7 @@ const loadUsuarios = useCallback(
     async (id, payload = {}) => {
       start("entregas");
       try {
-        const currentList = normalizeCollection(entregas);
+        const currentList = entregasRef.current;
         const current = currentList.find(
           (item) => String(item.id) === String(id)
         );
@@ -279,7 +390,7 @@ const loadUsuarios = useCallback(
         stop("entregas");
       }
     },
-    [entregas, setEntregas, start, stop]
+    [setEntregas, start, stop]
   );
 
   const removeEntrega = useCallback(
@@ -308,7 +419,7 @@ const loadUsuarios = useCallback(
     async (id) => {
       start("usuarios");
       try {
-        const listado = normalizeCollection(usuarios);
+        const listado = usuariosRef.current;
         const existente = listado.find(
           (usuario) => String(usuario.id) === String(id)
         );
@@ -355,14 +466,14 @@ const loadUsuarios = useCallback(
         stop("usuarios");
       }
     },
-    [usuarios, setUsuarios, start, stop]
+    [setUsuarios, start, stop]
   );
 
   const updateUsuarioEstadoRemoto = useCallback(
     async (id, estado) => {
       start("usuarios");
       try {
-        const listado = normalizeCollection(usuarios);
+        const listado = usuariosRef.current;
         const existente = listado.find(
           (usuario) => String(usuario.id) === String(id)
         );
@@ -419,17 +530,19 @@ const loadUsuarios = useCallback(
         stop("usuarios");
       }
     },
-    [usuarios, setUsuarios, start, stop]
+    [setUsuarios, start, stop]
   );
 
   // --- CRUD de turnos disponible para dashboards ---
   const createTurno = useCallback(
     async (payload) => {
-      setTurnosLoading(true);
       start("turnos");
       try {
         const nuevo = await apiCreateTurno(payload);
         const normalized = normalizeItem(nuevo);
+        if (!normalized) {
+          throw new Error("Respuesta invalida al crear turno.");
+        }
         setTurnos((prev) => {
           const base = Array.isArray(prev) ? prev : [];
           return [...base, normalized];
@@ -441,7 +554,6 @@ const loadUsuarios = useCallback(
         setTurnosError(error.message);
         throw error;
       } finally {
-        setTurnosLoading(false);
         stop("turnos");
       }
     },
@@ -450,27 +562,31 @@ const loadUsuarios = useCallback(
 
   const updateTurno = useCallback(
     async (id, payload) => {
-      setTurnosLoading(true);
       start("turnos");
       try {
         const actualizado = await apiUpdateTurno(id, payload);
         const normalized = normalizeItem(actualizado);
-        const targetId = normalized.id ?? id;
+        const targetId = normalized?.id ?? id;
+        const nextTurno =
+          normalized ??
+          (targetId != null ? { ...payload, id: targetId } : null);
+        if (!nextTurno || targetId == null) {
+          throw new Error("No se pudo resolver el turno actualizado.");
+        }
         setTurnos((prev) =>
           Array.isArray(prev)
             ? prev.map((turno) =>
-                String(turno.id) === String(targetId) ? normalized : turno
+                String(turno.id) === String(targetId) ? nextTurno : turno
               )
-            : [normalized]
+            : [nextTurno]
         );
         setTurnosError(null);
-        return normalized;
+        return nextTurno;
       } catch (error) {
         console.error("Error al actualizar turno", error);
         setTurnosError(error.message);
         throw error;
       } finally {
-        setTurnosLoading(false);
         stop("turnos");
       }
     },
@@ -479,7 +595,6 @@ const loadUsuarios = useCallback(
 
   const removeTurno = useCallback(
     async (id) => {
-      setTurnosLoading(true);
       start("turnos");
       try {
         await apiDeleteTurno(id);
@@ -494,7 +609,6 @@ const loadUsuarios = useCallback(
         setTurnosError(error.message);
         throw error;
       } finally {
-        setTurnosLoading(false);
         stop("turnos");
       }
     },
@@ -503,12 +617,11 @@ const loadUsuarios = useCallback(
 
   const findTurnoById = useCallback(
     async (id) => {
-      const cached = turnosState.find(
+      const cached = turnosRef.current.find(
         (turno) => String(turno.id) === String(id)
       );
       if (cached) return cached;
 
-      setTurnosLoading(true);
       start("turnos");
       try {
         const remote = await apiGetTurnoById(id);
@@ -535,16 +648,17 @@ const loadUsuarios = useCallback(
         setTurnosError(error.message);
         throw error;
       } finally {
-        setTurnosLoading(false);
         stop("turnos");
       }
     },
-    [turnosState, setTurnos, start, stop]
+    [setTurnos, start, stop]
   );
 
   useEffect(() => {
     if (!token || !user) {
-      setTurnos([]);
+      const fallback = normalizeCollection(DEFAULT_TURNOS_SEED);
+      turnosRef.current = fallback;
+      setTurnos(fallback);
       setEntregas([]);
       setUsuarios([]);
       setTurnosError(null);
@@ -573,6 +687,8 @@ const loadUsuarios = useCallback(
     }),
     [turnosState, entregas, usuarios]
   );
+
+  const turnosLoading = isLoading("turnos");
 
   return (
     <AppContext.Provider
