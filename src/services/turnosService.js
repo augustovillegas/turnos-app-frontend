@@ -4,17 +4,40 @@ import { apiClient } from "./apiClient";
 
 const RESOURCE = "/turnos";
 
-const mapTurnoPayload = (payload) => ({
-  review: Number(payload.review) || 0,
-  fecha: payload.fecha,
-  horario: payload.horario,
-  sala: payload.sala,
-  zoomLink: payload.zoomLink || "",
-  estado: payload.estado || "Disponible",
-  start: payload.start || "",
-  end: payload.end || "",
-  comentarios: payload.comentarios || "",
-});
+const mapTurnoPayload = (payload) => {
+  const base = {
+    review: Number(payload.review) || 0,
+    fecha: payload.fecha,
+    horario: payload.horario,
+    sala: payload.sala,
+    zoomLink: payload.zoomLink || "",
+    estado: payload.estado || "Disponible",
+    start: payload.start || "",
+    end: payload.end || "",
+    comentarios: payload.comentarios || "",
+  };
+
+  if (payload.titulo !== undefined) {
+    base.titulo = payload.titulo ?? "";
+  }
+  if (payload.descripcion !== undefined) {
+    base.descripcion = payload.descripcion ?? "";
+  }
+  if (payload.modulo !== undefined) {
+    base.modulo = payload.modulo ?? "";
+  }
+  if (payload.duracion !== undefined) {
+    const durationValue = Number(payload.duracion);
+    base.duracion = Number.isNaN(durationValue) ? payload.duracion : durationValue;
+  }
+  if (payload.solicitanteId !== undefined) {
+    base.solicitanteId = payload.solicitanteId;
+  }
+  if (payload.profesorId !== undefined) {
+    base.profesorId = payload.profesorId;
+  }
+  return base;
+};
 
 export const getTurnos = (params = {}) =>
   apiClient

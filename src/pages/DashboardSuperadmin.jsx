@@ -30,10 +30,11 @@ export const DashboardSuperadmin = () => {
     updateTurno,
     turnosLoading,
     usuarios,
-    setUsuarios,
     loadTurnos,
     loadEntregas,
     loadUsuarios,
+    approveUsuario: approveUsuarioRemoto,
+    updateUsuarioEstado: updateUsuarioEstadoRemoto,
   } = useAppData();
   const { user, token } = useAuth();
   const { showModal } = useModal();
@@ -115,11 +116,30 @@ export const DashboardSuperadmin = () => {
     fetchData();
   }, [user, token, loadTurnos, loadEntregas, loadUsuarios]);
   // --- Operaciones sobre usuarios desde la vista global ---
-  const aprobarUsuario = (index) => {
-    const nuevos = [...usuarios];
-    nuevos[index].estado = "Aprobado";
-    setUsuarios(nuevos);
-    showToast("Usuario aprobado.");
+  const aprobarUsuario = async (usuario) => {
+    if (!usuario?.id) return;
+    try {
+      await approveUsuarioRemoto(usuario.id);
+      showToast("Usuario aprobado.");
+    } catch (error) {
+      showToast(
+        error.message || "No se pudo aprobar al usuario.",
+        "error"
+      );
+    }
+  };
+
+  const rechazarUsuario = async (usuario) => {
+    if (!usuario?.id) return;
+    try {
+      await updateUsuarioEstadoRemoto(usuario.id, "Rechazado");
+      showToast("Usuario rechazado.");
+    } catch (error) {
+      showToast(
+        error.message || "No se pudo rechazar al usuario.",
+        "error"
+      );
+    }
   };
 
   // --- Usuarios esperando aprobacion ---
@@ -419,44 +439,37 @@ export const DashboardSuperadmin = () => {
                   data={paginatedUsuariosPendientes.items}
                   minWidth="min-w-[680px]" // 🎨 Consistencia con las tablas de otras secciones
                   containerClass="px-4"
-                  renderRow={(u) => {
-                    const indexReal = usuarios.findIndex((x) => x === u);
-                    return (
-                      <>
-                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                          {u.nombre}
-                        </td>
-                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                          {u.rol}
-                        </td>
-                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                          <Status status={u.estado} />
-                        </td>
-                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="success"
-                              className="py-1"
-                              onClick={() => aprobarUsuario(indexReal)}
-                            >
-                              Aprobar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="py-1"
-                              onClick={() => {
-                                const nuevos = [...usuarios];
-                                nuevos[indexReal].estado = "Rechazado";
-                                setUsuarios(nuevos);
-                              }}
-                            >
-                              Rechazar
-                            </Button>
-                          </div>
-                        </td>
-                      </>
-                    );
-                  }}
+                  renderRow={(u) => (
+                    <>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {u.nombre}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                        {u.rol}
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                        <Status status={u.estado} />
+                      </td>
+                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="success"
+                            className="py-1"
+                            onClick={() => aprobarUsuario(u)}
+                          >
+                            Aprobar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="py-1"
+                            onClick={() => rechazarUsuario(u)}
+                          >
+                            Rechazar
+                          </Button>
+                        </div>
+                      </td>
+                    </>
+                  )}
                 />
               </div>
 
@@ -467,45 +480,38 @@ export const DashboardSuperadmin = () => {
                     No hay usuarios pendientes por aprobar.
                   </p>
                 ) : (
-                  paginatedUsuariosPendientes.items.map((u, idx) => {
-                    const indexReal = usuarios.findIndex((x) => x === u);
-                    return (
-                      <div
-                        key={u.id || `${u.nombre}-${idx}`}
-                        className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                            {u.nombre}
-                          </h3>
-                          <Status status={u.estado} />
-                        </div>
-                        <p className="text-sm text-[#111827] dark:text-gray-200">
-                          <strong>Rol:</strong> {u.rol}
-                        </p>
-                        <div className="grid grid-cols-1 gap-2">
-                          <Button
-                            variant="success"
-                            className="w-full py-1"
-                            onClick={() => aprobarUsuario(indexReal)}
-                          >
-                            Aprobar
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="w-full py-1"
-                            onClick={() => {
-                              const nuevos = [...usuarios];
-                              nuevos[indexReal].estado = "Rechazado";
-                              setUsuarios(nuevos);
-                            }}
-                          >
-                            Rechazar
-                          </Button>
-                        </div>
+                  paginatedUsuariosPendientes.items.map((u, idx) => (
+                    <div
+                      key={u.id || `${u.nombre}-${idx}`}
+                      className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                          {u.nombre}
+                        </h3>
+                        <Status status={u.estado} />
                       </div>
-                    );
-                  })
+                      <p className="text-sm text-[#111827] dark:text-gray-200">
+                        <strong>Rol:</strong> {u.rol}
+                      </p>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          variant="success"
+                          className="w-full py-1"
+                          onClick={() => aprobarUsuario(u)}
+                        >
+                          Aprobar
+                        </Button>
+                        <Button
+                          variant="danger"
+                          className="w-full py-1"
+                          onClick={() => rechazarUsuario(u)}
+                        >
+                          Rechazar
+                        </Button>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
 

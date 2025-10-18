@@ -19,8 +19,17 @@ import {
   updateTurno as apiUpdateTurno,
   deleteTurno as apiDeleteTurno,
 } from "../services/turnosService";
-import { getEntregas } from "../services/entregasService";
-import { getUsuarios } from "../services/usuariosService";
+import {
+  getEntregas,
+  createEntrega as apiCreateEntrega,
+  updateEntrega as apiUpdateEntrega,
+  deleteEntrega as apiDeleteEntrega,
+} from "../services/entregasService";
+import {
+  getUsuarios,
+  approveUsuario as apiApproveUsuario,
+  updateUsuarioEstado as apiUpdateUsuarioEstado,
+} from "../services/usuariosService";
 
 // --- Utilidades internas para normalizar ids y colecciones ---
 
@@ -156,11 +165,11 @@ export const AppProvider = ({ children }) => {
     [token, setEntregas, start, stop, entregas]
   );
 
-  const loadUsuarios = useCallback(
-    async (params = {}) => {
-      if (!token) {
-        setUsuarios([]);
-        setUsuariosError(null);
+const loadUsuarios = useCallback(
+  async (params = {}) => {
+    if (!token) {
+      setUsuarios([]);
+      setUsuariosError(null);
         return [];
       }
       start("usuarios");
@@ -179,6 +188,217 @@ export const AppProvider = ({ children }) => {
       }
     },
     [token, setUsuarios, start, stop, usuarios]
+  );
+
+  const createEntrega = useCallback(
+    async (payload) => {
+      start("entregas");
+      try {
+        const created = await apiCreateEntrega(payload);
+        const normalized = normalizeItem(created);
+        if (normalized) {
+          setEntregas((prev) => {
+            const base = normalizeCollection(prev);
+            return [...base, normalized];
+          });
+        }
+        setEntregasError(null);
+        return normalized;
+      } catch (error) {
+        console.error("Error al crear entrega", error);
+        setEntregasError(error.message);
+        throw error;
+      } finally {
+        stop("entregas");
+      }
+    },
+    [setEntregas, start, stop]
+  );
+
+  const updateEntrega = useCallback(
+    async (id, payload = {}) => {
+      start("entregas");
+      try {
+        const currentList = normalizeCollection(entregas);
+        const current = currentList.find(
+          (item) => String(item.id) === String(id)
+        );
+        const requestPayload = current ? { ...current, ...payload } : payload;
+        const updated = await apiUpdateEntrega(id, requestPayload);
+        const normalized = normalizeItem(updated);
+        const targetId = normalized?.id ?? id;
+        const fallback =
+          current && targetId != null
+            ? { ...current, ...payload, id: targetId }
+            : { ...payload, id: targetId };
+        const nextEntrega = normalized ?? fallback;
+
+        setEntregas((prev) => {
+          const base = normalizeCollection(prev);
+          if (!nextEntrega) return base;
+          const exists = base.some(
+            (item) => String(item.id) === String(targetId)
+          );
+          if (exists) {
+            return base.map((item) =>
+              String(item.id) === String(targetId)
+                ? { ...item, ...nextEntrega }
+                : item
+            );
+          }
+          return [...base, nextEntrega];
+        });
+        setEntregasError(null);
+        return nextEntrega;
+      } catch (error) {
+        console.error("Error al actualizar entrega", error);
+        setEntregasError(error.message);
+        throw error;
+      } finally {
+        stop("entregas");
+      }
+    },
+    [entregas, setEntregas, start, stop]
+  );
+
+  const removeEntrega = useCallback(
+    async (id) => {
+      start("entregas");
+      try {
+        await apiDeleteEntrega(id);
+        setEntregas((prev) =>
+          normalizeCollection(prev).filter(
+            (entregaItem) => String(entregaItem.id) !== String(id)
+          )
+        );
+        setEntregasError(null);
+      } catch (error) {
+        console.error("Error al eliminar entrega", error);
+        setEntregasError(error.message);
+        throw error;
+      } finally {
+        stop("entregas");
+      }
+    },
+    [setEntregas, start, stop]
+  );
+
+  const approveUsuarioRemoto = useCallback(
+    async (id) => {
+      start("usuarios");
+      try {
+        const listado = normalizeCollection(usuarios);
+        const existente = listado.find(
+          (usuario) => String(usuario.id) === String(id)
+        );
+        const aprobado = await apiApproveUsuario(id);
+        const normalizado = normalizeItem(aprobado);
+        const targetId = normalizado?.id ?? id;
+
+        const merged = {
+          ...existente,
+          ...normalizado,
+          id: targetId,
+          estado:
+            normalizado?.estado ??
+            normalizado?.status ??
+            "Aprobado",
+          status:
+            normalizado?.status ??
+            normalizado?.estado ??
+            "Aprobado",
+          isApproved:
+            normalizado?.isApproved ?? existente?.isApproved ?? true,
+        };
+
+        setUsuarios((prev) => {
+          const base = normalizeCollection(prev);
+          const exists = base.some(
+            (usuario) => String(usuario.id) === String(targetId)
+          );
+          if (exists) {
+            return base.map((usuario) =>
+              String(usuario.id) === String(targetId) ? merged : usuario
+            );
+          }
+          return [...base, merged];
+        });
+
+        setUsuariosError(null);
+        return merged;
+      } catch (error) {
+        console.error("Error al aprobar usuario", error);
+        setUsuariosError(error.message);
+        throw error;
+      } finally {
+        stop("usuarios");
+      }
+    },
+    [usuarios, setUsuarios, start, stop]
+  );
+
+  const updateUsuarioEstadoRemoto = useCallback(
+    async (id, estado) => {
+      start("usuarios");
+      try {
+        const listado = normalizeCollection(usuarios);
+        const existente = listado.find(
+          (usuario) => String(usuario.id) === String(id)
+        );
+        const actualizado = await apiUpdateUsuarioEstado(id, estado);
+        const normalizado = normalizeItem(actualizado);
+        const targetId = normalizado?.id ?? id;
+
+        const merged = {
+          ...existente,
+          ...normalizado,
+          id: targetId,
+          estado:
+            estado ??
+            normalizado?.estado ??
+            normalizado?.status ??
+            existente?.estado ??
+            existente?.status ??
+            null,
+          status:
+            estado ??
+            normalizado?.status ??
+            normalizado?.estado ??
+            existente?.status ??
+            existente?.estado ??
+            null,
+          isApproved:
+            estado === "Aprobado"
+              ? true
+              : estado === "Rechazado"
+              ? false
+              : normalizado?.isApproved ?? existente?.isApproved ?? false,
+        };
+
+        setUsuarios((prev) => {
+          const base = normalizeCollection(prev);
+          const exists = base.some(
+            (usuario) => String(usuario.id) === String(targetId)
+          );
+          if (exists) {
+            return base.map((usuario) =>
+              String(usuario.id) === String(targetId) ? merged : usuario
+            );
+          }
+          return [...base, merged];
+        });
+
+        setUsuariosError(null);
+        return merged;
+      } catch (error) {
+        console.error("Error al actualizar estado del usuario", error);
+        setUsuariosError(error.message);
+        throw error;
+      } finally {
+        stop("usuarios");
+      }
+    },
+    [usuarios, setUsuarios, start, stop]
   );
 
   // --- CRUD de turnos disponible para dashboards ---
@@ -339,15 +559,18 @@ export const AppProvider = ({ children }) => {
         turnos: turnosState,
         setTurnos,
         entregas,
-        setEntregas,
         usuarios,
-        setUsuarios,
         totalTurnosSolicitados,
         totalEntregas,
         totalUsuarios,
         loadTurnos,
         loadEntregas,
         loadUsuarios,
+        createEntrega,
+        updateEntrega,
+        removeEntrega,
+        approveUsuario: approveUsuarioRemoto,
+        updateUsuarioEstado: updateUsuarioEstadoRemoto,
         createTurno,
         updateTurno,
         removeTurno,

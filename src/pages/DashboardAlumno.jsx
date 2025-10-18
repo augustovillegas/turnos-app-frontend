@@ -31,9 +31,10 @@ export const DashboardAlumno = () => {
     updateTurno,
     turnosLoading,
     entregas,
-    setEntregas,
     loadTurnos,
     loadEntregas,
+    createEntrega: createEntregaRemoto,
+    removeEntrega: removeEntregaRemoto,
   } = useAppData();
   const { user, token } = useAuth();
   const { showModal } = useModal();
@@ -146,7 +147,7 @@ export const DashboardAlumno = () => {
   };
 
   // --- Gestion de nuevas entregas cargadas por el alumno ---
-  const handleAgregarEntrega = () => {
+  const handleAgregarEntrega = async () => {
     const validation = {};
     if (!sprint) {
       validation.sprint = "Seleccioná el sprint a entregar.";
@@ -166,22 +167,41 @@ export const DashboardAlumno = () => {
       return;
     }
 
+    const alumnoId = user?._id ?? user?.id ?? user?.uid;
+    if (!alumnoId) {
+      showToast(
+        "No se pudo identificar al alumno para registrar la entrega.",
+        "error"
+      );
+      return;
+    }
+
+    const sprintNumber = Number(sprint);
     const nueva = {
-      id: Date.now(),
-      sprint,
+      sprint: Number.isNaN(sprintNumber) ? sprint : sprintNumber,
       githubLink: githubLink.trim(),
       renderLink: renderLink.trim(),
       comentarios: comentarios.trim(),
       reviewStatus: "A revisar",
+      estado: "A revisar",
+      alumnoId,
+      modulo: user?.modulo ?? "",
     };
 
     setEntregaErrors({});
-    setEntregas([...entregas, nueva]);
-    showToast("Entrega registrada correctamente.");
-    setSprint("");
-    setGithubLink("");
-    setRenderLink("");
-    setComentarios("");
+    try {
+      await createEntregaRemoto(nueva);
+      showToast("Entrega registrada correctamente.");
+      setSprint("");
+      setGithubLink("");
+      setRenderLink("");
+      setComentarios("");
+    } catch (error) {
+      showToast(
+        error.message || "No se pudo registrar la entrega.",
+        "error"
+      );
+    }
   };
 
   // --- Columnas para la tabla de turnos disponibles ---
@@ -713,19 +733,24 @@ export const DashboardAlumno = () => {
                           <Button
                             variant="danger"
                             className="py-1"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
-                                )
-                              ) {
-                                const nuevas = entregas.filter(
-                                  (ent) => ent.id !== e.id
-                                );
-                                setEntregas(nuevas);
+                          onClick={async () => {
+                            if (
+                              window.confirm(
+                                "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
+                              )
+                            ) {
+                              try {
+                                await removeEntregaRemoto(e.id);
                                 showToast("Entrega cancelada.", "info");
+                              } catch (error) {
+                                showToast(
+                                  error.message ||
+                                    "No se pudo cancelar la entrega.",
+                                  "error"
+                                );
                               }
-                            }}
+                            }
+                          }}
                           >
                             Cancelar
                           </Button>
@@ -747,17 +772,22 @@ export const DashboardAlumno = () => {
                     <CardEntrega
                       key={entrega.id}
                       entrega={entrega}
-                      onCancelar={() => {
+                      onCancelar={async () => {
                         if (
                           window.confirm(
                             "¿Estás seguro de cancelar esta entrega?"
                           )
                         ) {
-                          const nuevas = entregas.filter(
-                            (e) => e.id !== entrega.id
-                          );
-                          setEntregas(nuevas);
-                          showToast("Entrega cancelada.", "info");
+                          try {
+                            await removeEntregaRemoto(entrega.id);
+                            showToast("Entrega cancelada.", "info");
+                          } catch (error) {
+                            showToast(
+                              error.message ||
+                                "No se pudo cancelar la entrega.",
+                              "error"
+                            );
+                          }
                         }
                       }}
                     />

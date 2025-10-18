@@ -1,6 +1,14 @@
 // === App Shell ===
 // Configura rutas públicas/privadas y provee layout general de landing + dashboards.
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { Suspense, useMemo } from "react";
+import {
+  Outlet,
+  Route,
+  RouterProvider,
+  createBrowserRouter,
+  createRoutesFromElements,
+  useLocation,
+} from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { LandingPage } from "./pages/LandingPage";
 import { Header } from "./components/layout/Header";
@@ -12,6 +20,7 @@ import { DashboardProfesor } from "./pages/DashboardProfesor";
 import { DashboardSuperadmin } from "./pages/DashboardSuperadmin";
 import { Login } from "./pages/Login";
 import { PrivateRoute } from "./components/auth/PrivateRoute";
+import { Loader } from "./components/ui/Loader";
 
 function Layout() {
   // --- Determina qué elementos globales mostrar según la ruta ---
@@ -27,35 +36,9 @@ function Layout() {
       {isLandingOrLogin && <Header />}
 
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard/alumno"
-            element={
-              <PrivateRoute roles={["alumno"]}>
-                <DashboardAlumno />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/profesor"
-            element={
-              <PrivateRoute roles={["profesor"]}>
-                <DashboardProfesor />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/superadmin"
-            element={
-              <PrivateRoute roles={["superadmin"]}>
-                <DashboardSuperadmin />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/items" element={<CreateTurnos />} />
-        </Routes>
+        <Suspense fallback={<Loader />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* RequestsPanel solo en dashboards */}
@@ -67,14 +50,58 @@ function Layout() {
   );
 }
 
+const createAppRouter = () =>
+  createBrowserRouter(
+    createRoutesFromElements(
+      <Route element={<Layout />}>
+        <Route index element={<LandingPage />} />
+        <Route path="login" element={<Login />} />
+        <Route
+          path="dashboard/alumno"
+          element={
+            <PrivateRoute roles={["alumno"]}>
+              <DashboardAlumno />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="dashboard/profesor"
+          element={
+            <PrivateRoute roles={["profesor"]}>
+              <DashboardProfesor />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="dashboard/superadmin"
+          element={
+            <PrivateRoute roles={["superadmin"]}>
+              <DashboardSuperadmin />
+            </PrivateRoute>
+          }
+        />
+        <Route path="items" element={<CreateTurnos />} />
+      </Route>
+    ),
+    {
+      future: {
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      },
+    }
+  );
+
 function App() {
   // --- Raíz del front: react-router + contenedor de toasts ---
+  const router = useMemo(() => createAppRouter(), []);
+
   return (
-    <BrowserRouter>
-      <Layout />
+    <>
+      <RouterProvider router={router} />
       <ToastContainer />
-    </BrowserRouter>
+    </>
   );
 }
 
 export default App;
+export { createAppRouter };

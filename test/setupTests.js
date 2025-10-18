@@ -4,20 +4,49 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
-import { resetMockState, server } from "./utils/mocks/server";
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
+import { unstable_setFutureFlags } from "react-router";
+
+if (typeof unstable_setFutureFlags === "function") {
+  unstable_setFutureFlags({
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  });
+}
 
 const LOG_DIR = resolve(process.cwd(), "test", "logs");
 const LOG_FILE = resolve(LOG_DIR, "test-run.log");
 
 let isLogInitialised = false;
+const taskStartTimes = new Map();
+
+const sanitizeUrl = (value) => value?.replace(/\/+$/, "") ?? "";
+
+const DEFAULT_BASE_URL = "http://localhost:3000";
+
+const configuredBase = sanitizeUrl(
+  process.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
+);
+const activeBaseUrl = configuredBase || DEFAULT_BASE_URL;
+
+process.env.VITE_API_BASE_URL = activeBaseUrl;
+process.env.TEST_USE_REAL_API = "true";
+
+vi.stubEnv("VITE_API_BASE_URL", activeBaseUrl);
+vi.stubEnv("TEST_USE_REAL_API", "true");
+
+const remoteTestsFlag =
+  process.env.RUN_REMOTE_TESTS === "true" ? "true" : "false";
+const backendModeLabel = "REAL";
 
 const ensureLogFile = () => {
   if (isLogInitialised) return;
   mkdirSync(LOG_DIR, { recursive: true });
   writeFileSync(
     LOG_FILE,
-    `\n=== Nueva ejecucion de pruebas: ${new Date().toISOString()} ===\n`,
+    `\n=== Nueva ejecucion de pruebas: ${new Date().toISOString()} ===\n` +
+      `Backend: ${backendModeLabel} | BaseURL: ${activeBaseUrl}\n` +
+      `RUN_REMOTE_TESTS=${remoteTestsFlag}\n`,
     { flag: "a" }
   );
   isLogInitialised = true;
@@ -86,20 +115,20 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
 
 beforeAll(() => {
   ensureLogFile();
-  server.listen({ onUnhandledRequest: "error" });
+  logLine(`SETUP | Peticiones reales habilitadas hacia ${activeBaseUrl}`);
 });
 
 beforeEach((context) => {
   const { task } = context ?? {};
   if (isTestTask(task)) {
-    logLine(`INICIO | ${task.name}`);
+    const suiteName = task?.suite?.name || task?.suite?.filepath || "root";
+    logLine(`INICIO | ${task.name} | Suite: ${suiteName}`);
+    taskStartTimes.set(task, Date.now());
   }
 });
 
 afterEach((context) => {
   cleanup();
-  server.resetHandlers();
-  resetMockState();
   localStorage.clear();
   sessionStorage.clear();
 
@@ -110,9 +139,15 @@ afterEach((context) => {
   const errorMessage = task?.result?.error
     ? ` | ERROR: ${task.result.error.message}`
     : "";
-  logLine(`FIN | ${task.name} | Resultado: ${status}${errorMessage}`);
+  const startedAt = taskStartTimes.get(task);
+  const durationMs =
+    typeof startedAt === "number" ? `${Date.now() - startedAt}ms` : "n/a";
+  logLine(
+    `FIN | ${task.name} | Resultado: ${status}${errorMessage} | Duracion: ${durationMs}`
+  );
+  taskStartTimes.delete(task);
 });
 
 afterAll(() => {
-  server.close();
+  logLine("TEARDOWN | Ciclo de pruebas finalizado.");
 });

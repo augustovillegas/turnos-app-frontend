@@ -14,9 +14,14 @@ const ThemeContext = createContext();
 
 const systemPreference = () => {
   if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  if (typeof window.matchMedia !== "function") return "light";
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
 };
 
 export const ThemeProvider = ({ children }) => {

@@ -7,23 +7,42 @@ import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
+import { showToast } from "../utils/feedback/toasts";
 
 export const EvaluarEntregas = () => {
   // --- Contexto de datos compartido ---
-  const { entregas, setEntregas } = useAppData();
+  const { entregas, updateEntrega } = useAppData();
   const ITEMS_PER_PAGE = 5; // --- Cantidad de entregas por pagina ---
   const [page, setPage] = useState(1);
+  const [processingEntregaId, setProcessingEntregaId] = useState(null);
 
   // --- Utilidades para cambiar el estado de una entrega ---
-  const actualizarEstado = (id, nuevoEstado) => {
-    const nuevas = entregas.map((e) =>
-      e.id === id ? { ...e, estado: nuevoEstado } : e
-    );
-    setEntregas(nuevas);
+  const actualizarEstado = async (entrega, nuevoEstado) => {
+    if (!entrega?.id) return;
+    setProcessingEntregaId(entrega.id);
+    try {
+      await updateEntrega(entrega.id, {
+        estado: nuevoEstado,
+        reviewStatus: nuevoEstado,
+      });
+      showToast(
+        nuevoEstado === "Aprobado"
+          ? "Entrega aprobada correctamente."
+          : "Entrega rechazada."
+      );
+    } catch (error) {
+      showToast(
+        error.message || "No se pudo actualizar la entrega.",
+        "error"
+      );
+    } finally {
+      setProcessingEntregaId(null);
+    }
   };
 
-  const aprobarEntrega = (id) => actualizarEstado(id, "Aprobado");
-  const desaprobarEntrega = (id) => actualizarEstado(id, "Rechazado");
+  const aprobarEntrega = (entrega) => actualizarEstado(entrega, "Aprobado");
+  const desaprobarEntrega = (entrega) =>
+    actualizarEstado(entrega, "Rechazado");
 
   // 🛠️ Fix lógica: contemplar `estado` y `reviewStatus` como equivalentes para "pendiente"
   const esPendiente = (e) => {
@@ -174,14 +193,16 @@ export const EvaluarEntregas = () => {
                       <Button
                         variant="success"
                         className="py-1"
-                        onClick={() => aprobarEntrega(e.id)}
+                        onClick={() => aprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
                       >
                         Aprobar
                       </Button>
                       <Button
                         variant="danger"
                         className="py-1"
-                        onClick={() => desaprobarEntrega(e.id)}
+                        onClick={() => desaprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
                       >
                         Desaprobar
                       </Button>
@@ -278,14 +299,16 @@ export const EvaluarEntregas = () => {
                     <Button
                       variant="success"
                       className="py-1 text-xs"
-                      onClick={() => aprobarEntrega(e.id)}
+                      onClick={() => aprobarEntrega(e)}
+                      disabled={processingEntregaId === e.id}
                     >
                       Aprobar
                     </Button>
                     <Button
                       variant="danger"
                       className="py-1 text-xs"
-                      onClick={() => desaprobarEntrega(e.id)}
+                      onClick={() => desaprobarEntrega(e)}
+                      disabled={processingEntregaId === e.id}
                     >
                       Desaprobar
                     </Button>

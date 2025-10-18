@@ -92,7 +92,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
       expect(fetched.sala).toBe(payload.sala);
       expect(fetched.review).toBe(payload.review);
     },
-    TEST_TIMEOUT
+    30_000
   );
 
   it(
