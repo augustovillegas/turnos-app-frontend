@@ -12,6 +12,7 @@ import {
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useAuth } from "./AuthContext";
 import { useLoading } from "./LoadingContext";
+import { useError } from "./ErrorContext";
 import {
   getTurnos,
   getTurnoById as apiGetTurnoById,
@@ -74,6 +75,23 @@ export const AppProvider = ({ children }) => {
   const [usuariosError, setUsuariosError] = useState(null);
   const { user, token } = useAuth();
   const { start, stop } = useLoading();
+  const { pushError } = useError();
+
+  const notifyError = useCallback(
+    (message, error, title = "Error en la operación") => {
+      if (!pushError) return;
+      const description =
+        error?.message && error.message !== message
+          ? error.message
+          : "Intentalo nuevamente en unos instantes.";
+      pushError(message, {
+        title,
+        description,
+        autoDismiss: false,
+      });
+    },
+    [pushError]
+  );
 
   // --- Setter seguro para mantener los turnos normalizados ---
   const setTurnos = useCallback(
@@ -131,13 +149,14 @@ export const AppProvider = ({ children }) => {
       } catch (error) {
         console.error("Error al cargar turnos", error);
         setTurnosError(error.message);
+        notifyError("No se pudieron cargar los turnos.", error, "Error al cargar turnos");
         return normalizeCollection(turnosState);
       } finally {
         setTurnosLoading(false);
         stop("turnos");
       }
     },
-    [setTurnos, token, start, stop, turnosState]
+    [setTurnos, token, start, stop, turnosState, notifyError]
   );
 
   const loadEntregas = useCallback(
@@ -157,12 +176,13 @@ export const AppProvider = ({ children }) => {
       } catch (error) {
         console.error("Error al cargar entregas", error);
         setEntregasError(error.message);
+        notifyError("No se pudieron cargar las entregas.", error, "Error al cargar entregas");
         return Array.isArray(entregas) ? entregas : [];
       } finally {
         stop("entregas");
       }
     },
-    [token, setEntregas, start, stop, entregas]
+    [token, setEntregas, start, stop, entregas, notifyError]
   );
 
 const loadUsuarios = useCallback(
@@ -182,12 +202,13 @@ const loadUsuarios = useCallback(
       } catch (error) {
         console.error("Error al cargar usuarios", error);
         setUsuariosError(error.message);
+        notifyError("No se pudieron cargar los usuarios.", error, "Error al cargar usuarios");
         return Array.isArray(usuarios) ? usuarios : [];
       } finally {
         stop("usuarios");
       }
     },
-    [token, setUsuarios, start, stop, usuarios]
+    [token, setUsuarios, start, stop, usuarios, notifyError]
   );
 
   const createEntrega = useCallback(

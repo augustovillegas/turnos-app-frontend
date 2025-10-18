@@ -40,8 +40,8 @@ export const EvaluarEntregas = () => {
     }
   };
 
-  const aprobarEntrega = (entrega) => actualizarEstado(entrega, "Aprobado");
-  const desaprobarEntrega = (entrega) =>
+  const handleAprobarEntrega = (entrega) => actualizarEstado(entrega, "Aprobado");
+  const handleDesaprobarEntrega = (entrega) =>
     actualizarEstado(entrega, "Rechazado");
 
   // 🛠️ Fix lógica: contemplar `estado` y `reviewStatus` como equivalentes para "pendiente"
@@ -193,7 +193,7 @@ export const EvaluarEntregas = () => {
                       <Button
                         variant="success"
                         className="py-1"
-                        onClick={() => aprobarEntrega(e)}
+                        onClick={() => handleAprobarEntrega(e)}
                         disabled={processingEntregaId === e.id}
                       >
                         Aprobar
@@ -201,7 +201,7 @@ export const EvaluarEntregas = () => {
                       <Button
                         variant="danger"
                         className="py-1"
-                        onClick={() => desaprobarEntrega(e)}
+                        onClick={() => handleDesaprobarEntrega(e)}
                         disabled={processingEntregaId === e.id}
                       >
                         Desaprobar
@@ -299,7 +299,7 @@ export const EvaluarEntregas = () => {
                     <Button
                       variant="success"
                       className="py-1 text-xs"
-                      onClick={() => aprobarEntrega(e)}
+                    onClick={() => handleAprobarEntrega(e)}
                       disabled={processingEntregaId === e.id}
                     >
                       Aprobar
@@ -307,7 +307,7 @@ export const EvaluarEntregas = () => {
                     <Button
                       variant="danger"
                       className="py-1 text-xs"
-                      onClick={() => desaprobarEntrega(e)}
+                    onClick={() => handleDesaprobarEntrega(e)}
                       disabled={processingEntregaId === e.id}
                     >
                       Desaprobar

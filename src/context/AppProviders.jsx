@@ -6,15 +6,18 @@ import { ThemeProvider } from "./ThemeContext";
 import { SoundProvider } from "./SoundContext";
 import { ModalProvider } from "./ModalContext";
 import { LoadingProvider } from "./LoadingContext";
+import { ErrorProvider } from "./ErrorContext";
 
-// Envuelve ambos contextos, para mantener un punto de entrada limpio.
+// Se mantiene el orden original de providers y se agrega ErrorProvider junto a AppProvider.
 export const AppProviders = ({ children }) => (
   <AuthProvider>
     <ThemeProvider>
       <SoundProvider>
         <ModalProvider>
           <LoadingProvider>
-            <AppProvider>{children}</AppProvider>
+            <ErrorProvider>
+              <AppProvider>{children}</AppProvider>
+            </ErrorProvider>
           </LoadingProvider>
         </ModalProvider>
       </SoundProvider>

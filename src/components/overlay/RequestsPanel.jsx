@@ -62,7 +62,7 @@ export const RequestsPanel = () => {
   }, [solicitudes, totalSolicitudes, page, ITEMS_PER_PAGE]);
 
   // --- Devuelve un turno solicitado a estado disponible ---
-  const cancelarTurno = async (id) => {
+  const handleCancelarTurno = async (id) => {
     const turno = turnos.find((item) => String(item.id) === String(id));
     if (!turno) return;
     const confirmado = window.confirm(
@@ -130,7 +130,7 @@ export const RequestsPanel = () => {
                       <div className="text-right mt-2">
                         <Button
                           variant="secondary"
-                          onClick={() => cancelarTurno(t.id)}
+                          onClick={() => handleCancelarTurno(t.id)}
                           disabled={turnosLoading || processingId === t.id}
                         >
                           {processingId === t.id ? "Procesando..." : "Cancelar"}

@@ -1,6 +1,7 @@
 // === Dashboard Profesor ===
 // Panel del docente: aprobar/rechazar turnos, gestionar usuarios y crear slots.
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
@@ -35,7 +36,8 @@ export const DashboardProfesor = () => {
     loadEntregas,
     approveUsuario: approveUsuarioRemoto,
   } = useAppData();
-  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
 
@@ -49,7 +51,7 @@ export const DashboardProfesor = () => {
 
   // ---- Funciones de gestión de turnos ----
   // --- Acciones sobre turnos solicitados ---
-  const aprobarTurno = async (turno) => {
+  const handleAprobarTurno = async (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
     setProcessingTurno(turno.id);
     try {
@@ -69,7 +71,7 @@ export const DashboardProfesor = () => {
   };
 
   // --- Maneja rechazos explicitos de solicitudes ---
-  const rechazarTurno = (turno) => {
+  const handleRechazarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
 
     showModal({
@@ -101,7 +103,7 @@ export const DashboardProfesor = () => {
 
   // ---- Gestión de usuarios ----
   // --- Operaciones de gestion sobre usuarios pendientes ---
-  const aprobarUsuario = async (usuario) => {
+  const handleAprobarUsuario = async (usuario) => {
     if (!usuario?.id) return;
     try {
       await approveUsuarioRemoto(usuario.id);
@@ -211,6 +213,14 @@ export const DashboardProfesor = () => {
     pageUsuariosPendientes,
     ITEMS_PER_PAGE,
   ]);
+  const isTurnosSectionLoading = turnosLoading || isLoading("turnos");
+  const hasSolicitudes =
+    paginatedTurnosSolicitados.totalItems > 0 &&
+    paginatedTurnosSolicitados.items.length > 0;
+  const isUsuariosSectionLoading = isLoading("usuarios");
+  const hasUsuariosPendientes =
+    paginatedUsuariosPendientes.totalItems > 0 &&
+    paginatedUsuariosPendientes.items.length > 0;
 
   // --- Carga inicial de datos del modulo correspondiente ---
   useEffect(() => {
@@ -234,6 +244,16 @@ export const DashboardProfesor = () => {
 
     fetchData();
   }, [user, token, loadTurnos, loadEntregas]);
+
+  const handleSidebarSelect = (id) => {
+    if (id === "logout") {
+      logout();
+      navigate("/login");
+      showToast("Sesión cerrada correctamente.", "info");
+      return;
+    }
+    setActive(id);
+  };
 
   return (
     <div className="flex min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
@@ -261,7 +281,7 @@ export const DashboardProfesor = () => {
           },
         ]}
         active={active}
-        onSelect={setActive}
+        onSelect={handleSidebarSelect}
       />
 
       <div className="flex-1 p-6">
@@ -276,14 +296,6 @@ export const DashboardProfesor = () => {
 
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
 
-            {(turnosLoading || isLoading("turnos")) && (
-              <div className="flex flex-col gap-2 my-4">
-                {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} height="1.25rem" />
-                ))}
-              </div>
-            )}
-
             <SearchBar
               data={turnosSolicitados}
               fields={["sala", "fecha", "horario", "estado", "review"]}
@@ -295,6 +307,13 @@ export const DashboardProfesor = () => {
             />
             {/* ---- Desktop (tabla) ---- */}
             <div className="hidden sm:block">
+              {isTurnosSectionLoading ? (
+                <div className="space-y-3 py-6">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} height="2.75rem" />
+                  ))}
+                </div>
+              ) : hasSolicitudes ? (
               <Table
                 columns={[
                   "Review",
@@ -341,9 +360,10 @@ export const DashboardProfesor = () => {
                             <Button
                               variant="success"
                               className="py-1"
-                              onClick={() => aprobarTurno(t)}
+                              onClick={() => handleAprobarTurno(t)}
                               disabled={
-                                turnosLoading || processingTurno === t.id
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
                               }
                             >
                               Aprobar
@@ -351,9 +371,10 @@ export const DashboardProfesor = () => {
                             <Button
                               variant="danger"
                               className="py-1"
-                              onClick={() => rechazarTurno(t)}
+                              onClick={() => handleRechazarTurno(t)}
                               disabled={
-                                turnosLoading || processingTurno === t.id
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
                               }
                             >
                               Rechazar
@@ -365,27 +386,48 @@ export const DashboardProfesor = () => {
                   );
                 }}
               />
+              ) : (
+                <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+                  No hay solicitudes pendientes.
+                </p>
+              )}
             </div>
 
             {/* ---- Mobile (tarjetas) ---- */}
             <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {paginatedTurnosSolicitados.items.map((t) => (
-                <CardTurno
-                  key={t.id}
-                  turno={t}
-                  onAprobar={() => aprobarTurno(t)}
-                  onRechazar={() => rechazarTurno(t)}
-                  disabled={turnosLoading || processingTurno === t.id}
-                />
-              ))}
+              {isTurnosSectionLoading ? (
+                <div className="space-y-3 py-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} height="4rem" />
+                  ))}
+                </div>
+              ) : hasSolicitudes ? (
+                paginatedTurnosSolicitados.items.map((t) => (
+                  <CardTurno
+                    key={t.id}
+                    turno={t}
+                    onAprobar={() => handleAprobarTurno(t)}
+                    onRechazar={() => handleRechazarTurno(t)}
+                    disabled={
+                      isTurnosSectionLoading || processingTurno === t.id
+                    }
+                  />
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+                  No hay solicitudes pendientes.
+                </p>
+              )}
             </div>
 
-            <Pagination
-              totalItems={paginatedTurnosSolicitados.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedTurnosSolicitados.currentPage}
-              onPageChange={setPageSolicitudes}
-            />
+            {!isTurnosSectionLoading && hasSolicitudes && (
+              <Pagination
+                totalItems={paginatedTurnosSolicitados.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedTurnosSolicitados.currentPage}
+                onPageChange={setPageSolicitudes}
+              />
+            )}
           </>
         )}
 
@@ -409,6 +451,13 @@ export const DashboardProfesor = () => {
             />
 
             <div className="hidden sm:block">
+              {isUsuariosSectionLoading ? (
+                <div className="space-y-3 py-6">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} height="2.75rem" />
+                  ))}
+                </div>
+              ) : hasUsuariosPendientes ? (
               <Table
                 columns={["Nombre", "Rol", "Estado", "Acción"]}
                 data={paginatedUsuariosPendientes.items}
@@ -428,7 +477,8 @@ export const DashboardProfesor = () => {
                         <Button
                           variant="success"
                           className="py-1"
-                          onClick={() => aprobarUsuario(u)}
+                          onClick={() => handleAprobarUsuario(u)}
+                          disabled={isUsuariosSectionLoading}
                         >
                           Aprobar usuario
                         </Button>
@@ -436,15 +486,22 @@ export const DashboardProfesor = () => {
                     </>
                   );
                 }}
-              />
+                />
+              ) : (
+                <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+                  No hay usuarios pendientes de aprobación.
+                </p>
+              )}
             </div>
 
             <div className="mt-4 space-y-4 px-2 sm:hidden">
-              {paginatedUsuariosPendientes.totalItems === 0 ? (
-                <p className="text-sm text-gray-100 dark:text-gray-300">
-                  No hay usuarios pendientes de aprobación.
-                </p>
-              ) : (
+              {isUsuariosSectionLoading ? (
+                <div className="space-y-3 py-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} height="4.5rem" />
+                  ))}
+                </div>
+              ) : hasUsuariosPendientes ? (
                 paginatedUsuariosPendientes.items.map((u, idx) => (
                   <div
                     key={u.id || `${u.nombre}-${idx}`}
@@ -462,21 +519,28 @@ export const DashboardProfesor = () => {
                     <Button
                       variant="success"
                       className="w-full py-1"
-                      onClick={() => aprobarUsuario(u)}
+                      onClick={() => handleAprobarUsuario(u)}
+                      disabled={isUsuariosSectionLoading}
                     >
                       Aprobar usuario
                     </Button>
                   </div>
                 ))
+              ) : (
+                <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+                  No hay usuarios pendientes de aprobación.
+                </p>
               )}
             </div>
 
-            <Pagination
-              totalItems={paginatedUsuariosPendientes.totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              currentPage={paginatedUsuariosPendientes.currentPage}
-              onPageChange={setPageUsuariosPendientes}
-            />
+            {!isUsuariosSectionLoading && hasUsuariosPendientes && (
+              <Pagination
+                totalItems={paginatedUsuariosPendientes.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedUsuariosPendientes.currentPage}
+                onPageChange={setPageUsuariosPendientes}
+              />
+            )}
           </>
         )}
 

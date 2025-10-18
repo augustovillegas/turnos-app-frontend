@@ -5,10 +5,11 @@ import { showToast } from "../utils/feedback/toasts";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../services/apiClient";
 import { DialUpModal } from "../components/ui/DialUpModal";
+import { defaultHomeForRole } from "../router/session";
 
 export const Login = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { login: authenticate } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,15 +41,10 @@ export const Login = () => {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      authenticate(data.token, data.user);
 
       const role = data.user?.role;
-      if (role === "alumno") navigate("/dashboard/alumno");
-      else if (role === "profesor") navigate("/dashboard/profesor");
-      else if (role === "superadmin") navigate("/dashboard/superadmin");
-      else navigate("/");
+      navigate(defaultHomeForRole(role));
     } catch (error) {
       console.error("[Login] Error al autenticar", {
         status: error?.response?.status,

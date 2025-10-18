@@ -1,14 +1,17 @@
 import axios from "axios";
 
-const FALLBACK_BASE_URL =
-  "https://servidor-turnosapp-dip-fullstack.onrender.com";
+const DEFAULT_DEV_BASE_URL = "http://localhost:3000";
+const DEFAULT_PROD_BASE_URL =
+  import.meta.env?.VITE_PROD_API_BASE_URL ||
+  "https://servidor-turnosapp-dip-fullstack.onrender.com/";
 
 // Resolve backend base URL prioritising the Vite override.
 const sanitizeBaseUrl = (value) =>
   value?.replace(/\/+$/, "") || "";
 
 const baseURL = sanitizeBaseUrl(
-  import.meta.env?.VITE_API_BASE_URL || FALLBACK_BASE_URL
+  import.meta.env?.VITE_API_BASE_URL ||
+    (import.meta.env?.DEV ? DEFAULT_DEV_BASE_URL : DEFAULT_PROD_BASE_URL)
 );
 
 export const apiClient = axios.create({

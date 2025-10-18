@@ -1,7 +1,11 @@
+/* eslint-env node */
+/* global process */
 import { defineConfig } from 'vite'
 import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
+
+const isCI = typeof process !== 'undefined' && process.env?.CI
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,7 +14,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
-    reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+    reporters: isCI ? ['default', 'junit'] : ['default'],
     clearMocks: true,
     restoreMocks: true,
     unstubGlobals: true,

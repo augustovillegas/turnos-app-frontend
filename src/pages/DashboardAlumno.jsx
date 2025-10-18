@@ -1,6 +1,7 @@
 // === Dashboard Alumno ===
 // Panel del estudiante: solicitar turnos, ver historial y cargar entregables.
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
@@ -36,7 +37,8 @@ export const DashboardAlumno = () => {
     createEntrega: createEntregaRemoto,
     removeEntrega: removeEntregaRemoto,
   } = useAppData();
-  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
 
@@ -71,7 +73,7 @@ export const DashboardAlumno = () => {
   ];
 
   // --- Acciones sobre solicitudes de turnos ---
-  const solicitarTurno = async (turno) => {
+  const handleSolicitarTurno = async (turno) => {
     if (!turno || turno.estado !== "Disponible") return;
     setProcessingTurno(turno.id);
     try {
@@ -204,26 +206,6 @@ export const DashboardAlumno = () => {
     }
   };
 
-  // --- Columnas para la tabla de turnos disponibles ---
-  const columns = [
-    "Review",
-    "Fecha",
-    "Horario",
-    "Sala",
-    "Zoom",
-    "Estado",
-    "Acción",
-  ];
-  // --- Columnas para la tabla de mis turnos ---
-  const columnsMisTurnos = [
-    "Review",
-    "Fecha",
-    "Horario",
-    "Sala",
-    "Zoom",
-    "Estado",
-    "Acción",
-  ];
 
   // --- Utilidad comun para aplicar el filtro de review ---
   const aplicarFiltro = (lista) => {
@@ -358,9 +340,30 @@ export const DashboardAlumno = () => {
     };
   }, [entregasBuscadas, totalEntregas, pageEntregas, ITEMS_PER_PAGE]);
 
+  const isTurnosSectionLoading = turnosLoading || isLoading("turnos");
+  const isEntregasSectionLoading = isLoading("entregas");
+  const hasTurnosDisponibles =
+    paginatedTurnosDisponibles.totalItems > 0 &&
+    paginatedTurnosDisponibles.items.length > 0;
+  const hasTurnosHistorial =
+    paginatedTurnosHistorial.totalItems > 0 &&
+    paginatedTurnosHistorial.items.length > 0;
+  const hasEntregas =
+    paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
+
+  const handleSidebarSelect = (id) => {
+    if (id === "logout") {
+      logout();
+      navigate("/login");
+      showToast("Sesión cerrada correctamente.", "info");
+      return;
+    }
+    setActive(id);
+  };
+
   return (
     <div className="flex min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
-      <SideBar items={items} active={active} onSelect={setActive} />
+      <SideBar items={items} active={active} onSelect={handleSidebarSelect} />
 
       <div className="flex-1 p-6">
         {/* =========================
@@ -394,109 +397,129 @@ export const DashboardAlumno = () => {
                 }}
               />
 
-              {(turnosLoading || isLoading("turnos")) && (
-                <div className="flex flex-col gap-2">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} height="1.25rem" />
-                  ))}
-                </div>
-              )}
-
-              {/* Tabla Desktop */}
+                {/* Tabla Desktop */}
               <div className="hidden sm:block">
-                <Table
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acción",
-                  ]}
-                  data={paginatedTurnosDisponibles.items}
-                  minWidth="min-w-[680px]"
-                  containerClass="px-4"
-                  renderRow={(t) => (
-                    <>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.review}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.fecha}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.horario}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.sala}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        {t.zoomLink && (
-                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                            <img
-                              src="/icons/video_-2.png"
-                              alt="Zoom"
-                              className="w-5 h-5 mx-auto hover:opacity-80"
-                            />
-                          </a>
-                        )}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <Status status={t.estado || "Disponible"} />
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        {t.estado === "Disponible" && (
-                          <Button
-                            variant="primary"
-                            className="py-1"
-                            onClick={() => solicitarTurno(t)}
-                            disabled={turnosLoading || processingTurno === t.id}
-                          >
-                            Solicitar turno
-                          </Button>
-                        )}
-                        {t.estado === "Solicitado" && (
-                          <Button
-                            variant="secondary"
-                            className="py-1"
-                            onClick={() => handleCancelarTurno(t)}
-                            disabled={turnosLoading || processingTurno === t.id}
-                          >
-                            Cancelar solicitud
-                          </Button>
-                        )}
-                      </td>
-                    </>
-                  )}
-                />
+                {isTurnosSectionLoading ? (
+                  <div className="flex flex-col gap-2">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} height="1.25rem" />
+                    ))}
+                  </div>
+                ) : (
+                  <Table
+                    columns={[
+                      "Review",
+                      "Fecha",
+                      "Horario",
+                      "Sala",
+                      "Zoom",
+                      "Estado",
+                      "Acci??n",
+                    ]}
+                    data={paginatedTurnosDisponibles.items}
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
+                    renderRow={(t) => (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.review}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.fecha}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.horario}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.sala}
+                        </td>
+                        <td className="border p-2 text-center dark:border-[#333]">
+                          {t.zoomLink && (
+                            <a
+                              href={t.zoomLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <img
+                                src="/icons/video_-2.png"
+                                alt="Zoom"
+                                className="w-5 h-5 mx-auto hover:opacity-80"
+                              />
+                            </a>
+                          )}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Status status={t.estado || "Disponible"} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          {t.estado === "Disponible" && (
+                            <Button
+                              variant="primary"
+                              className="py-1"
+                              onClick={() => handleSolicitarTurno(t)}
+                              disabled={
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
+                              }
+                            >
+                              Solicitar turno
+                            </Button>
+                          )}
+                          {t.estado === "Solicitado" && (
+                            <Button
+                              variant="secondary"
+                              className="py-1"
+                              onClick={() => handleCancelarTurno(t)}
+                              disabled={
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
+                              }
+                            >
+                              Cancelar solicitud
+                            </Button>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  />
+                )}
               </div>
 
               {/* Tarjetas Mobile */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {paginatedTurnosDisponibles.totalItems === 0 ? (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay turnos disponibles.
-                  </p>
-                ) : (
+                {isTurnosSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasTurnosDisponibles ? (
                   paginatedTurnosDisponibles.items.map((t) => (
                     <CardTurno
                       key={t.id}
                       turno={t}
-                      onSolicitar={() => solicitarTurno(t)}
+                      onSolicitar={() => handleSolicitarTurno(t)}
                       onCancelar={() => handleCancelarTurno(t)}
-                      disabled={turnosLoading || processingTurno === t.id}
+                      disabled={
+                        isTurnosSectionLoading || processingTurno === t.id
+                      }
                     />
                   ))
+                ) : (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay turnos disponibles.
+                  </p>
                 )}
               </div>
 
-              <Pagination
-                totalItems={paginatedTurnosDisponibles.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedTurnosDisponibles.currentPage}
-                onPageChange={setPageTurnosDisponibles}
-              />
+              {!isTurnosSectionLoading && hasTurnosDisponibles && (
+                <Pagination
+                  totalItems={paginatedTurnosDisponibles.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedTurnosDisponibles.currentPage}
+                  onPageChange={setPageTurnosDisponibles}
+                />
+              )}
             </div>
           </div>
         )}
@@ -532,98 +555,113 @@ export const DashboardAlumno = () => {
                 }}
               />
 
-              {turnosLoading && (
-                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                  Cargando tus turnos...
-                </p>
-              )}
-
               {/* Tabla Desktop */}
               <div className="hidden sm:block">
-                <Table
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acción",
-                  ]}
-                  data={paginatedTurnosHistorial.items}
-                  minWidth="min-w-[680px]"
-                  containerClass="px-4"
-                  renderRow={(t) => (
-                    <>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.review}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.fecha}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.horario}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.sala}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        {t.zoomLink ? (
-                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                            <img
-                              src="/icons/video_-2.png"
-                              alt="Zoom"
-                              className="w-5 h-5 mx-auto hover:opacity-80"
-                            />
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <Status status={t.estado || "-"} />
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        {t.estado === "Solicitado" && (
-                          <Button
-                            variant="secondary"
-                            className="py-1"
-                            onClick={() => cancelarTurno(t)}
-                            disabled={turnosLoading || processingTurno === t.id}
-                          >
-                            Cancelar turno
-                          </Button>
-                        )}
-                      </td>
-                    </>
-                  )}
-                />
+                {isTurnosSectionLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : (
+                  <Table
+                    columns={[
+                      "Review",
+                      "Fecha",
+                      "Horario",
+                      "Sala",
+                      "Zoom",
+                      "Estado",
+                      "Acci??n",
+                    ]}
+                    data={paginatedTurnosHistorial.items}
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
+                    renderRow={(t) => (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.review}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.fecha}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.horario}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.sala}
+                        </td>
+                        <td className="border p-2 text-center dark:border-[#333]">
+                          {t.zoomLink ? (
+                            <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                              <img
+                                src="/icons/video_-2.png"
+                                alt="Zoom"
+                                className="w-5 h-5 mx-auto hover:opacity-80"
+                              />
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Status status={t.estado || "-"} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          {t.estado === "Solicitado" && (
+                            <Button
+                              variant="secondary"
+                              className="py-1"
+                              onClick={() => handleCancelarTurno(t)}
+                              disabled={
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
+                              }
+                            >
+                              Cancelar turno
+                            </Button>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  />
+                )}
               </div>
 
               {/* Tarjetas Mobile */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {paginatedTurnosHistorial.totalItems === 0 ? (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No tenés turnos registrados.
-                  </p>
-                ) : (
+                {isTurnosSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasTurnosHistorial ? (
                   paginatedTurnosHistorial.items.map((t) => (
                     <CardTurno
                       key={t.id}
                       turno={t}
-                      onCancelar={() => cancelarTurno(t)}
-                      disabled={turnosLoading || processingTurno === t.id}
+                      onCancelar={() => handleCancelarTurno(t)}
+                      disabled={
+                        isTurnosSectionLoading || processingTurno === t.id
+                      }
                     />
                   ))
+                ) : (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No tenes turnos registrados.
+                  </p>
                 )}
               </div>
 
-              <Pagination
-                totalItems={paginatedTurnosHistorial.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedTurnosHistorial.currentPage}
-                onPageChange={setPageMisTurnos}
-              />
+              {!isTurnosSectionLoading && hasTurnosHistorial && (
+                <Pagination
+                  totalItems={paginatedTurnosHistorial.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedTurnosHistorial.currentPage}
+                  onPageChange={setPageMisTurnos}
+                />
+              )}
             </div>
           </div>
         )}
@@ -672,102 +710,107 @@ export const DashboardAlumno = () => {
                 }}
               />
 
-              {/* ====== MENSAJE SIN REGISTROS ====== */}
-              {entregasBuscadas.length === 0 && (
-                <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                  No hay entregas registradas aún.
-                </p>
-              )}
 
               {/* ====== TABLA DESKTOP ====== */}
               <div className="hidden sm:block">
-                <Table
-                  columns={[
-                    "Sprint",
-                    "GitHub",
-                    "Render",
-                    "Comentarios",
-                    "Estado",
-                    "Acción",
-                  ]}
-                  data={paginatedEntregas.items}
-                  minWidth="min-w-[680px]"
-                  containerClass="px-4"
-                  renderRow={(e) => (
-                    <>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {e.sprint}
-                      </td>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                        <a
-                          href={e.githubLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-                        >
-                          {e.githubLink}
-                        </a>
-                      </td>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                        {e.renderLink ? (
+                {isEntregasSectionLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : (
+                  <Table
+                    columns={[
+                      "Sprint",
+                      "GitHub",
+                      "Render",
+                      "Comentarios",
+                      "Estado",
+                      "Acci??n",
+                    ]}
+                    data={paginatedEntregas.items}
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
+                    renderRow={(e) => (
+                      <>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {e.sprint}
+                        </td>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
                           <a
-                            href={e.renderLink}
+                            href={e.githubLink}
                             target="_blank"
                             rel="noreferrer"
                             className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                           >
-                            {e.renderLink}
+                            {e.githubLink}
                           </a>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {e.comentarios || "-"}
-                      </td>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                        <Status status={e.reviewStatus} />
-                      </td>
-                      <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                        {e.reviewStatus === "A revisar" && (
-                          <Button
-                            variant="danger"
-                            className="py-1"
-                          onClick={async () => {
-                            if (
-                              window.confirm(
-                                "¿Cancelar el envío? Podrás volver a cargarlo cuando tengas los ajustes listos."
-                              )
-                            ) {
-                              try {
-                                await removeEntregaRemoto(e.id);
-                                showToast("Entrega cancelada.", "info");
-                              } catch (error) {
-                                showToast(
-                                  error.message ||
-                                    "No se pudo cancelar la entrega.",
-                                  "error"
-                                );
-                              }
-                            }
-                          }}
-                          >
-                            Cancelar
-                          </Button>
-                        )}
-                      </td>
-                    </>
-                  )}
-                />
+                        </td>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                          {e.renderLink ? (
+                            <a
+                              href={e.renderLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                            >
+                              {e.renderLink}
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {e.comentarios || "-"}
+                        </td>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                          <Status status={e.reviewStatus} />
+                        </td>
+                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                          {e.reviewStatus === "A revisar" && (
+                            <Button
+                              variant="danger"
+                              className="py-1"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    "Cancelar el envio? Podras volver a cargarlo cuando tengas los ajustes listos."
+                                  )
+                                ) {
+                                  try {
+                                    await removeEntregaRemoto(e.id);
+                                    showToast("Entrega cancelada.", "info");
+                                  } catch (error) {
+                                    showToast(
+                                      error.message ||
+                                        "No se pudo cancelar la entrega.",
+                                      "error"
+                                    );
+                                  }
+                                }
+                              }}
+                              disabled={isEntregasSectionLoading}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  />
+                )}
               </div>
 
               {/* ====== TARJETAS MOBILE ====== */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {paginatedEntregas.totalItems === 0 ? (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay entregas registradas.
-                  </p>
-                ) : (
+                {isEntregasSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasEntregas ? (
                   paginatedEntregas.items.map((entrega) => (
                     <CardEntrega
                       key={entrega.id}
@@ -775,7 +818,7 @@ export const DashboardAlumno = () => {
                       onCancelar={async () => {
                         if (
                           window.confirm(
-                            "¿Estás seguro de cancelar esta entrega?"
+                            "Estas seguro de cancelar esta entrega?"
                           )
                         ) {
                           try {
@@ -792,16 +835,22 @@ export const DashboardAlumno = () => {
                       }}
                     />
                   ))
+                ) : (
+                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
+                    No hay entregas registradas.
+                  </p>
                 )}
               </div>
 
-              {/* ====== PAGINACIÓN ====== */}
-              <Pagination
-                totalItems={paginatedEntregas.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedEntregas.currentPage}
-                onPageChange={setPageEntregas}
-              />
+              {!isEntregasSectionLoading && hasEntregas && (
+                <Pagination
+                  totalItems={paginatedEntregas.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedEntregas.currentPage}
+                  onPageChange={setPageEntregas}
+                />
+              )}
+
             </div>
           </div>
         )}

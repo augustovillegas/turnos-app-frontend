@@ -2,6 +2,7 @@
 // Tabla principal para CRUD de turnos en la vista administrativa.
 import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "../../context/AppContext";
+import { useLoading } from "../../context/LoadingContext";
 import { Table } from "../ui/Table";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
@@ -11,6 +12,7 @@ import { Pagination } from "../ui/Pagination";
 import { SearchBar } from "../ui/SearchBar";
 import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
+import { Skeleton } from "../ui/Skeleton";
 
 export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
@@ -21,6 +23,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   const ITEMS_PER_PAGE = 5;
 
   const { showModal } = useModal();
+  const { isLoading } = useLoading();
 
   useEffect(() => {
     loadTurnos();
@@ -64,9 +67,11 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
     page,
     Math.ceil((turnosBuscados.length || 0) / ITEMS_PER_PAGE) || 1
   );
+  const showLoader = turnosLoading || isLoading("turnos");
+  const hasTurnos = turnosBuscados.length > 0;
 
   // --- Eliminacion con confirmacion estilo Win98 ---
-  const confirmarEliminacion = (turno) => {
+  const handleConfirmarEliminacion = (turno) => {
     showModal({
       type: "warning", 
       title: "Eliminar turno",
@@ -127,112 +132,126 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
           </div>
         )}
 
-        {turnosLoading && (
-          <p className="text-sm font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-            Cargando turnos...
-          </p>
-        )}
-
         <div className="hidden sm:block">
-          <Table
-            columns={[
-              "Review",
-              "Fecha",
-              "Horario",
-              "Sala",
-              "Zoom",
-              "Estado",
-              "Accion",
-            ]}
-            data={paginatedTurnos}
-            renderRow={(turno) => (
-              <>
-                <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                  {turno.review}
-                </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                  {turno.fecha}
-                </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                  {turno.horario}
-                </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                  {turno.sala}
-                </td>
-                <td className="border p-2 text-center dark:border-[#333]">
-                  {turno.zoomLink && (
-                    <a href={turno.zoomLink} target="_blank" rel="noreferrer">
-                      <img
-                        src="/icons/video_-2.png"
-                        alt="Zoom"
-                        className="w-5 h-5 mx-auto hover:opacity-80"
-                      />
-                    </a>
-                  )}
-                </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333]">
-                  <Status status={turno.estado || "Disponible"} />
-                </td>
-                <td className="border border-[#111827] p-2 dark:border-[#333]">
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {onVer && (
-                      <button
-                        type="button"
-                        className="px-3 py-1 text-sm font-semibold underline"
-                        onClick={() => onVer?.(turno)}
-                        disabled={turnosLoading || processingId === turno.id}
-                      >
-                        Ver
-                      </button>
+          {showLoader ? (
+            <div className="space-y-3 py-6">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} height="2.75rem" />
+              ))}
+            </div>
+          ) : hasTurnos ? (
+            <Table
+              columns={[
+                "Review",
+                "Fecha",
+                "Horario",
+                "Sala",
+                "Zoom",
+                "Estado",
+                "Accion",
+              ]}
+              data={paginatedTurnos}
+              renderRow={(turno) => (
+                <>
+                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                    {turno.review}
+                  </td>
+                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                    {turno.fecha}
+                  </td>
+                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                    {turno.horario}
+                  </td>
+                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                    {turno.sala}
+                  </td>
+                  <td className="border p-2 text-center dark:border-[#333]">
+                    {turno.zoomLink && (
+                      <a href={turno.zoomLink} target="_blank" rel="noreferrer">
+                        <img
+                          src="/icons/video_-2.png"
+                          alt="Zoom"
+                          className="w-5 h-5 mx-auto hover:opacity-80"
+                        />
+                      </a>
                     )}
-                    <Button
-                      variant="secondary"
-                      onClick={() => onEditar?.(turno)}
-                      disabled={turnosLoading || processingId === turno.id}
-                      className="text-sm"
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => confirmarEliminacion(turno)}
-                      disabled={turnosLoading || processingId === turno.id}
-                      className="text-sm"
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </td>
-              </>
-            )}
-          />
+                  </td>
+                  <td className="border border-[#111827] p-2 dark:border-[#333]">
+                    <Status status={turno.estado || "Disponible"} />
+                  </td>
+                  <td className="border border-[#111827] p-2 dark:border-[#333]">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {onVer && (
+                        <button
+                          type="button"
+                          className="px-3 py-1 text-sm font-semibold underline"
+                          onClick={() => onVer?.(turno)}
+                          disabled={showLoader || processingId === turno.id}
+                        >
+                          Ver
+                        </button>
+                      )}
+                      <Button
+                        variant="secondary"
+                        onClick={() => onEditar?.(turno)}
+                        disabled={showLoader || processingId === turno.id}
+                        className="text-sm"
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleConfirmarEliminacion(turno)}
+                        disabled={showLoader || processingId === turno.id}
+                        className="text-sm"
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </td>
+                </>
+              )}
+            />
+          ) : (
+            <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+              No hay turnos para mostrar.
+            </p>
+          )}
         </div>
 
         <div className="mt-4 space-y-4 px-2 sm:hidden">
-          {totalTurnos === 0 ? (
-            <p className="text-sm text-gray-100 dark:text-gray-300">
-              No hay turnos registrados.
-            </p>
-          ) : (
+          {showLoader ? (
+            <div className="space-y-3 py-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} height="4rem" />
+              ))}
+            </div>
+          ) : hasTurnos ? (
             paginatedTurnos.map((turno) => (
               <CardTurnosCreados
                 key={turno.id}
                 turno={turno}
                 onVer={onVer ? () => onVer(turno) : undefined}
                 onEditar={() => onEditar?.(turno)}
-                onEliminar={() => confirmarEliminacion(turno)}
-                disabled={turnosLoading || processingId === turno.id}
+                onEliminar={() => handleConfirmarEliminacion(turno)}
+                disabled={showLoader || processingId === turno.id}
               />
             ))
+          ) : (
+            <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+              No hay turnos para mostrar.
+            </p>
           )}
         </div>
 
-        <Pagination
-          totalItems={totalTurnos}
-          itemsPerPage={ITEMS_PER_PAGE}
-          currentPage={currentPage}
-          onPageChange={setPage}
-        />
+        {!showLoader && hasTurnos && (
+          <Pagination
+            totalItems={totalTurnos}
+            itemsPerPage={ITEMS_PER_PAGE}
+            currentPage={currentPage}
+            onPageChange={setPage}
+          />
+        )}
       </div>
     </div>
   );

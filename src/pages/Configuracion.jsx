@@ -4,6 +4,8 @@ import { useTheme } from "../context/ThemeContext";
 import { useSound } from "../context/SoundContext";
 import { Button } from "../components/ui/Button";
 
+const MotionContainer = motion.div;
+
 export const Configuracion = () => {
   const { theme, toggleTheme } = useTheme();
   const { muted, toggleMute } = useSound();
@@ -29,7 +31,7 @@ export const Configuracion = () => {
       </div>
 
       {/* Contenido */}
-      <motion.div
+      <MotionContainer
         key={activeTab}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -119,7 +121,7 @@ export const Configuracion = () => {
 
         {/* Sección: Seguridad */}
         {activeTab === "seguridad" && (
-          <motion.div
+          <MotionContainer
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
@@ -133,9 +135,9 @@ export const Configuracion = () => {
             <p className="italic text-gray-500 dark:text-gray-400 mt-2">
               (Sección en construcción)
             </p>
-          </motion.div>
+          </MotionContainer>
         )}
-      </motion.div>
+      </MotionContainer>
     </div>
   );
 };

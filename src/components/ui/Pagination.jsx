@@ -24,7 +24,7 @@ export const Pagination = ({
     if (controlledPage) setPage(controlledPage);
   }, [controlledPage]);
 
-  const goToPage = (newPage) => {
+  const handleGoToPage = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
     onPageChange?.(newPage);
@@ -34,7 +34,7 @@ export const Pagination = ({
     e.preventDefault();
     const target = Number(inputPage);
     if (!isNaN(target)) {
-      goToPage(target);
+      handleGoToPage(target);
       setInputPage("");
     }
   };
@@ -58,7 +58,7 @@ export const Pagination = ({
       {/* Controles principales */}
       <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-semibold">
         <button
-          onClick={() => goToPage(1)}
+          onClick={() => handleGoToPage(1)}
           disabled={page === 1}
           className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
                       hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
@@ -67,7 +67,7 @@ export const Pagination = ({
           ⏮ Primera
         </button>
         <button
-          onClick={() => goToPage(page - 1)}
+          onClick={() => handleGoToPage(page - 1)}
           disabled={page === 1}
           className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
                       hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
@@ -80,7 +80,7 @@ export const Pagination = ({
         {getPageNumbers().map((num) => (
           <button
             key={num}
-            onClick={() => goToPage(num)}
+            onClick={() => handleGoToPage(num)}
             className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                         transition-colors duration-300
                         ${
@@ -94,7 +94,7 @@ export const Pagination = ({
         ))}
 
         <button
-          onClick={() => goToPage(page + 1)}
+          onClick={() => handleGoToPage(page + 1)}
           disabled={page === totalPages}
           className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
                       hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
@@ -103,7 +103,7 @@ export const Pagination = ({
           Siguiente ▶
         </button>
         <button
-          onClick={() => goToPage(totalPages)}
+          onClick={() => handleGoToPage(totalPages)}
           disabled={page === totalPages}
           className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
                       hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white

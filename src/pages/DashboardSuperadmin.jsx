@@ -1,6 +1,7 @@
 // === Dashboard Superadmin ===
 // Panel general: gestion global de usuarios, turnos y entregas.
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
@@ -36,7 +37,8 @@ export const DashboardSuperadmin = () => {
     approveUsuario: approveUsuarioRemoto,
     updateUsuarioEstado: updateUsuarioEstadoRemoto,
   } = useAppData();
-  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
 
@@ -49,7 +51,7 @@ export const DashboardSuperadmin = () => {
   const [pageUsuariosPendientes, setPageUsuariosPendientes] = useState(1);
 
   // --- Acciones sobre turnos pendientes a nivel global ---
-  const aprobarTurno = async (turno) => {
+  const handleAprobarTurno = async (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
     setProcessingTurno(turno.id);
     try {
@@ -69,7 +71,7 @@ export const DashboardSuperadmin = () => {
   };
 
   // --- Maneja rechazos cuando el turno no continua ---
-  const rechazarTurno = (turno) => {
+  const handleRechazarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
 
     showModal({
@@ -116,7 +118,7 @@ export const DashboardSuperadmin = () => {
     fetchData();
   }, [user, token, loadTurnos, loadEntregas, loadUsuarios]);
   // --- Operaciones sobre usuarios desde la vista global ---
-  const aprobarUsuario = async (usuario) => {
+  const handleAprobarUsuario = async (usuario) => {
     if (!usuario?.id) return;
     try {
       await approveUsuarioRemoto(usuario.id);
@@ -129,7 +131,7 @@ export const DashboardSuperadmin = () => {
     }
   };
 
-  const rechazarUsuario = async (usuario) => {
+  const handleRechazarUsuario = async (usuario) => {
     if (!usuario?.id) return;
     try {
       await updateUsuarioEstadoRemoto(usuario.id, "Rechazado");
@@ -242,6 +244,22 @@ export const DashboardSuperadmin = () => {
     pageUsuariosPendientes,
     ITEMS_PER_PAGE,
   ]);
+  const isTurnosSectionLoading = turnosLoading || isLoading("turnos");
+  const hasTurnosSolicitados =
+    paginatedTurnosSolicitados.totalItems > 0 && paginatedTurnosSolicitados.items.length > 0;
+  const isUsuariosSectionLoading = isLoading("usuarios");
+  const hasUsuariosPendientes =
+    paginatedUsuariosPendientes.totalItems > 0 && paginatedUsuariosPendientes.items.length > 0;
+
+  const handleSidebarSelect = (id) => {
+    if (id === "logout") {
+      logout();
+      navigate("/login");
+      showToast("Sesión cerrada correctamente.", "info");
+      return;
+    }
+    setActive(id);
+  };
 
   return (
     <div className="flex min-h-screen bg-[#017F82] transition-colors duration-300 dark:bg-[#0F3D3F]">
@@ -269,7 +287,7 @@ export const DashboardSuperadmin = () => {
           },
         ]}
         active={active}
-        onSelect={setActive}
+        onSelect={handleSidebarSelect}
       />
 
       <div className="flex-1 p-6">
@@ -289,16 +307,15 @@ export const DashboardSuperadmin = () => {
 
               <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
 
-              {(turnosLoading || isLoading("turnos")) && (
-                <div className="flex flex-col gap-2 my-4">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} height="1.25rem" />
-                  ))}
-                </div>
-              )}
-
               {/* Tabla Desktop */}
               <div className="hidden sm:block">
+                {isTurnosSectionLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : hasTurnosSolicitados ? (
                 <Table
                   columns={[
                     "Review",
@@ -346,9 +363,10 @@ export const DashboardSuperadmin = () => {
                             <Button
                               variant="success"
                               className="py-1"
-                              onClick={() => aprobarTurno(t)}
+                              onClick={() => handleAprobarTurno(t)}
                               disabled={
-                                turnosLoading || processingTurno === t.id
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
                               }
                             >
                               Aprobar
@@ -356,9 +374,10 @@ export const DashboardSuperadmin = () => {
                             <Button
                               variant="danger"
                               className="py-1"
-                              onClick={() => rechazarTurno(t)}
+                              onClick={() => handleRechazarTurno(t)}
                               disabled={
-                                turnosLoading || processingTurno === t.id
+                                isTurnosSectionLoading ||
+                                processingTurno === t.id
                               }
                             >
                               Rechazar
@@ -369,34 +388,49 @@ export const DashboardSuperadmin = () => {
                     </>
                   )}
                 />
+                ) : (
+                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay solicitudes pendientes.
+                  </p>
+                )}
               </div>
 
               {/* Tarjetas Mobile */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {paginatedTurnosSolicitados.totalItems === 0 ? (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay solicitudes pendientes.
-                  </p>
-                ) : (
+                {isTurnosSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4rem" />
+                    ))}
+                  </div>
+                ) : hasTurnosSolicitados ? (
                   paginatedTurnosSolicitados.items.map((t) => (
                     <CardTurno
                       key={t.id}
                       turno={t}
-                      onAprobar={() => aprobarTurno(t)}
-                      onRechazar={() => rechazarTurno(t)}
-                      disabled={turnosLoading || processingTurno === t.id}
+                      onAprobar={() => handleAprobarTurno(t)}
+                      onRechazar={() => handleRechazarTurno(t)}
+                      disabled={
+                        isTurnosSectionLoading || processingTurno === t.id
+                      }
                     />
                   ))
+                ) : (
+                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay solicitudes pendientes.
+                  </p>
                 )}
               </div>
 
               {/* 🎨 Ajuste visual: Espaciado y paginación alineados con el resto de dashboards */}
-              <Pagination
-                totalItems={paginatedTurnosSolicitados.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedTurnosSolicitados.currentPage}
-                onPageChange={setPageTurnosSolicitados}
-              />
+              {!isTurnosSectionLoading && hasTurnosSolicitados && (
+                <Pagination
+                  totalItems={paginatedTurnosSolicitados.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedTurnosSolicitados.currentPage}
+                  onPageChange={setPageTurnosSolicitados}
+                />
+              )}
             </div>
           </div>
         )}
@@ -414,14 +448,6 @@ export const DashboardSuperadmin = () => {
                 </h2>
               </div>
 
-              {isLoading("usuarios") && (
-                <div className="flex flex-col gap-2 my-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} height="1.25rem" />
-                  ))}
-                </div>
-              )}
-
               <SearchBar
                 data={usuariosPendientesBuscados}
                 fields={["nombre", "rol", "estado"]}
@@ -434,6 +460,13 @@ export const DashboardSuperadmin = () => {
 
               {/* Tabla Desktop */}
               <div className="hidden sm:block">
+                {isUsuariosSectionLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : hasUsuariosPendientes ? (
                 <Table
                   columns={["Nombre", "Rol", "Estado", "Acción"]}
                   data={paginatedUsuariosPendientes.items}
@@ -455,14 +488,16 @@ export const DashboardSuperadmin = () => {
                           <Button
                             variant="success"
                             className="py-1"
-                            onClick={() => aprobarUsuario(u)}
+                            onClick={() => handleAprobarUsuario(u)}
+                            disabled={isUsuariosSectionLoading}
                           >
                             Aprobar
                           </Button>
                           <Button
                             variant="danger"
                             className="py-1"
-                            onClick={() => rechazarUsuario(u)}
+                            onClick={() => handleRechazarUsuario(u)}
+                            disabled={isUsuariosSectionLoading}
                           >
                             Rechazar
                           </Button>
@@ -471,15 +506,22 @@ export const DashboardSuperadmin = () => {
                     </>
                   )}
                 />
+                ) : (
+                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay usuarios pendientes por aprobar.
+                  </p>
+                )}
               </div>
 
               {/* Tarjetas Mobile */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {paginatedUsuariosPendientes.totalItems === 0 ? (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay usuarios pendientes por aprobar.
-                  </p>
-                ) : (
+                {isUsuariosSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasUsuariosPendientes ? (
                   paginatedUsuariosPendientes.items.map((u, idx) => (
                     <div
                       key={u.id || `${u.nombre}-${idx}`}
@@ -498,30 +540,38 @@ export const DashboardSuperadmin = () => {
                         <Button
                           variant="success"
                           className="w-full py-1"
-                          onClick={() => aprobarUsuario(u)}
+                          onClick={() => handleAprobarUsuario(u)}
+                          disabled={isUsuariosSectionLoading}
                         >
                           Aprobar
                         </Button>
                         <Button
                           variant="danger"
                           className="w-full py-1"
-                          onClick={() => rechazarUsuario(u)}
+                          onClick={() => handleRechazarUsuario(u)}
+                          disabled={isUsuariosSectionLoading}
                         >
                           Rechazar
                         </Button>
                       </div>
                     </div>
                   ))
+                ) : (
+                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay usuarios pendientes por aprobar.
+                  </p>
                 )}
               </div>
 
               {/* 🎨 Paginación alineada visualmente */}
-              <Pagination
-                totalItems={paginatedUsuariosPendientes.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedUsuariosPendientes.currentPage}
-                onPageChange={setPageUsuariosPendientes}
-              />
+              {!isUsuariosSectionLoading && hasUsuariosPendientes && (
+                <Pagination
+                  totalItems={paginatedUsuariosPendientes.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedUsuariosPendientes.currentPage}
+                  onPageChange={setPageUsuariosPendientes}
+                />
+              )}
             </div>
           </div>
         )}
