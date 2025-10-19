@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { CreateTurnos } from "../pages/CreateTurnos";
 import { requireAuth } from "../router/session";
 

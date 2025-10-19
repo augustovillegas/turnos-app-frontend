@@ -1,6 +1,6 @@
 import { Status } from "./Status";
 
-export const CardEntrega = ({ entrega, onCancelar }) => {
+export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
   return (
     <div className="border-2 border-[#111827] dark:border-[#333] rounded-md p-4 bg-white dark:bg-[#1E1E1E] shadow space-y-2">
       <p className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
@@ -40,7 +40,8 @@ export const CardEntrega = ({ entrega, onCancelar }) => {
         {entrega.reviewStatus === "A revisar" && onCancelar && (
           <button
             onClick={onCancelar}
-            className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+            disabled={disabled}
+            className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>

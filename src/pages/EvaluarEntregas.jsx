@@ -1,7 +1,8 @@
 // === Evaluar Entregas ===
 // Panel para revisar, aprobar o rechazar entregables pendientes.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppData } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
@@ -12,6 +13,7 @@ import { showToast } from "../utils/feedback/toasts";
 export const EvaluarEntregas = () => {
   // --- Contexto de datos compartido ---
   const { entregas, updateEntrega } = useAppData();
+  const { user } = useAuth();
   const ITEMS_PER_PAGE = 5; // --- Cantidad de entregas por pagina ---
   const [page, setPage] = useState(1);
   const [processingEntregaId, setProcessingEntregaId] = useState(null);
@@ -56,8 +58,71 @@ export const EvaluarEntregas = () => {
     );
   };
 
+  const moduloActual = useMemo(() => {
+    if (!user) return null;
+    const candidates = [
+      user.cohort,
+      user.cohorte,
+      user.modulo,
+      user.module,
+    ];
+    const found = candidates.find(
+      (candidate) =>
+        candidate !== undefined &&
+        candidate !== null &&
+        String(candidate).trim() !== ""
+    );
+    return found ? String(found).trim() : null;
+  }, [user]);
+  const moduloActualNormalized = moduloActual
+    ? moduloActual.toLowerCase()
+    : null;
+
+  const moduloCoincide = useCallback((value) => {
+    if (!moduloActualNormalized) return true;
+    if (value === undefined || value === null) return false;
+    if (Array.isArray(value)) {
+      return value.some((item) => moduloCoincide(item));
+    }
+    if (typeof value === "object") {
+      const nestedCandidates = [
+        value.nombre,
+        value.name,
+        value.id,
+        value._id,
+        value.slug,
+        value.codigo,
+      ];
+      return nestedCandidates.some((candidate) => moduloCoincide(candidate));
+    }
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === moduloActualNormalized;
+  }, [moduloActualNormalized]);
+
+  const entregasFiltradas = useMemo(() => {
+    const listado = Array.isArray(entregas) ? entregas : [];
+    if (!user) return listado;
+    if (user.role === "superadmin") return listado;
+    if (user.role === "profesor" && moduloActualNormalized) {
+      return listado.filter((entrega) => {
+        const candidates = [
+          entrega.modulo,
+          entrega.module,
+          entrega.cohort,
+          entrega.cohorte,
+          entrega.moduloId,
+          entrega.cohortId,
+          entrega?.alumno?.modulo,
+          entrega?.alumno?.cohort,
+        ];
+        return candidates.some(moduloCoincide);
+      });
+    }
+    return listado;
+  }, [entregas, user, moduloActualNormalized, moduloCoincide]);
+
   // 🛠️ Fix lógica: usar esPendiente para derivar la lista a evaluar
-  const entregasPendientes = entregas.filter(esPendiente);
+  const entregasPendientes = entregasFiltradas.filter(esPendiente);
 
   const [entregasBuscadas, setEntregasBuscadas] = useState(entregasPendientes);
   const totalPendientes = entregasBuscadas.length;
@@ -226,8 +291,7 @@ export const EvaluarEntregas = () => {
                 <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
                   Sprint {e.sprint}
                 </h3>
-                <Status status={getEstadoUI(e)} />
-                {/* 🛠️ Fix lógica */}
+                <Status status={getEstadoUI(e)} />             
               </div>
 
               <p className="mb-1 text-sm dark:text-gray-200">

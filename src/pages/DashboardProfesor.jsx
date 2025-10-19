@@ -23,6 +23,7 @@ import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useLoading } from "../context/LoadingContext";
+import { useError } from "../context/ErrorContext";
 
 export const DashboardProfesor = () => {
   // --- Contexto y permisos del profesor ---
@@ -34,17 +35,91 @@ export const DashboardProfesor = () => {
     usuarios,
     loadTurnos,
     loadEntregas,
+    loadUsuarios,
     approveUsuario: approveUsuarioRemoto,
   } = useAppData();
   const navigate = useNavigate();
   const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
+  const { pushError } = useError();
+
+  const moduloActual = useMemo(() => {
+    if (!user) return null;
+    const candidates = [
+      user.cohort,
+      user.cohorte,
+      user.modulo,
+      user.module,
+    ];
+    const found = candidates.find(
+      (candidate) =>
+        candidate !== undefined &&
+        candidate !== null &&
+        String(candidate).trim() !== ""
+    );
+    return found ? String(found).trim() : null;
+  }, [user]);
+  const moduloActualNormalized = moduloActual
+    ? moduloActual.toLowerCase()
+    : null;
+
+  const moduloCoincide = (value) => {
+    if (!moduloActualNormalized) return true;
+    if (value === undefined || value === null) return false;
+    if (Array.isArray(value)) {
+      return value.some((item) => moduloCoincide(item));
+    }
+    if (typeof value === "object") {
+      const nestedCandidates = [
+        value.nombre,
+        value.name,
+        value.id,
+        value._id,
+        value.slug,
+        value.codigo,
+      ];
+      return nestedCandidates.some((candidate) => moduloCoincide(candidate));
+    }
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === moduloActualNormalized;
+  };
+
+  const turnoPerteneceAlModulo = (turno) => {
+    if (!moduloActualNormalized) return true;
+    if (!turno || typeof turno !== "object") return false;
+    const candidates = [
+      turno.modulo,
+      turno.module,
+      turno.cohort,
+      turno.cohorte,
+      turno.moduloId,
+      turno.cohortId,
+    ];
+    return candidates.some(moduloCoincide);
+  };
+
+  const usuarioPerteneceAlModulo = (usuario) => {
+    if (!moduloActualNormalized) return true;
+    if (!usuario || typeof usuario !== "object") return false;
+    const candidates = [
+      usuario.modulo,
+      usuario.module,
+      usuario.cohort,
+      usuario.cohorte,
+      usuario.moduloId,
+      usuario.cohortId,
+      usuario?.datos?.modulo,
+      usuario?.datos?.cohort,
+    ];
+    return candidates.some(moduloCoincide);
+  };
 
   // --- Estado local: panel activo y operacion actual ---
   const [active, setActive] = useState("solicitudes");
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
+  const [processingUsuario, setProcessingUsuario] = useState(null);
   const ITEMS_PER_PAGE = 5;
   const [pageSolicitudes, setPageSolicitudes] = useState(1);
   const [pageUsuariosPendientes, setPageUsuariosPendientes] = useState(1);
@@ -64,7 +139,13 @@ export const DashboardProfesor = () => {
       await updateTurno(turno.id, payload);
       showToast("Turno aprobado correctamente.");
     } catch (error) {
-      showToast(error.message || "No se pudo aprobar el turno.", "error");
+      const message = error?.message || "No se pudo aprobar el turno.";
+      showToast(message, "error");
+      if (pushError) {
+        pushError("Error al aprobar turno.", {
+          description: message,
+        });
+      }
     } finally {
       setProcessingTurno(null);
     }
@@ -93,7 +174,14 @@ export const DashboardProfesor = () => {
           await updateTurno(turno.id, payload);
           showToast("Turno rechazado correctamente.");
         } catch (error) {
-          showToast(error.message || "No se pudo rechazar el turno.", "error");
+          const message =
+            error?.message || "No se pudo rechazar el turno.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al rechazar turno.", {
+              description: message,
+            });
+          }
         } finally {
           setProcessingTurno(null);
         }
@@ -103,21 +191,48 @@ export const DashboardProfesor = () => {
 
   // ---- Gestión de usuarios ----
   // --- Operaciones de gestion sobre usuarios pendientes ---
-  const handleAprobarUsuario = async (usuario) => {
+  const handleAprobarUsuario = (usuario) => {
     if (!usuario?.id) return;
-    try {
-      await approveUsuarioRemoto(usuario.id);
-      showToast("Usuario aprobado.");
-    } catch (error) {
-      showToast(
-        error.message || "No se pudo aprobar al usuario.",
-        "error"
-      );
-    }
+
+    const nombre = usuario.nombre || usuario.email || "este usuario";
+    showModal({
+      type: "warning",
+      title: "Aprobar usuario",
+      message: `¿Confirmás la aprobación de ${nombre}?`,
+      onConfirm: async () => {
+        setProcessingUsuario(usuario.id);
+        try {
+          await approveUsuarioRemoto(usuario.id);
+          showToast("Usuario aprobado.");
+        } catch (error) {
+          const message =
+            error?.message || "No se pudo aprobar al usuario.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al aprobar usuario.", {
+              description: message,
+            });
+          }
+        } finally {
+          setProcessingUsuario(null);
+        }
+      },
+    });
   };
 
   // --- Derivaciones: usuarios pendientes a aprobar ---
-  const usuariosPendientes = usuarios.filter((u) => u.estado === "Pendiente");
+  const turnosCollection = Array.isArray(turnos) ? turnos : [];
+  const usuariosCollection = Array.isArray(usuarios) ? usuarios : [];
+
+  const turnosSolicitados = turnosCollection.filter((t) => {
+    const estado = String(t?.estado || "").toLowerCase();
+    return estado === "solicitado" && turnoPerteneceAlModulo(t);
+  });
+
+  const usuariosPendientes = usuariosCollection.filter((u) => {
+    const estado = String(u?.estado || u?.status || "").toLowerCase();
+    return estado === "pendiente" && usuarioPerteneceAlModulo(u);
+  });
 
   // ---- Filtro por review ----
   const aplicarFiltro = (lista) => {
@@ -126,11 +241,9 @@ export const DashboardProfesor = () => {
   };
 
   // --- Turnos en estado solicitado filtrados segun la vista ---
-  const turnosSolicitados = aplicarFiltro(
-    turnos.filter((t) => t.estado === "Solicitado")
-  );
+  const turnosSolicitadosFiltrados = aplicarFiltro(turnosSolicitados);
   const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] =
-    useState(turnosSolicitados);
+    useState(turnosSolicitadosFiltrados);
   const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] =
     useState(usuariosPendientes);
   const totalSolicitudes = turnosSolicitadosBuscados.length;
@@ -141,8 +254,8 @@ export const DashboardProfesor = () => {
   }, [filtroReview]);
 
   useEffect(() => {
-    setTurnosSolicitadosBuscados(turnosSolicitados);
-  }, [turnosSolicitados]);
+    setTurnosSolicitadosBuscados(turnosSolicitadosFiltrados);
+  }, [turnosSolicitadosFiltrados]);
 
   useEffect(() => {
     setUsuariosPendientesBuscados(usuariosPendientes);
@@ -192,6 +305,7 @@ export const DashboardProfesor = () => {
     ITEMS_PER_PAGE,
   ]);
 
+
   // --- Paginacion de usuarios a aprobar ---
   const paginatedUsuariosPendientes = useMemo(() => {
     const totalPages =
@@ -227,29 +341,34 @@ export const DashboardProfesor = () => {
     if (!user || !token) return;
     if (user.role !== "profesor") return;
 
-    const modulo = user.cohort ?? user.modulo;
-    const turnosParams = modulo ? { modulo } : {};
-
     const fetchData = async () => {
       try {
         await Promise.all([
-          loadTurnos(turnosParams),
-          loadEntregas(turnosParams),
+          loadTurnos(),
+          loadEntregas(),
+          loadUsuarios(),
         ]);
       } catch (error) {
         console.error("Error al cargar los datos del profesor", error);
         showToast("No se pudo cargar la informacion del modulo.", "error");
+        if (pushError) {
+          pushError("Error al cargar datos del modulo.", {
+            description:
+              error?.message ||
+              "Fallo inesperado al obtener turnos, entregas y usuarios.",
+          });
+        }
       }
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas]);
+  }, [user, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
 
   const handleSidebarSelect = (id) => {
     if (id === "logout") {
       logout();
-      navigate("/", { replace: true });
       showToast("Sesion cerrada correctamente.", "info");
+      navigate("/", { replace: true });
       return;
     }
     setActive(id);
@@ -478,7 +597,10 @@ export const DashboardProfesor = () => {
                           variant="success"
                           className="py-1"
                           onClick={() => handleAprobarUsuario(u)}
-                          disabled={isUsuariosSectionLoading}
+                          disabled={
+                            isUsuariosSectionLoading ||
+                            processingUsuario === u.id
+                          }
                         >
                           Aprobar usuario
                         </Button>
@@ -520,7 +642,10 @@ export const DashboardProfesor = () => {
                       variant="success"
                       className="w-full py-1"
                       onClick={() => handleAprobarUsuario(u)}
-                      disabled={isUsuariosSectionLoading}
+                      disabled={
+                        isUsuariosSectionLoading ||
+                        processingUsuario === u.id
+                      }
                     >
                       Aprobar usuario
                     </Button>

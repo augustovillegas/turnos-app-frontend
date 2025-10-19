@@ -22,6 +22,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
+import { useError } from "../context/ErrorContext";
 import { Skeleton } from "../components/ui/Skeleton";
 
 export const DashboardAlumno = () => {
@@ -41,6 +42,97 @@ export const DashboardAlumno = () => {
   const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
+  const { pushError } = useError();
+
+  const alumnoId = useMemo(() => {
+    if (!user) return null;
+    const candidates = [
+      user._id,
+      user.id,
+      user.uid,
+      user.alumnoId,
+      user.alumno?.id,
+      user.alumno?._id,
+      user.profile?.id,
+      user.profile?._id,
+    ];
+    const found = candidates.find(
+      (candidate) =>
+        candidate !== undefined &&
+        candidate !== null &&
+        String(candidate).trim() !== ""
+    );
+    return found ?? null;
+  }, [user]);
+  const alumnoIdString = alumnoId != null ? String(alumnoId).trim() : null;
+
+  const resolveComparableId = (value) => {
+    if (value === undefined || value === null) return null;
+    if (typeof value === "string" || typeof value === "number") {
+      const normalized = String(value).trim();
+      return normalized || null;
+    }
+    if (typeof value === "object") {
+      const nested =
+        value.id ??
+        value._id ??
+        value.$oid ??
+        value.uid ??
+        value.userId ??
+        value.usuarioId ??
+        value.alumnoId ??
+        value.estudianteId ??
+        value.studentId ??
+        null;
+      return nested === value ? null : resolveComparableId(nested);
+    }
+    return null;
+  };
+
+  const isTurnoDelAlumno = (turno) => {
+    if (!alumnoIdString) return false;
+    if (!turno || typeof turno !== "object") return false;
+    const candidates = [
+      turno.alumnoId,
+      turno.alumno_id,
+      turno.alumno?.id,
+      turno.alumno?._id,
+      turno.alumno?.uid,
+      turno.alumno?.usuarioId,
+      turno.alumno?.userId,
+      turno.solicitanteId,
+      turno.solicitante?.id,
+      turno.solicitante?._id,
+      turno.solicitante?.uid,
+      turno.userId,
+      turno.usuarioId,
+      turno.estudianteId,
+      turno.studentId,
+      turno.user?.id,
+      turno.user?._id,
+    ];
+    return candidates.some(
+      (candidate) => resolveComparableId(candidate) === alumnoIdString
+    );
+  };
+
+  const isEntregaDelAlumno = (entrega) => {
+    if (!alumnoIdString) return false;
+    if (!entrega || typeof entrega !== "object") return false;
+    const candidates = [
+      entrega.alumnoId,
+      entrega.alumno?.id,
+      entrega.alumno?._id,
+      entrega.alumno?.uid,
+      entrega.userId,
+      entrega.usuarioId,
+      entrega.estudianteId,
+      entrega.studentId,
+    ];
+    return candidates.some(
+      (candidate) => resolveComparableId(candidate) === alumnoIdString
+    );
+  };
 
   // --- Estado local: pestaña activa y formularios de entregas ---
   const [active, setActive] = useState("turnos");
@@ -75,18 +167,40 @@ export const DashboardAlumno = () => {
   // --- Acciones sobre solicitudes de turnos ---
   const handleSolicitarTurno = async (turno) => {
     if (!turno || turno.estado !== "Disponible") return;
+    if (!alumnoIdString) {
+      showToast(
+        "No se pudo identificar al alumno para solicitar el turno.",
+        "error"
+      );
+      if (pushError) {
+        pushError("No se pudo identificar al alumno.", {
+          description:
+            "El identificador del alumno no esta disponible al solicitar un turno.",
+        });
+      }
+      return;
+    }
     setProcessingTurno(turno.id);
     try {
-      const payload = buildTurnoPayloadFromForm({
-        ...formValuesFromTurno(turno),
-        review: turno.review,
-        comentarios: turno.comentarios || "",
-        estado: "Solicitado",
-      });
+      const payload = {
+        ...buildTurnoPayloadFromForm({
+          ...formValuesFromTurno(turno),
+          review: turno.review,
+          comentarios: turno.comentarios || "",
+          estado: "Solicitado",
+        }),
+        solicitanteId: alumnoIdString,
+      };
       await updateTurno(turno.id, payload);
       showToast("Turno solicitado correctamente.");
     } catch (error) {
-      showToast(error.message || "No se pudo solicitar el turno.", "error");
+      const message = error?.message || "No se pudo solicitar el turno.";
+      showToast(message, "error");
+      if (pushError) {
+        pushError("Error al solicitar turno.", {
+          description: message,
+        });
+      }
     } finally {
       setProcessingTurno(null);
     }
@@ -95,23 +209,25 @@ export const DashboardAlumno = () => {
   // --- Carga inicial de turnos y entregas ---
   useEffect(() => {
     if (!user || !token) return;
-    const alumnoId = user._id ?? user.id ?? user.uid;
-    if (!alumnoId) return;
 
     const fetchData = async () => {
       try {
-        await Promise.all([
-          loadTurnos({ userId: alumnoId }),
-          loadEntregas({ alumnoId }),
-        ]);
+        await Promise.all([loadTurnos(), loadEntregas()]);
       } catch (error) {
         console.error("Error al cargar los datos del alumno", error);
         showToast("No se pudieron cargar tus datos.", "error");
+        if (pushError) {
+          pushError("Error al cargar datos del alumno.", {
+            description:
+              error?.message ||
+              "Fallo inesperado al recuperar turnos y entregas.",
+          });
+        }
       }
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas]);
+  }, [user, token, loadTurnos, loadEntregas, pushError]);
 
   const handleCancelarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
@@ -127,20 +243,26 @@ export const DashboardAlumno = () => {
         setProcessingTurno(turno.id);
 
         try {
-          const payload = buildTurnoPayloadFromForm({
-            ...formValuesFromTurno(turno),
-            review: turno.review,
-            comentarios: turno.comentarios || "",
-            estado: "Disponible", // 🔁 se revierte el estado del turno
-          });
-
+          const payload = {
+            ...buildTurnoPayloadFromForm({
+              ...formValuesFromTurno(turno),
+              review: turno.review,
+              comentarios: turno.comentarios || "",
+              estado: "Disponible", // 🔁 se revierte el estado del turno
+            }),
+            solicitanteId: null,
+          };
           await updateTurno(turno.id, payload);
           showToast("Solicitud cancelada."); // Notificación visual
         } catch (error) {
-          showToast(
-            error.message || "No se pudo cancelar la solicitud.",
-            "error"
-          );
+          const message =
+            error?.message || "No se pudo cancelar la solicitud.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al cancelar la solicitud.", {
+              description: message,
+            });
+          }
         } finally {
           setProcessingTurno(null);
         }
@@ -169,12 +291,17 @@ export const DashboardAlumno = () => {
       return;
     }
 
-    const alumnoId = user?._id ?? user?.id ?? user?.uid;
-    if (!alumnoId) {
+    if (!alumnoIdString) {
       showToast(
         "No se pudo identificar al alumno para registrar la entrega.",
         "error"
       );
+      if (pushError) {
+        pushError("No se pudo identificar al alumno.", {
+          description:
+            "El identificador del alumno no esta disponible al crear la entrega.",
+        });
+      }
       return;
     }
 
@@ -186,8 +313,8 @@ export const DashboardAlumno = () => {
       comentarios: comentarios.trim(),
       reviewStatus: "A revisar",
       estado: "A revisar",
-      alumnoId,
-      modulo: user?.modulo ?? "",
+      alumnoId: alumnoIdString,
+      modulo: user?.modulo ?? user?.cohort ?? "",
     };
 
     setEntregaErrors({});
@@ -199,11 +326,40 @@ export const DashboardAlumno = () => {
       setRenderLink("");
       setComentarios("");
     } catch (error) {
-      showToast(
-        error.message || "No se pudo registrar la entrega.",
-        "error"
-      );
+      const message =
+        error?.message || "No se pudo registrar la entrega.";
+      showToast(message, "error");
+      if (pushError) {
+        pushError("Error al registrar la entrega.", {
+          description: message,
+        });
+      }
     }
+  };
+
+  const handleCancelarEntrega = (entrega) => {
+    if (!entrega?.id) return;
+
+    showModal({
+      type: "warning",
+      title: "Cancelar entrega",
+      message: `¿Cancelar la entrega del sprint ${entrega.sprint}?`,
+      onConfirm: async () => {
+        try {
+          await removeEntregaRemoto(entrega.id);
+          showToast("Entrega cancelada.", "info");
+        } catch (error) {
+          const message =
+            error?.message || "No se pudo cancelar la entrega.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al cancelar la entrega.", {
+              description: message,
+            });
+          }
+        }
+      },
+    });
   };
 
 
@@ -213,21 +369,35 @@ export const DashboardAlumno = () => {
     return lista.filter((t) => t.review === Number(filtroReview));
   };
 
-  const turnosHistorial = aplicarFiltro(
-    turnos.filter(
-      (t) =>
-        t.estado === "Aprobado" ||
-        t.estado === "Rechazado" ||
-        t.estado === "Solicitado"
-    )
+  const turnosCollection = Array.isArray(turnos) ? turnos : [];
+  const entregasCollection = Array.isArray(entregas) ? entregas : [];
+
+  const turnosDisponibles = aplicarFiltro(
+    turnosCollection.filter((t) => {
+      const estado = String(t?.estado || "").toLowerCase();
+      if (estado === "disponible") return true;
+      return isTurnoDelAlumno(t);
+    })
   );
 
-  const turnosDisponibles = aplicarFiltro(turnos);
+  const turnosHistorial = aplicarFiltro(
+    turnosCollection.filter((t) => {
+      if (!isTurnoDelAlumno(t)) return false;
+      const estado = String(t?.estado || "").toLowerCase();
+      return (
+        estado === "solicitado" ||
+        estado === "aprobado" ||
+        estado === "rechazado"
+      );
+    })
+  );
+
+  const entregasAlumno = entregasCollection.filter(isEntregaDelAlumno);
   const [turnosDisponiblesBuscados, setTurnosDisponiblesBuscados] =
     useState(turnosDisponibles);
   const [turnosHistorialBuscados, setTurnosHistorialBuscados] =
     useState(turnosHistorial);
-  const [entregasBuscadas, setEntregasBuscadas] = useState(entregas);
+  const [entregasBuscadas, setEntregasBuscadas] = useState(entregasAlumno);
 
   const totalTurnosDisponibles = turnosDisponiblesBuscados.length;
   const totalTurnosHistorial = turnosHistorialBuscados.length;
@@ -247,8 +417,8 @@ export const DashboardAlumno = () => {
   }, [turnosHistorial]);
 
   useEffect(() => {
-    setEntregasBuscadas(entregas);
-  }, [entregas]);
+    setEntregasBuscadas(entregasAlumno);
+  }, [entregasAlumno]);
 
   useEffect(() => {
     const totalPages = Math.max(
@@ -354,8 +524,8 @@ export const DashboardAlumno = () => {
   const handleSidebarSelect = (id) => {
     if (id === "logout") {
       logout();
-      navigate("/", { replace: true });
       showToast("Sesion cerrada correctamente.", "info");
+      navigate("/", { replace: true });
       return;
     }
     setActive(id);
@@ -695,7 +865,7 @@ export const DashboardAlumno = () => {
 
               {/* ====== BUSCADOR ====== */}
               <SearchBar
-                data={entregas}
+                data={entregasAlumno}
                 fields={[
                   "sprint",
                   "githubLink",
@@ -772,24 +942,7 @@ export const DashboardAlumno = () => {
                             <Button
                               variant="danger"
                               className="py-1"
-                              onClick={async () => {
-                                if (
-                                  window.confirm(
-                                    "Cancelar el envio? Podras volver a cargarlo cuando tengas los ajustes listos."
-                                  )
-                                ) {
-                                  try {
-                                    await removeEntregaRemoto(e.id);
-                                    showToast("Entrega cancelada.", "info");
-                                  } catch (error) {
-                                    showToast(
-                                      error.message ||
-                                        "No se pudo cancelar la entrega.",
-                                      "error"
-                                    );
-                                  }
-                                }
-                              }}
+                              onClick={() => handleCancelarEntrega(e)}
                               disabled={isEntregasSectionLoading}
                             >
                               Cancelar
@@ -815,24 +968,8 @@ export const DashboardAlumno = () => {
                     <CardEntrega
                       key={entrega.id}
                       entrega={entrega}
-                      onCancelar={async () => {
-                        if (
-                          window.confirm(
-                            "Estas seguro de cancelar esta entrega?"
-                          )
-                        ) {
-                          try {
-                            await removeEntregaRemoto(entrega.id);
-                            showToast("Entrega cancelada.", "info");
-                          } catch (error) {
-                            showToast(
-                              error.message ||
-                                "No se pudo cancelar la entrega.",
-                              "error"
-                            );
-                          }
-                        }
-                      }}
+                      onCancelar={() => handleCancelarEntrega(entrega)}
+                      disabled={isEntregasSectionLoading}
                     />
                   ))
                 ) : (

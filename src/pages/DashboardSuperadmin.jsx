@@ -23,6 +23,7 @@ import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useLoading } from "../context/LoadingContext";
+import { useError } from "../context/ErrorContext";
 
 export const DashboardSuperadmin = () => {
   // --- Contexto global con acceso a todo el sistema ---
@@ -41,11 +42,13 @@ export const DashboardSuperadmin = () => {
   const { user, token, logout } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
+  const { pushError } = useError();
 
   // --- Estado local: pestañas y proceso actual ---
   const [active, setActive] = useState("usuarios");
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
+  const [processingUsuario, setProcessingUsuario] = useState(null);
   const ITEMS_PER_PAGE = 5;
   const [pageTurnosSolicitados, setPageTurnosSolicitados] = useState(1);
   const [pageUsuariosPendientes, setPageUsuariosPendientes] = useState(1);
@@ -64,7 +67,13 @@ export const DashboardSuperadmin = () => {
       await updateTurno(turno.id, payload);
       showToast("Turno aprobado correctamente.");
     } catch (error) {
-      showToast(error.message || "No se pudo aprobar el turno.", "error");
+      const message = error?.message || "No se pudo aprobar el turno.";
+      showToast(message, "error");
+      if (pushError) {
+        pushError("Error al aprobar turno.", {
+          description: message,
+        });
+      }
     } finally {
       setProcessingTurno(null);
     }
@@ -93,7 +102,14 @@ export const DashboardSuperadmin = () => {
           await updateTurno(turno.id, payload);
           showToast("Turno rechazado correctamente.");
         } catch (error) {
-          showToast(error.message || "No se pudo rechazar el turno.", "error");
+          const message =
+            error?.message || "No se pudo rechazar el turno.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al rechazar turno.", {
+              description: message,
+            });
+          }
         } finally {
           setProcessingTurno(null);
         }
@@ -112,40 +128,83 @@ export const DashboardSuperadmin = () => {
       } catch (error) {
         console.error("Error al cargar los datos globales", error);
         showToast("No se pudieron cargar los datos generales.", "error");
+        if (pushError) {
+          pushError("Error al cargar datos globales.", {
+            description:
+              error?.message ||
+              "Fallo inesperado al obtener turnos, entregas y usuarios.",
+          });
+        }
       }
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas, loadUsuarios]);
+  }, [user, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
   // --- Operaciones sobre usuarios desde la vista global ---
-  const handleAprobarUsuario = async (usuario) => {
+  const handleAprobarUsuario = (usuario) => {
     if (!usuario?.id) return;
-    try {
-      await approveUsuarioRemoto(usuario.id);
-      showToast("Usuario aprobado.");
-    } catch (error) {
-      showToast(
-        error.message || "No se pudo aprobar al usuario.",
-        "error"
-      );
-    }
+    const nombre = usuario.nombre || usuario.email || "este usuario";
+
+    showModal({
+      type: "warning",
+      title: "Aprobar usuario",
+      message: `¿Confirmás la aprobación de ${nombre}?`,
+      onConfirm: async () => {
+        setProcessingUsuario(usuario.id);
+        try {
+          await approveUsuarioRemoto(usuario.id);
+          showToast("Usuario aprobado.");
+        } catch (error) {
+          const message =
+            error?.message || "No se pudo aprobar al usuario.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al aprobar usuario.", {
+              description: message,
+            });
+          }
+        } finally {
+          setProcessingUsuario(null);
+        }
+      },
+    });
   };
 
-  const handleRechazarUsuario = async (usuario) => {
+  const handleRechazarUsuario = (usuario) => {
     if (!usuario?.id) return;
-    try {
-      await updateUsuarioEstadoRemoto(usuario.id, "Rechazado");
-      showToast("Usuario rechazado.");
-    } catch (error) {
-      showToast(
-        error.message || "No se pudo rechazar al usuario.",
-        "error"
-      );
-    }
+    const nombre = usuario.nombre || usuario.email || "este usuario";
+
+    showModal({
+      type: "warning",
+      title: "Rechazar usuario",
+      message: `¿Confirmás el rechazo de ${nombre}?`,
+      onConfirm: async () => {
+        setProcessingUsuario(usuario.id);
+        try {
+          await updateUsuarioEstadoRemoto(usuario.id, "Rechazado");
+          showToast("Usuario rechazado.");
+        } catch (error) {
+          const message =
+            error?.message || "No se pudo rechazar al usuario.";
+          showToast(message, "error");
+          if (pushError) {
+            pushError("Error al rechazar usuario.", {
+              description: message,
+            });
+          }
+        } finally {
+          setProcessingUsuario(null);
+        }
+      },
+    });
   };
 
   // --- Usuarios esperando aprobacion ---
-  const usuariosPendientes = usuarios.filter((u) => u.estado === "Pendiente");
+  const usuariosCollection = Array.isArray(usuarios) ? usuarios : [];
+  const usuariosPendientes = usuariosCollection.filter((u) => {
+    const estado = String(u?.estado || u?.status || "").toLowerCase();
+    return estado === "pendiente";
+  });
   const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] =
     useState(usuariosPendientes);
 
@@ -155,8 +214,11 @@ export const DashboardSuperadmin = () => {
   };
 
   // --- Turnos solicitados a nivel general ---
+  const turnosCollection = Array.isArray(turnos) ? turnos : [];
   const turnosSolicitados = aplicarFiltro(
-    turnos.filter((t) => t.estado === "Solicitado")
+    turnosCollection.filter(
+      (t) => String(t?.estado || "").toLowerCase() === "solicitado"
+    )
   );
   const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] =
     useState(turnosSolicitados);
@@ -254,8 +316,8 @@ export const DashboardSuperadmin = () => {
   const handleSidebarSelect = (id) => {
     if (id === "logout") {
       logout();
-      navigate("/", { replace: true });
       showToast("Sesion cerrada correctamente.", "info");
+      navigate("/", { replace: true });
       return;
     }
     setActive(id);
@@ -449,7 +511,7 @@ export const DashboardSuperadmin = () => {
               </div>
 
               <SearchBar
-                data={usuariosPendientesBuscados}
+                data={usuariosPendientes}
                 fields={["nombre", "rol", "estado"]}
                 placeholder="Buscar usuarios pendientes"
                 onSearch={(results) => {
@@ -489,7 +551,10 @@ export const DashboardSuperadmin = () => {
                             variant="success"
                             className="py-1"
                             onClick={() => handleAprobarUsuario(u)}
-                            disabled={isUsuariosSectionLoading}
+                            disabled={
+                              isUsuariosSectionLoading ||
+                              processingUsuario === u.id
+                            }
                           >
                             Aprobar
                           </Button>
@@ -497,7 +562,10 @@ export const DashboardSuperadmin = () => {
                             variant="danger"
                             className="py-1"
                             onClick={() => handleRechazarUsuario(u)}
-                            disabled={isUsuariosSectionLoading}
+                            disabled={
+                              isUsuariosSectionLoading ||
+                              processingUsuario === u.id
+                            }
                           >
                             Rechazar
                           </Button>
@@ -541,7 +609,10 @@ export const DashboardSuperadmin = () => {
                           variant="success"
                           className="w-full py-1"
                           onClick={() => handleAprobarUsuario(u)}
-                          disabled={isUsuariosSectionLoading}
+                          disabled={
+                            isUsuariosSectionLoading ||
+                            processingUsuario === u.id
+                          }
                         >
                           Aprobar
                         </Button>
@@ -549,7 +620,10 @@ export const DashboardSuperadmin = () => {
                           variant="danger"
                           className="w-full py-1"
                           onClick={() => handleRechazarUsuario(u)}
-                          disabled={isUsuariosSectionLoading}
+                          disabled={
+                            isUsuariosSectionLoading ||
+                            processingUsuario === u.id
+                          }
                         >
                           Rechazar
                         </Button>

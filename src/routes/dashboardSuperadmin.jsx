@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { DashboardSuperadmin } from "../pages/DashboardSuperadmin";
 import { requireAuth } from "../router/session";
 
