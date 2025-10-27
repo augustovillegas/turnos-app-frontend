@@ -1,5 +1,5 @@
 // === Dashboard Superadmin ===
-// Panel general: gestion global de usuarios, turnos y entregas.
+// Panel general: gestión global de usuarios, turnos y entregas.
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
@@ -39,7 +39,7 @@ export const DashboardSuperadmin = () => {
     updateUsuarioEstado: updateUsuarioEstadoRemoto,
   } = useAppData();
   const navigate = useNavigate();
-  const { user, token, logout } = useAuth();
+  const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
   const { pushError } = useError();
@@ -119,8 +119,8 @@ export const DashboardSuperadmin = () => {
 
   // --- Carga inicial de datos globales ---
   useEffect(() => {
-    if (!user || !token) return;
-    if (user.role !== "superadmin") return;
+    if (!usuarioActual || !token) return;
+    if (usuarioActual.role !== "superadmin") return;
 
     const fetchData = async () => {
       try {
@@ -139,7 +139,7 @@ export const DashboardSuperadmin = () => {
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
+  }, [usuarioActual, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
   // --- Operaciones sobre usuarios desde la vista global ---
   const handleAprobarUsuario = (usuario) => {
     if (!usuario?.id) return;
@@ -199,7 +199,7 @@ export const DashboardSuperadmin = () => {
     });
   };
 
-  // --- Usuarios esperando aprobacion ---
+  // --- Usuarios esperando aprobación ---
   const usuariosCollection = Array.isArray(usuarios) ? usuarios : [];
   const usuariosPendientes = usuariosCollection.filter((u) => {
     const estado = String(u?.estado || u?.status || "").toLowerCase();
@@ -314,9 +314,9 @@ export const DashboardSuperadmin = () => {
     paginatedUsuariosPendientes.totalItems > 0 && paginatedUsuariosPendientes.items.length > 0;
 
   const handleSidebarSelect = (id) => {
-    if (id === "logout") {
-      logout();
-      showToast("Sesion cerrada correctamente.", "info");
+    if (id === "cerrar-sesion") {
+      cerrarSesion();
+      showToast("Sesión cerrada correctamente.", "info");
       navigate("/", { replace: true });
       return;
     }
@@ -661,7 +661,7 @@ export const DashboardSuperadmin = () => {
         {active === "evaluar-entregas" && <EvaluarEntregas />}
 
         {/* =========================
-            SECCIÓN: CONFIGURACION
+            SECCIÓN: CONFIGURACIÓN
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>

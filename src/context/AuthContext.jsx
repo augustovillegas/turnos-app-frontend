@@ -1,80 +1,90 @@
 /* eslint-disable react-refresh/only-export-components */
 // === Auth Context ===
-// Gestiona sesión básica con token/user almacenado en localStorage.
+// Gestiona sesión básica con token/usuario almacenado en localStorage.
 import { createContext, useContext, useEffect, useState } from "react";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   // --- Estado inicial: recupera usuario y token guardados si existen ---
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("user");
+  const [usuario, establecerUsuario] = useState(() => {
+    const almacenado = localStorage.getItem("user");
     try {
-      return saved ? JSON.parse(saved) : null;
+      return almacenado ? JSON.parse(almacenado) : null;
     } catch (error) {
       console.error("No se pudo leer el usuario almacenado", error);
       return null;
     }
   });
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [token, establecerToken] = useState(() => localStorage.getItem("token"));
 
   // --- Propaga cambios de sesión entre pestañas ---
   useEffect(() => {
-    const handleStorage = (event) => {
-      if (event.key === "user") {
-        if (event.newValue) {
+    const manejarStorage = (evento) => {
+      if (evento.key === "user") {
+        if (evento.newValue) {
           try {
-            setUser(JSON.parse(event.newValue));
+            establecerUsuario(JSON.parse(evento.newValue));
           } catch (error) {
-            console.error("No se pudo parsear el usuario desde storage", error);
-            setUser(null);
+            console.error(
+              "No se pudo interpretar el usuario desde storage",
+              error
+            );
+            establecerUsuario(null);
           }
         } else {
-          setUser(null);
+          establecerUsuario(null);
         }
       }
-      if (event.key === "token") {
-        setToken(event.newValue || null);
-        if (!event.newValue) {
-          setUser(null);
+      if (evento.key === "token") {
+        establecerToken(evento.newValue || null);
+        if (!evento.newValue) {
+          establecerUsuario(null);
         }
       }
     };
 
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("storage", manejarStorage);
+    return () => window.removeEventListener("storage", manejarStorage);
   }, []);
 
-  const setSession = (nextToken, nextUser) => {
-    if (nextToken) {
-      localStorage.setItem("token", nextToken);
-      setToken(nextToken);
+  const actualizarSesion = (siguienteToken, siguienteUsuario) => {
+    if (siguienteToken) {
+      localStorage.setItem("token", siguienteToken);
+      establecerToken(siguienteToken);
     } else {
       localStorage.removeItem("token");
-      setToken(null);
+      establecerToken(null);
     }
 
-    if (nextUser) {
-      localStorage.setItem("user", JSON.stringify(nextUser));
-      setUser(nextUser);
+    if (siguienteUsuario) {
+      localStorage.setItem("user", JSON.stringify(siguienteUsuario));
+      establecerUsuario(siguienteUsuario);
     } else {
       localStorage.removeItem("user");
-      setUser(null);
+      establecerUsuario(null);
     }
   };
 
-  const login = (nextToken, nextUser) => {
-    setSession(nextToken, nextUser);
+  const iniciarSesion = (siguienteToken, siguienteUsuario) => {
+    actualizarSesion(siguienteToken, siguienteUsuario);
   };
 
-  const logout = () => {
+  const cerrarSesion = () => {
     // --- Limpia credenciales y reinicia sesión ---
-    setSession(null, null);
+    actualizarSesion(null, null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, setUser, token, setSession, login, logout }}
+      value={{
+        usuario,
+        establecerUsuario,
+        token,
+        actualizarSesion,
+        iniciarSesion,
+        cerrarSesion,
+      }}
     >
       {children}
     </AuthContext.Provider>

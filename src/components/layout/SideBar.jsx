@@ -2,35 +2,36 @@ import { useState, useRef, useEffect } from "react";
 import { ThemeButton } from "../ui/ThemeButton";
 
 export const SideBar = ({ items = [], onSelect, active }) => {
-  const [open, setOpen] = useState(false);
-  const sidebarRef = useRef(null);
+  const [abierto, establecerAbierto] = useState(false);
+  const referenciaPanel = useRef(null);
 
   useEffect(() => {
-    const handleInteraction = (e) => {
-      const isOutsideSidebar =
-        sidebarRef.current && !sidebarRef.current.contains(e.target);
-      const isButton = e.target.closest("#sidebar-toggle-btn");
+    const manejarInteraccion = (evento) => {
+      const clicFuera =
+        referenciaPanel.current &&
+        !referenciaPanel.current.contains(evento.target);
+      const esBotonToggle = evento.target.closest("#sidebar-toggle-btn");
 
-      if (e.type === "mousedown" && isOutsideSidebar && !isButton) {
-        setOpen(false);
+      if (evento.type === "mousedown" && clicFuera && !esBotonToggle) {
+        establecerAbierto(false);
       }
 
-      if (e.type === "keydown" && e.key === "Escape") {
-        setOpen(false);
+      if (evento.type === "keydown" && evento.key === "Escape") {
+        establecerAbierto(false);
       }
     };
 
-    document.addEventListener("mousedown", handleInteraction);
-    document.addEventListener("keydown", handleInteraction);
+    document.addEventListener("mousedown", manejarInteraccion);
+    document.addEventListener("keydown", manejarInteraccion);
     return () => {
-      document.removeEventListener("mousedown", handleInteraction);
-      document.removeEventListener("keydown", handleInteraction);
+      document.removeEventListener("mousedown", manejarInteraccion);
+      document.removeEventListener("keydown", manejarInteraccion);
     };
   }, []);
 
-  const handleSelect = (id) => {
-    onSelect(id);
-    setOpen(false);
+  const manejarSeleccion = (identificador) => {
+    onSelect(identificador);
+    establecerAbierto(false);
   };
 
   return (
@@ -38,27 +39,29 @@ export const SideBar = ({ items = [], onSelect, active }) => {
       {/* Botón flotante tipo switch */}
       <button
         id="sidebar-toggle-btn"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => establecerAbierto((previo) => !previo)}
         className="fixed top-1/2 left-0 z-[60] flex -translate-y-1/2 items-center justify-center
                    rounded-r-md border-2 border-[#111827] bg-[#FFD700] p-2 shadow-md
                    hover:opacity-90 transition-all duration-300
                    dark:border-[#444] dark:bg-[#B8860B]"
-        aria-label={open ? "Cerrar panel" : "Abrir panel"}
-        aria-expanded={open}
+        aria-label={abierto ? "Cerrar panel" : "Abrir panel"}
+        aria-expanded={abierto}
         aria-controls="sidebar-panel"
       >
         <i
           className={`bi ${
-            open ? "bi-layout-sidebar-inset-reverse" : "bi-layout-sidebar-inset"
+            abierto
+              ? "bi-layout-sidebar-inset-reverse"
+              : "bi-layout-sidebar-inset"
           } text-lg text-black dark:text-white`}
         ></i>
       </button>
 
       {/* Overlay al abrir */}
-      {open && (
+      {abierto && (
         <div
           className="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300"
-          onClick={() => setOpen(false)}
+          onClick={() => establecerAbierto(false)}
           aria-hidden="true"
         ></div>
       )}
@@ -66,13 +69,13 @@ export const SideBar = ({ items = [], onSelect, active }) => {
       {/* Sidebar deslizable */}
       <aside
         id="sidebar-panel"
-        ref={sidebarRef}
+        ref={referenciaPanel}
         className={`fixed top-0 left-0 z-50 h-full w-64 
                     bg-[#C0C0C0] dark:bg-[#1A1A1A] 
                     border-r-2 border-[#111827] dark:border-[#333]
                     shadow-2xl flex flex-col
                     transition-transform duration-300 ease-in-out
-                    ${open ? "translate-x-0" : "-translate-x-full"}`}
+                    ${abierto ? "translate-x-0" : "-translate-x-full"}`}
         role="navigation"
         aria-label="Menú lateral"
       >
@@ -87,7 +90,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
           {items.map((item) => (
             <button
               key={item.id}
-              onClick={() => handleSelect(item.id)}
+              onClick={() => manejarSeleccion(item.id)}
               className={`flex items-center gap-3 px-4 py-2 text-sm text-left 
                         hover:bg-[#FFD700] hover:text-black 
                         dark:hover:bg-[#B8860B] dark:hover:text-white
@@ -107,7 +110,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
         {/* Configuración / Cerrar sesión */}
         <div className="border-t-2 border-[#808080] dark:border-[#444] p-2 flex flex-col gap-1">
           <button
-            onClick={() => handleSelect("config")}
+            onClick={() => manejarSeleccion("config")}
             className={`flex items-center gap-3 px-4 py-2 text-sm text-left
                       hover:bg-[#FFD700] hover:text-black
                       dark:hover:bg-[#B8860B] dark:hover:text-white
@@ -126,7 +129,7 @@ export const SideBar = ({ items = [], onSelect, active }) => {
             Configuración
           </button>
           <button
-            onClick={() => handleSelect("logout")}
+            onClick={() => manejarSeleccion("cerrar-sesion")}
             className="flex items-center gap-3 px-4 py-2 text-sm text-left
                       text-[#DC2626] dark:text-[#F87171]
                       hover:bg-[#FFD700] hover:text-black

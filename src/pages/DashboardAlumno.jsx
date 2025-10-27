@@ -26,7 +26,7 @@ import { useError } from "../context/ErrorContext";
 import { Skeleton } from "../components/ui/Skeleton";
 
 export const DashboardAlumno = () => {
-  // --- Contexto compartido y autenticacion del alumno ---
+  // --- Contexto compartido y autenticación del alumno ---
   // App context
   const {
     turnos,
@@ -39,22 +39,22 @@ export const DashboardAlumno = () => {
     removeEntrega: removeEntregaRemoto,
   } = useAppData();
   const navigate = useNavigate();
-  const { user, token, logout } = useAuth();
+  const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
   const { pushError } = useError();
 
   const alumnoId = useMemo(() => {
-    if (!user) return null;
+    if (!usuarioActual) return null;
     const candidates = [
-      user._id,
-      user.id,
-      user.uid,
-      user.alumnoId,
-      user.alumno?.id,
-      user.alumno?._id,
-      user.profile?.id,
-      user.profile?._id,
+      usuarioActual._id,
+      usuarioActual.id,
+      usuarioActual.uid,
+      usuarioActual.alumnoId,
+      usuarioActual.alumno?.id,
+      usuarioActual.alumno?._id,
+      usuarioActual.profile?.id,
+      usuarioActual.profile?._id,
     ];
     const found = candidates.find(
       (candidate) =>
@@ -63,7 +63,7 @@ export const DashboardAlumno = () => {
         String(candidate).trim() !== ""
     );
     return found ?? null;
-  }, [user]);
+  }, [usuarioActual]);
   const alumnoIdString = alumnoId != null ? String(alumnoId).trim() : null;
 
   const resolveComparableId = (value) => {
@@ -208,7 +208,7 @@ export const DashboardAlumno = () => {
 
   // --- Carga inicial de turnos y entregas ---
   useEffect(() => {
-    if (!user || !token) return;
+    if (!usuarioActual || !token) return;
 
     const fetchData = async () => {
       try {
@@ -227,7 +227,7 @@ export const DashboardAlumno = () => {
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas, pushError]);
+  }, [usuarioActual, token, loadTurnos, loadEntregas, pushError]);
 
   const handleCancelarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
@@ -270,7 +270,7 @@ export const DashboardAlumno = () => {
     });
   };
 
-  // --- Gestion de nuevas entregas cargadas por el alumno ---
+  // --- Gestión de nuevas entregas cargadas por el alumno ---
   const handleAgregarEntrega = async () => {
     const validation = {};
     if (!sprint) {
@@ -314,7 +314,7 @@ export const DashboardAlumno = () => {
       reviewStatus: "A revisar",
       estado: "A revisar",
       alumnoId: alumnoIdString,
-      modulo: user?.modulo ?? user?.cohort ?? "",
+      modulo: usuarioActual?.modulo ?? usuarioActual?.cohort ?? "",
     };
 
     setEntregaErrors({});
@@ -522,9 +522,9 @@ export const DashboardAlumno = () => {
     paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
 
   const handleSidebarSelect = (id) => {
-    if (id === "logout") {
-      logout();
-      showToast("Sesion cerrada correctamente.", "info");
+    if (id === "cerrar-sesion") {
+      cerrarSesion();
+      showToast("Sesión cerrada correctamente.", "info");
       navigate("/", { replace: true });
       return;
     }
@@ -993,7 +993,7 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-            SECCIÓN: CONFIGURACION
+            SECCIÓN: CONFIGURACIÓN
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>

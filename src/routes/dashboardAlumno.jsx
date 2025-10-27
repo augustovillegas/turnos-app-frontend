@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { DashboardAlumno } from "../pages/DashboardAlumno";
-import { requireAuth } from "../router/session";
+import { requerirAutenticacion } from "../router/session";
 
 export function loader() {
-  return requireAuth(["alumno"]);
+  return requerirAutenticacion(["alumno"]);
 }
 
 export function Component() {

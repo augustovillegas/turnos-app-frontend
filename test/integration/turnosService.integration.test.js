@@ -148,7 +148,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
   );
 
   it(
-    "rechaza la creacion con datos invalidos",
+    "rechaza la creación con datos inválidos",
     async () => {
       await expect(
         createTurno({

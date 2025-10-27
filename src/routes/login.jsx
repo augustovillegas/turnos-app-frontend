@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Login } from "../pages/Login";
-import { redirectIfAuthenticated } from "../router/session";
+import { redirigirSiAutenticado } from "../router/session";
 
 export function loader() {
-  return redirectIfAuthenticated();
+  return redirigirSiAutenticado();
 }
 
 export function Component() {

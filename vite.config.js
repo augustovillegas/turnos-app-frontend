@@ -19,43 +19,28 @@ export default defineConfig({
     restoreMocks: true,
     unstubGlobals: true,
     unstubEnvs: true,
-    include: [],
+    include: [
+      'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+      'test/integration/**/*.test.{js,jsx,ts,tsx}',
+      'test/e2e/**/*.test.{js,jsx,ts,tsx}',
+    ],
     exclude: [...configDefaults.exclude, 'test/logs/**'],
     coverage: {
       reporter: ['text', 'lcov'],
       reportsDirectory: './test/coverage',
       include: ['src/**/*.{js,jsx,ts,tsx}'],
     },
-    projects: [
-      {
-        name: 'unit',
-        include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
-        environment: 'jsdom',
-        setupFiles: './test/setupTests.js',
+    testTimeout: 30_000,
+    hookTimeout: 10_000,
+    sequence: {
+      concurrent: false,
+    },
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        minThreads: 1,
+        maxThreads: 1,
       },
-      {
-        name: 'integration',
-        include: ['test/integration/**/*.test.{js,jsx,ts,tsx}'],
-        environment: 'jsdom',
-        setupFiles: './test/setupTests.js',
-        sequence: { concurrent: false },
-      },
-      {
-        name: 'e2e',
-        include: ['test/e2e/**/*.test.{js,jsx,ts,tsx}'],
-        environment: 'jsdom',
-        setupFiles: './test/setupTests.js',
-        testTimeout: 30000,
-        hookTimeout: 10000,
-        sequence: { concurrent: false },
-        pool: 'threads',
-        poolOptions: {
-          threads: {
-            minThreads: 1,
-            maxThreads: 1,
-          },
-        },
-      },
-    ],
+    },
   },
 })

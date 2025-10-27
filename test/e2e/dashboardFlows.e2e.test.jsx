@@ -6,7 +6,7 @@ import { renderApp } from "../utils/renderWithProviders.jsx";
 
 describe.sequential("Dashboards protegidos end-to-end", () => {
   it("renderiza el dashboard de alumno con turnos disponibles", async () => {
-    renderApp({ route: "/dashboard/alumno", user: "alumno" });
+    await renderApp({ route: "/dashboard/alumno", user: "alumno" });
 
     expect(
       await screen.findByRole("heading", {
@@ -24,7 +24,7 @@ describe.sequential("Dashboards protegidos end-to-end", () => {
   });
 
   it("muestra las solicitudes pendientes y usuarios en el dashboard de profesor", async () => {
-    renderApp({ route: "/dashboard/profesor", user: "profesor" });
+    await renderApp({ route: "/dashboard/profesor", user: "profesor" });
 
     expect(
       await screen.findByRole("heading", {
@@ -44,8 +44,8 @@ describe.sequential("Dashboards protegidos end-to-end", () => {
     );
   });
 
-  it("habilita la gestion global en el dashboard de superadmin y el panel flotante", async () => {
-    renderApp({ route: "/dashboard/superadmin", user: "superadmin" });
+  it("habilita la gesti��n global en el dashboard de superadmin y el panel flotante", async () => {
+    await renderApp({ route: "/dashboard/superadmin", user: "superadmin" });
 
     expect(
       await screen.findByRole("heading", {

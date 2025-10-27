@@ -1,24 +1,24 @@
 import { Button } from "../ui/Button";
 
 export const ItemForm = ({
-  values,
-  errors,
-  onChange,
-  onSubmit,
-  submitLabel,
-  loading = false,
-  onCancel,
+  valores,
+  errores,
+  alCambiar,
+  alEnviar,
+  etiquetaEnvio,
+  estaCargando = false,
+  alCancelar,
 }) => {
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    onChange(name, value);
+  const manejarCambio = (evento) => {
+    const { name, value } = evento.target;
+    alCambiar(name, value);
   };
 
   return (
     <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit();
+      onSubmit={(evento) => {
+        evento.preventDefault();
+        alEnviar();
       }}
       className="space-y-4 rounded-md border-2 border-[#111827] bg-white p-4 dark:border-[#333] dark:bg-[#1E1E1E]"
     >
@@ -29,8 +29,8 @@ export const ItemForm = ({
           </label>
           <select
             name="review"
-            value={values.review}
-            onChange={handleInputChange}
+            value={valores.review}
+            onChange={manejarCambio}
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           >
             {[1, 2, 3, 4, 5].map((review) => (
@@ -39,9 +39,9 @@ export const ItemForm = ({
               </option>
             ))}
           </select>
-          {errors.review && (
+          {errores.review && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.review}
+              {errores.review}
             </p>
           )}
         </div>
@@ -53,13 +53,13 @@ export const ItemForm = ({
           <input
             type="date"
             name="fecha"
-            value={values.fecha}
-            onChange={handleInputChange}
+            value={valores.fecha}
+            onChange={manejarCambio}
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
-          {errors.fecha && (
+          {errores.fecha && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.fecha}
+              {errores.fecha}
             </p>
           )}
         </div>
@@ -71,13 +71,13 @@ export const ItemForm = ({
           <input
             type="time"
             name="horaInicio"
-            value={values.horaInicio}
-            onChange={handleInputChange}
+            value={valores.horaInicio}
+            onChange={manejarCambio}
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
-          {errors.horaInicio && (
+          {errores.horaInicio && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.horaInicio}
+              {errores.horaInicio}
             </p>
           )}
         </div>
@@ -89,13 +89,13 @@ export const ItemForm = ({
           <input
             type="time"
             name="horaFin"
-            value={values.horaFin}
-            onChange={handleInputChange}
+            value={valores.horaFin}
+            onChange={manejarCambio}
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
-          {errors.horaFin && (
+          {errores.horaFin && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.horaFin}
+              {errores.horaFin}
             </p>
           )}
         </div>
@@ -107,14 +107,14 @@ export const ItemForm = ({
           <input
             type="text"
             name="sala"
-            value={values.sala}
-            onChange={handleInputChange}
+            value={valores.sala}
+            onChange={manejarCambio}
             placeholder="Sala 101"
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
-          {errors.sala && (
+          {errores.sala && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.sala}
+              {errores.sala}
             </p>
           )}
         </div>
@@ -126,14 +126,14 @@ export const ItemForm = ({
           <input
             type="url"
             name="zoomLink"
-            value={values.zoomLink}
-            onChange={handleInputChange}
+            value={valores.zoomLink}
+            onChange={manejarCambio}
             placeholder="https://zoom.us/..."
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
-          {errors.zoomLink && (
+          {errores.zoomLink && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
-              {errors.zoomLink}
+              {errores.zoomLink}
             </p>
           )}
         </div>
@@ -145,21 +145,21 @@ export const ItemForm = ({
         </label>
         <textarea
           name="comentarios"
-          value={values.comentarios}
-          onChange={handleInputChange}
+          value={valores.comentarios}
+          onChange={manejarCambio}
           rows={3}
           className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
         />
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:justify-end">
-        {onCancel && (
+        {alCancelar && (
           <Button
             type="button"
             variant="secondary"
             className="md:w-auto"
-            onClick={onCancel}
-            disabled={loading}
+            onClick={alCancelar}
+            disabled={estaCargando}
           >
             Cancelar
           </Button>
@@ -168,9 +168,9 @@ export const ItemForm = ({
           type="submit"
           variant="primary"
           className="md:w-auto"
-          disabled={loading}
+          disabled={estaCargando}
         >
-          {loading ? "Procesando..." : submitLabel}
+          {estaCargando ? "Procesando..." : etiquetaEnvio}
         </Button>
       </div>
     </form>

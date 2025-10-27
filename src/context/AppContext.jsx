@@ -117,7 +117,7 @@ export const AppProvider = ({ children }) => {
   const [turnosError, setTurnosError] = useState(null);
   const [entregasError, setEntregasError] = useState(null);
   const [usuariosError, setUsuariosError] = useState(null);
-  const { user, token } = useAuth();
+  const { usuario, token } = useAuth();
   const { start, stop, isLoading } = useLoading();
   const { pushError } = useError();
 
@@ -131,7 +131,7 @@ export const AppProvider = ({ children }) => {
       const description =
         error?.message && error.message !== message
           ? error.message
-          : "Intentalo nuevamente en unos instantes.";
+          : "Inténtalo nuevamente en unos instantes.";
       pushError(message, {
         title,
         description,
@@ -541,7 +541,7 @@ export const AppProvider = ({ children }) => {
         const nuevo = await apiCreateTurno(payload);
         const normalized = normalizeItem(nuevo);
         if (!normalized) {
-          throw new Error("Respuesta invalida al crear turno.");
+          throw new Error("Respuesta inválida al crear turno.");
         }
         setTurnos((prev) => {
           const base = Array.isArray(prev) ? prev : [];
@@ -655,7 +655,7 @@ export const AppProvider = ({ children }) => {
   );
 
   useEffect(() => {
-    if (!token || !user) {
+    if (!token || !usuario) {
       const fallback = normalizeCollection(DEFAULT_TURNOS_SEED);
       turnosRef.current = fallback;
       setTurnos(fallback);
@@ -667,7 +667,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [
     token,
-    user,
+    usuario,
     setTurnos,
     setEntregas,
     setUsuarios,

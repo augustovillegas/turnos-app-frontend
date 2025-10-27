@@ -1,63 +1,60 @@
-// Core helpers to build, validate y mapear datos de turnos desde formularios.
+// Helpers centrales para construir, validar y mapear datos de turnos.
 
-const ensureTwoDigits = (value) => value.toString().padStart(2, "0");
+const asegurarDosDigitos = (valor) => valor.toString().padStart(2, "0");
 
-const buildIsoDate = (date, time) => {
-  const [hours, minutes] = time.split(":").map(Number);
-  const target = new Date(date);
-  target.setHours(hours, minutes, 0, 0);
-  return target.toISOString();
+const construirFechaIso = (fecha, hora) => {
+  const [horas, minutos] = hora.split(":").map(Number);
+  const objetivo = new Date(fecha);
+  objetivo.setHours(horas, minutos, 0, 0);
+  return objetivo.toISOString();
 };
 
-const formatHorario = (startIso, endIso) => {
-  const options = { hour: "2-digit", minute: "2-digit", hour12: false };
-  const start = new Date(startIso).toLocaleTimeString([], options);
-  const end = new Date(endIso).toLocaleTimeString([], options);
-  return `${start} - ${end}`;
+const formatearHorario = (inicioIso, finIso) => {
+  const opciones = { hour: "2-digit", minute: "2-digit", hour12: false };
+  const inicio = new Date(inicioIso).toLocaleTimeString([], opciones);
+  const fin = new Date(finIso).toLocaleTimeString([], opciones);
+  return `${inicio} - ${fin}`;
 };
 
-const normalizeFecha = (value) => {
-  if (!value) return "";
-  if (value.includes("/")) {
-    const [day, month, year] = value.split("/");
-    if (day && month && year) {
-      return `${year}-${ensureTwoDigits(month)}-${ensureTwoDigits(day)}`;
+const normalizarFecha = (valor) => {
+  if (!valor) return "";
+  if (valor.includes("/")) {
+    const [dia, mes, anio] = valor.split("/");
+    if (dia && mes && anio) {
+      return `${anio}-${asegurarDosDigitos(mes)}-${asegurarDosDigitos(dia)}`;
     }
   }
-  return value;
+  return valor;
 };
 
-export const buildTurnoPayloadFromForm = (values) => {
-  // Construye el payload listo para enviar al backend a partir del formulario.
-  const start = buildIsoDate(values.fecha, values.horaInicio);
-  const end = buildIsoDate(values.fecha, values.horaFin);
-
-  const fecha = normalizeFecha(values.fecha);
+export const construirPayloadTurnoDesdeFormulario = (valores) => {
+  const inicio = construirFechaIso(valores.fecha, valores.horaInicio);
+  const fin = construirFechaIso(valores.fecha, valores.horaFin);
+  const fechaNormalizada = normalizarFecha(valores.fecha);
 
   return {
-    review: Number(values.review),
-    fecha,
-    horario: formatHorario(start, end),
-    sala: values.sala.trim(),
-    zoomLink: values.zoomLink.trim(),
-    estado: values.estado || "Disponible",
-    start,
-    end,
-    comentarios: values.comentarios?.trim() || "",
+    review: Number(valores.review),
+    fecha: fechaNormalizada,
+    horario: formatearHorario(inicio, fin),
+    sala: valores.sala.trim(),
+    zoomLink: valores.zoomLink.trim(),
+    estado: valores.estado || "Disponible",
+    start: inicio,
+    end: fin,
+    comentarios: valores.comentarios?.trim() || "",
   };
 };
 
-export const formValuesFromTurno = (turno) => {
-  // Convierte un turno existente en valores compatibles con el formulario edit/create.
-  const today = new Date();
-  const todayString = `${today.getFullYear()}-${ensureTwoDigits(
-    today.getMonth() + 1
-  )}-${ensureTwoDigits(today.getDate())}`;
+export const obtenerValoresFormularioDesdeTurno = (turno) => {
+  const hoy = new Date();
+  const fechaHoy = `${hoy.getFullYear()}-${asegurarDosDigitos(
+    hoy.getMonth() + 1
+  )}-${asegurarDosDigitos(hoy.getDate())}`;
 
   if (!turno) {
     return {
       review: "1",
-      fecha: todayString,
+      fecha: fechaHoy,
       horaInicio: "",
       horaFin: "",
       sala: "",
@@ -66,24 +63,23 @@ export const formValuesFromTurno = (turno) => {
     };
   }
 
-  const baseDate = turno.start
+  const fechaBase = turno.start
     ? new Date(turno.start)
     : turno.fecha
     ? new Date(turno.fecha.split("/").reverse().join("-"))
     : new Date();
 
-  const dateString = `${baseDate.getFullYear()}-${ensureTwoDigits(
-    baseDate.getMonth() + 1
-  )}-${ensureTwoDigits(baseDate.getDate())}`;
+  const fechaFormateada = `${fechaBase.getFullYear()}-${asegurarDosDigitos(
+    fechaBase.getMonth() + 1
+  )}-${asegurarDosDigitos(fechaBase.getDate())}`;
 
   const [horaInicio = "", horaFin = ""] = (turno.horario || "").split(" - ");
-
-  const mappedDate =
-    turno.start || turno.fecha ? dateString : todayString;
+  const fechaResultante =
+    turno.start || turno.fecha ? fechaFormateada : fechaHoy;
 
   return {
     review: String(turno.review ?? 1),
-    fecha: mappedDate,
+    fecha: fechaResultante,
     horaInicio,
     horaFin,
     sala: turno.sala ?? "",
@@ -92,27 +88,32 @@ export const formValuesFromTurno = (turno) => {
   };
 };
 
-export const validateTurnoForm = (values) => {
-  // Valida campos clave del formulario y devuelve un mapa de errores.
-  const errors = {};
-  if (!values.fecha) errors.fecha = "La fecha es obligatoria.";
-  if (!values.horaInicio) errors.horaInicio = "Ingresá una hora de inicio.";
-  if (!values.horaFin) errors.horaFin = "Ingresá una hora de fin.";
-  if (!values.sala.trim()) errors.sala = "La sala es obligatoria.";
-  if (!values.review || Number(values.review) <= 0) {
-    errors.review = "Seleccioná un review válido.";
+export const validarFormularioTurno = (valores) => {
+  const errores = {};
+  if (!valores.fecha) errores.fecha = "La fecha es obligatoria.";
+  if (!valores.horaInicio) errores.horaInicio = "Ingresa una hora de inicio.";
+  if (!valores.horaFin) errores.horaFin = "Ingresa una hora de fin.";
+  if (!valores.sala.trim()) errores.sala = "La sala es obligatoria.";
+  if (!valores.review || Number(valores.review) <= 0) {
+    errores.review = "Selecciona un review valido.";
   }
-  if (!values.zoomLink.trim()) {
-    errors.zoomLink = "Proporcioná un enlace de Zoom.";
+  if (!valores.zoomLink.trim()) {
+    errores.zoomLink = "Proporciona un enlace de Zoom.";
   }
 
-  if (values.fecha && values.horaInicio && values.horaFin) {
-    const start = buildIsoDate(values.fecha, values.horaInicio);
-    const end = buildIsoDate(values.fecha, values.horaFin);
-    if (new Date(end) <= new Date(start)) {
-      errors.horaFin = "La hora de fin debe ser posterior al inicio.";
+  if (valores.fecha && valores.horaInicio && valores.horaFin) {
+    const inicio = construirFechaIso(valores.fecha, valores.horaInicio);
+    const fin = construirFechaIso(valores.fecha, valores.horaFin);
+    if (new Date(fin) <= new Date(inicio)) {
+      errores.horaFin = "La hora de fin debe ser posterior al inicio.";
     }
   }
 
-  return errors;
+  return errores;
 };
+
+// Alias temporales para mantener compatibilidad con el resto del codigo.
+export const buildTurnoPayloadFromForm = construirPayloadTurnoDesdeFormulario;
+export const formValuesFromTurno = obtenerValoresFormularioDesdeTurno;
+export const validateTurnoForm = validarFormularioTurno;
+

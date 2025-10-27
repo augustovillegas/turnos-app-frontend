@@ -96,7 +96,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-              Gestion de Turnos
+              Gestión de Turnos
             </h1>
           </div>
           <Button
@@ -148,7 +148,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                 "Sala",
                 "Zoom",
                 "Estado",
-                "Accion",
+                "Acción",
               ]}
               data={paginatedTurnos}
               renderRow={(turno) => (

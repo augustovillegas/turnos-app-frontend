@@ -1,6 +1,7 @@
 /* eslint-env node */
 /* global process */
 import "@testing-library/jest-dom/vitest";
+import React from "react";
 import { cleanup } from "@testing-library/react";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -34,6 +35,10 @@ process.env.TEST_USE_REAL_API = "true";
 
 vi.stubEnv("VITE_API_BASE_URL", activeBaseUrl);
 vi.stubEnv("TEST_USE_REAL_API", "true");
+
+if (typeof globalThis.React === "undefined") {
+  globalThis.React = React;
+}
 
 const remoteTestsFlag =
   process.env.RUN_REMOTE_TESTS === "true" ? "true" : "false";

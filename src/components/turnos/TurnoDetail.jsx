@@ -1,5 +1,5 @@
 // === Turno Detail ===
-// Vista de solo lectura para mostrar la informacion completa de un turno.
+// Vista de solo lectura para mostrar la información completa de un turno.
 import { useEffect, useState } from "react";
 import { useAppData } from "../../context/AppContext";
 import { Button } from "../ui/Button";
@@ -98,7 +98,7 @@ export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
             Detalle del turno
           </h1>
           <p className="text-sm text-[#4B5563] dark:text-gray-300">
-            Informacion sincronizada con el backend.
+            Información sincronizada con el backend.
           </p>
 
           <dl className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -138,7 +138,7 @@ export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
                     rel="noreferrer"
                     className="text-blue-600 underline hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
                   >
-                    Abrir reunion
+                    Abrir reunión
                   </a>
                 ) : (
                   "Sin enlace"

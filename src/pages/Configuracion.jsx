@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { useSound } from "../context/SoundContext";
+import { showToast } from "../utils/feedback/toasts";
 import { Button } from "../components/ui/Button";
 
 const MotionContainer = motion.div;
@@ -10,6 +11,30 @@ export const Configuracion = () => {
   const { theme, toggleTheme } = useTheme();
   const { muted, toggleMute } = useSound();
   const [activeTab, setActiveTab] = useState("perfil");
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === "preferencias") {
+      showToast("Personaliza tu experiencia desde aquí.", "info");
+    } else {
+      showToast(
+        "Estamos trabajando en esta sección. Pronto tendrás novedades.",
+        "warning"
+      );
+    }
+  };
+
+  const handleToggleTheme = () => {
+    const siguienteTema = theme === "dark" ? "claro" : "oscuro";
+    toggleTheme();
+    showToast(`Tema ${siguienteTema} activado correctamente.`, "success");
+  };
+
+  const handleToggleSound = () => {
+    const siguienteEstado = muted ? "activado" : "silenciado";
+    toggleMute();
+    showToast(`Sonido ${siguienteEstado}.`, muted ? "success" : "info");
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
@@ -23,7 +48,7 @@ export const Configuracion = () => {
           <Button
             key={tab}
             variant={activeTab === tab ? "primary" : "secondary"}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </Button>
@@ -62,14 +87,12 @@ export const Configuracion = () => {
             {/* Sección: Tema */}
             <section className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
               <div className="flex items-center gap-3">
-                {/* Icono de tema (sin recuadro) */}
                 <img
                   src={theme === "dark" ? "/icons/moon.svg" : "/icons/sun.svg"}
                   alt={theme === "dark" ? "Modo oscuro" : "Modo claro"}
                   className="w-6 h-6"
                 />
 
-                {/* Texto de estado */}
                 <div>
                   <p className="text-gray-800 dark:text-gray-200 font-medium">
                     Tema
@@ -80,10 +103,9 @@ export const Configuracion = () => {
                 </div>
               </div>
 
-              {/* Botón de acción */}
               <Button
                 variant="primary"
-                onClick={toggleTheme}
+                onClick={handleToggleTheme}
                 className="text-center leading-tight sm:leading-normal"
               >
                 Cambiar
@@ -110,7 +132,7 @@ export const Configuracion = () => {
 
               <Button
                 variant="primary"
-                onClick={toggleMute}
+                onClick={handleToggleSound}
                 className="text-center leading-tight sm:leading-normal"
               >
                 {muted ? <>Activar</> : <>Silenciar</>}
@@ -141,3 +163,4 @@ export const Configuracion = () => {
     </div>
   );
 };
+

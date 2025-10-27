@@ -3,109 +3,133 @@
 import { useEffect, useMemo, useState } from "react";
 import { ItemForm } from "../items/ItemForm";
 import { useAppData } from "../../context/AppContext";
-import { buildTurnoPayloadFromForm, formValuesFromTurno, validateTurnoForm } from "../../utils/turnos/form";
+import { useModal } from "../../context/ModalContext";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+  validateTurnoForm,
+} from "../../utils/turnos/form";
 import { showToast } from "../../utils/feedback/toasts";
 import { Button } from "../ui/Button";
 
 export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
-  // --- Contexto y estados locales para manejar la edicion ---
   const { findTurnoById, updateTurno, turnosLoading } = useAppData();
-  const [currentTurno, setCurrentTurno] = useState(turno ?? null);
-  const [values, setValues] = useState(() => formValuesFromTurno(turno ?? null));
-  const [errors, setErrors] = useState({});
-  const [loadingTurno, setLoadingTurno] = useState(!turno && Boolean(turnoId));
-  const [notFound, setNotFound] = useState(false);
+  const { showModal } = useModal();
+  const [turnoActual, establecerTurnoActual] = useState(turno ?? null);
+  const [valoresFormulario, establecerValoresFormulario] = useState(() =>
+    formValuesFromTurno(turno ?? null)
+  );
+  const [erroresFormulario, establecerErroresFormulario] = useState({});
+  const [cargandoTurno, establecerCargandoTurno] = useState(
+    !turno && Boolean(turnoId)
+  );
+  const [sinResultados, establecerSinResultados] = useState(false);
 
-  const effectiveId = useMemo(
-    () => currentTurno?.id ?? turno?.id ?? turnoId ?? null,
-    [currentTurno, turno, turnoId]
+  const identificadorEfectivo = useMemo(
+    () => turnoActual?.id ?? turno?.id ?? turnoId ?? null,
+    [turnoActual, turno, turnoId]
   );
 
   useEffect(() => {
     if (!turno) return;
-    setCurrentTurno(turno);
-    setValues(formValuesFromTurno(turno));
-    setNotFound(false);
-    setLoadingTurno(false);
+    establecerTurnoActual(turno);
+    establecerValoresFormulario(formValuesFromTurno(turno));
+    establecerSinResultados(false);
+    establecerCargandoTurno(false);
   }, [turno]);
 
   useEffect(() => {
     if (turno || !turnoId) return;
 
-    let cancelled = false;
-    setLoadingTurno(true);
+    let cancelado = false;
+    establecerCargandoTurno(true);
     findTurnoById(turnoId)
-      .then((fetched) => {
-        if (cancelled) return;
-        if (!fetched) {
-          setNotFound(true);
+      .then((resultado) => {
+        if (cancelado) return;
+        if (!resultado) {
+          establecerSinResultados(true);
           return;
         }
-        setCurrentTurno(fetched);
-        setValues(formValuesFromTurno(fetched));
-        setNotFound(false);
+        establecerTurnoActual(resultado);
+        establecerValoresFormulario(formValuesFromTurno(resultado));
+        establecerSinResultados(false);
       })
       .catch((error) => {
-        if (cancelled) return;
+        if (cancelado) return;
         showToast(error.message || "No se pudo cargar el turno.", "error");
-        setNotFound(true);
+        establecerSinResultados(true);
       })
       .finally(() => {
-        if (!cancelled) {
-          setLoadingTurno(false);
+        if (!cancelado) {
+          establecerCargandoTurno(false);
         }
       });
 
     return () => {
-      cancelled = true;
+      cancelado = true;
     };
   }, [turno, turnoId, findTurnoById]);
 
-  // --- Sincroniza cambios del formulario con el estado local ---
-  const handleChange = (name, value) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+  const manejarCambioCampo = (nombre, valor) => {
+    establecerValoresFormulario((previos) => ({ ...previos, [nombre]: valor }));
+    establecerErroresFormulario((previos) => ({ ...previos, [nombre]: "" }));
   };
 
-  // --- Guarda cambios confirmados y valida la informacion ---
-  const handleSubmit = async () => {
-    const nextErrors = validateTurnoForm(values);
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
+  const manejarEnvio = () => {
+    const erroresDetectados = validateTurnoForm(valoresFormulario);
+    if (Object.keys(erroresDetectados).length > 0) {
+      establecerErroresFormulario(erroresDetectados);
       showToast(
-        "Revisá los campos resaltados antes de guardar los cambios.",
+        "Revisa los campos resaltados antes de guardar los cambios.",
         "warning"
       );
       return;
     }
 
-    if (!effectiveId) {
-      showToast(
-        "No encontramos el turno para editar. Volvé a intentarlo desde el listado.",
-        "error"
-      );
+    if (!identificadorEfectivo) {
+      showToast("No encontramos el turno para editar.", "error");
       return;
     }
 
-    const confirmed = window.confirm(
-      "¿Guardar los cambios realizados en este turno?"
-    );
-    if (!confirmed) return;
+    showModal({
+      type: "warning",
+      title: "Guardar cambios",
+      message: "¿Confirmás los cambios realizados en este turno?",
+      onConfirm: () => {
+        void persistirCambios();
+      },
+    });
+  };
 
+  const persistirCambios = async () => {
     try {
-      await updateTurno(effectiveId, buildTurnoPayloadFromForm(values));
+      await updateTurno(
+        identificadorEfectivo,
+        buildTurnoPayloadFromForm(valoresFormulario)
+      );
       showToast("Cambios guardados. El turno se actualizó correctamente.");
       onVolver?.();
     } catch (error) {
       showToast(
         error.message ||
-          "No pudimos actualizar el turno. Intentá de nuevo en unos instantes.",
+          "No pudimos actualizar el turno. Inténtalo de nuevo en unos instantes.",
         "error"
       );
     }
   };
 
-  if (notFound) {
+  const solicitarSalida = () => {
+    showModal({
+      type: "warning",
+      title: "Cancelar edición",
+      message: "¿Salir de la edición? Los cambios sin guardar se perderán.",
+      onConfirm: () => {
+        onVolver?.();
+      },
+    });
+  };
+
+  if (sinResultados) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#017F82] p-6 dark:bg-[#0F3D3F]">
         <div className="max-w-md rounded-md border-2 border-[#111827] bg-white p-6 text-center dark:border-[#333] dark:bg-[#1E1E1E]">
@@ -121,7 +145,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
     );
   }
 
-  if (loadingTurno) {
+  if (cargandoTurno) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#017F82] p-6 dark:bg-[#0F3D3F]">
         <p className="rounded-md border-2 border-[#1E3A8A] bg-white px-4 py-2 font-semibold text-[#1E3A8A] dark:border-[#93C5FD] dark:bg-[#1E1E1E] dark:text-[#93C5FD]">
@@ -138,29 +162,19 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
           <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Editar turno
           </h1>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              if (
-                window.confirm(
-                  "¿Salir de la edición? Los cambios sin guardar se perderán."
-                )
-              ) {
-                onVolver?.();
-              }
-            }}
-          >
+          <Button variant="secondary" onClick={solicitarSalida}>
             Cancelar
           </Button>
         </div>
 
         <ItemForm
-          values={values}
-          errors={errors}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          submitLabel="Actualizar turno"
-          loading={turnosLoading}
+          valores={valoresFormulario}
+          errores={erroresFormulario}
+          alCambiar={manejarCambioCampo}
+          alEnviar={manejarEnvio}
+          etiquetaEnvio="Actualizar turno"
+          estaCargando={turnosLoading}
+          alCancelar={solicitarSalida}
         />
       </div>
     </div>

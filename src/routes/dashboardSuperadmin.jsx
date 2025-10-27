@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { DashboardSuperadmin } from "../pages/DashboardSuperadmin";
-import { requireAuth } from "../router/session";
+import { requerirAutenticacion } from "../router/session";
 
 export function loader() {
-  return requireAuth(["superadmin"]);
+  return requerirAutenticacion(["superadmin"]);
 }
 
 export function Component() {

@@ -54,7 +54,7 @@ export const ErrorProvider = ({
             ? "Error"
             : level === "warning"
             ? "Advertencia"
-            : "Informacion"),
+            : "Información"),
         message: typeof message === "string" ? message : JSON.stringify(message),
         ts: Date.now(),
         sticky: Boolean(options.sticky),

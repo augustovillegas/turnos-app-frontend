@@ -1,12 +1,12 @@
 import { redirect } from "react-router-dom";
 
-const ROLE_HOME = {
+const INICIO_POR_ROL = {
   alumno: "/dashboard/alumno",
   profesor: "/dashboard/profesor",
   superadmin: "/dashboard/superadmin",
 };
 
-const getStorage = () => {
+const obtenerStorage = () => {
   if (typeof window !== "undefined" && window.localStorage) {
     return window.localStorage;
   }
@@ -16,48 +16,48 @@ const getStorage = () => {
   return null;
 };
 
-const storage = getStorage();
+const storage = obtenerStorage();
 
-const safeParse = (value) => {
-  if (typeof value !== "string") return null;
+const parseoSeguro = (valor) => {
+  if (typeof valor !== "string") return null;
   try {
-    return JSON.parse(value);
+    return JSON.parse(valor);
   } catch (error) {
-    console.error("[session] Failed to parse stored user", error);
+    console.error("[session] No se pudo interpretar el usuario", error);
     return null;
   }
 };
 
-export const defaultHomeForRole = (role) => ROLE_HOME[role] || "/";
+export const rutaInicioPorRol = (rol) => INICIO_POR_ROL[rol] || "/";
 
-export const getStoredSession = () => {
+export const obtenerSesionAlmacenada = () => {
   if (!storage) return null;
   const token = storage.getItem("token");
-  const rawUser = storage.getItem("user");
-  if (!token || !rawUser) return null;
-  const user = safeParse(rawUser);
-  if (!user) return null;
-  return { token, user };
+  const usuarioPlano = storage.getItem("user");
+  if (!token || !usuarioPlano) return null;
+  const usuario = parseoSeguro(usuarioPlano);
+  if (!usuario) return null;
+  return { token, user: usuario };
 };
 
-export const requireAuth = (roles = []) => {
-  const session = getStoredSession();
-  if (!session) {
+export const requerirAutenticacion = (roles = []) => {
+  const sesion = obtenerSesionAlmacenada();
+  if (!sesion) {
     throw redirect("/login");
   }
 
-  const role = session.user?.role;
-  if (roles.length > 0 && (!role || !roles.includes(role))) {
-    throw redirect(defaultHomeForRole(role));
+  const rol = sesion.user?.role;
+  if (roles.length > 0 && (!rol || !roles.includes(rol))) {
+    throw redirect(rutaInicioPorRol(rol));
   }
 
-  return session;
+  return sesion;
 };
 
-export const redirectIfAuthenticated = () => {
-  const session = getStoredSession();
-  if (session?.user?.role) {
-    throw redirect(defaultHomeForRole(session.user.role));
+export const redirigirSiAutenticado = () => {
+  const sesion = obtenerSesionAlmacenada();
+  if (sesion?.user?.role) {
+    throw redirect(rutaInicioPorRol(sesion.user.role));
   }
   return null;
 };

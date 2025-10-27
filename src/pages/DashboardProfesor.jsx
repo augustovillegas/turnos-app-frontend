@@ -39,18 +39,18 @@ export const DashboardProfesor = () => {
     approveUsuario: approveUsuarioRemoto,
   } = useAppData();
   const navigate = useNavigate();
-  const { user, token, logout } = useAuth();
+  const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
   const { pushError } = useError();
 
   const moduloActual = useMemo(() => {
-    if (!user) return null;
+    if (!usuarioActual) return null;
     const candidates = [
-      user.cohort,
-      user.cohorte,
-      user.modulo,
-      user.module,
+      usuarioActual.cohort,
+      usuarioActual.cohorte,
+      usuarioActual.modulo,
+      usuarioActual.module,
     ];
     const found = candidates.find(
       (candidate) =>
@@ -59,7 +59,7 @@ export const DashboardProfesor = () => {
         String(candidate).trim() !== ""
     );
     return found ? String(found).trim() : null;
-  }, [user]);
+  }, [usuarioActual]);
   const moduloActualNormalized = moduloActual
     ? moduloActual.toLowerCase()
     : null;
@@ -190,7 +190,7 @@ export const DashboardProfesor = () => {
   };
 
   // ---- Gestión de usuarios ----
-  // --- Operaciones de gestion sobre usuarios pendientes ---
+  // --- Operaciones de gestión sobre usuarios pendientes ---
   const handleAprobarUsuario = (usuario) => {
     if (!usuario?.id) return;
 
@@ -338,8 +338,8 @@ export const DashboardProfesor = () => {
 
   // --- Carga inicial de datos del modulo correspondiente ---
   useEffect(() => {
-    if (!user || !token) return;
-    if (user.role !== "profesor") return;
+    if (!usuarioActual || !token) return;
+    if (usuarioActual.role !== "profesor") return;
 
     const fetchData = async () => {
       try {
@@ -350,7 +350,7 @@ export const DashboardProfesor = () => {
         ]);
       } catch (error) {
         console.error("Error al cargar los datos del profesor", error);
-        showToast("No se pudo cargar la informacion del modulo.", "error");
+        showToast("No se pudo cargar la información del módulo.", "error");
         if (pushError) {
           pushError("Error al cargar datos del modulo.", {
             description:
@@ -362,12 +362,12 @@ export const DashboardProfesor = () => {
     };
 
     fetchData();
-  }, [user, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
+  }, [usuarioActual, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
 
   const handleSidebarSelect = (id) => {
-    if (id === "logout") {
-      logout();
-      showToast("Sesion cerrada correctamente.", "info");
+    if (id === "cerrar-sesion") {
+      cerrarSesion();
+      showToast("Sesión cerrada correctamente.", "info");
       navigate("/", { replace: true });
       return;
     }
@@ -680,7 +680,7 @@ export const DashboardProfesor = () => {
         {active === "evaluar-entregas" && <EvaluarEntregas />}
 
         {/* =========================
-            SECCIÓN: CONFIGURACION
+            SECCIÓN: CONFIGURACIÓN
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>

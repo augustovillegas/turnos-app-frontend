@@ -1,14 +1,18 @@
-// === Render Helpers ===
-// Utilidades para montar la aplicacion con los providers reales durante las pruebas.
+// === Utilidades de Render ===
+// Monta la app real con providers y un router de memoria para escenarios de prueba.
 
 import React from "react";
 import { JSDOM } from "jsdom";
 import { render } from "@testing-library/react";
 import App from "../../src/App";
 import { AppProviders } from "../../src/context/AppProviders";
+import {
+  RUTAS_APLICACION,
+  createRouterMemoria,
+} from "../../src/router/createAppRouter";
 import { authFixtures, fixtures } from "./mocks/fixtures";
 
-const ensureDom = () => {
+const asegurarDom = () => {
   if (typeof document !== "undefined" && typeof window !== "undefined") {
     return;
   }
@@ -29,90 +33,136 @@ const ensureDom = () => {
   }
 };
 
-const ensureStorage = (name) => {
-  if (typeof globalThis[name] !== "undefined" && globalThis[name] !== null) {
+const asegurarStorage = (nombre) => {
+  if (typeof globalThis[nombre] !== "undefined" && globalThis[nombre] !== null) {
     return;
   }
-  const store = new Map();
-  globalThis[name] = {
-    getItem: (key) => {
-      const value = store.get(String(key));
-      return value === undefined ? null : value;
+  const almacen = new Map();
+  globalThis[nombre] = {
+    getItem: (llave) => {
+      const valor = almacen.get(String(llave));
+      return valor === undefined ? null : valor;
     },
-    setItem: (key, value) => {
-      store.set(String(key), String(value));
+    setItem: (llave, valor) => {
+      almacen.set(String(llave), String(valor));
     },
-    removeItem: (key) => {
-      store.delete(String(key));
+    removeItem: (llave) => {
+      almacen.delete(String(llave));
     },
-    clear: () => store.clear(),
-    key: (index) => Array.from(store.keys())[Number(index)] ?? null,
+    clear: () => almacen.clear(),
+    key: (indice) => Array.from(almacen.keys())[Number(indice)] ?? null,
     get length() {
-      return store.size;
+      return almacen.size;
     },
   };
 };
 
-ensureDom();
-ensureStorage("localStorage");
-ensureStorage("sessionStorage");
+asegurarDom();
+asegurarStorage("localStorage");
+asegurarStorage("sessionStorage");
 if (typeof globalThis.React === "undefined") {
   globalThis.React = React;
 }
 
-const persistJSON = (key, value) => {
-  if (value === undefined) return;
-  localStorage.setItem(key, JSON.stringify(value));
+const persistirJSON = (llave, valor) => {
+  if (valor === undefined) return;
+  localStorage.setItem(llave, JSON.stringify(valor));
 };
 
-export const primeAppState = ({
+export const prepararEstadoApp = ({
   turnos = fixtures.turnos,
   entregas = fixtures.entregas,
   usuarios = fixtures.usuarios,
 } = {}) => {
-  persistJSON("turnos", turnos);
-  persistJSON("entregas", entregas);
-  persistJSON("usuarios", usuarios);
+  persistirJSON("turnos", turnos);
+  persistirJSON("entregas", entregas);
+  persistirJSON("usuarios", usuarios);
 };
 
-export const loginAs = (role) => {
-  const user =
-    typeof role === "object" && role !== null
-      ? role
-      : authFixtures[role] ?? null;
+export const iniciarSesionComo = (rol) => {
+  const usuario =
+    typeof rol === "object" && rol !== null ? rol : authFixtures[rol] ?? null;
 
-  if (user) {
+  if (usuario) {
     localStorage.setItem("token", "test-token");
-    persistJSON("user", user);
+    persistirJSON("user", usuario);
   } else {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   }
 
-  return user;
+  return usuario;
 };
 
-export const renderApp = ({ route = "/", user, state } = {}) => {
+export const loginAs = iniciarSesionComo;
+export const primeAppState = prepararEstadoApp;
+
+export const renderApp = async ({ route = "/", user, state } = {}) => {
   if (state) {
-    primeAppState(state);
+    prepararEstadoApp(state);
   } else {
-    primeAppState();
+    prepararEstadoApp();
   }
 
   if (route && typeof window !== "undefined" && window?.history) {
     window.history.replaceState({}, "Test", route);
   }
 
-  const authUser = user ? loginAs(user) : null;
+  const rutasResueltas = await resolverRutas(RUTAS_APLICACION);
+  const routerDeMemoria = createRouterMemoria({
+    entradasIniciales: [route],
+    rutasPersonalizadas: rutasResueltas,
+  });
 
-  const result = render(
+  const usuarioAutenticado = user ? iniciarSesionComo(user) : null;
+
+  const resultado = render(
     <AppProviders>
-      <App />
+      <App router={routerDeMemoria} />
     </AppProviders>
   );
+  if (typeof routerDeMemoria.initialize === "function") {
+    await routerDeMemoria.initialize();
+  }
 
   return {
-    ...result,
-    user: authUser,
+    ...resultado,
+    user: usuarioAutenticado,
+    router: routerDeMemoria,
   };
 };
+const resolverRutas = async (rutas = []) =>
+  Promise.all(
+    rutas.map(async (ruta) => {
+      const hijos = ruta.children ? await resolverRutas(ruta.children) : undefined;
+      if (typeof ruta.lazy !== "function") {
+        return {
+          ...ruta,
+          children: hijos,
+        };
+      }
+      const modulo = await ruta.lazy();
+      const {
+        Component,
+        ErrorBoundary,
+        loader,
+        action,
+        shouldRevalidate,
+        handle,
+        headers,
+      } = modulo ?? {};
+
+      return {
+        ...ruta,
+        lazy: undefined,
+        children: hijos,
+        Component: Component ?? modulo?.default ?? ruta.Component,
+        ErrorBoundary: ErrorBoundary ?? ruta.ErrorBoundary,
+        loader: loader ?? ruta.loader,
+        action: action ?? ruta.action,
+        shouldRevalidate: shouldRevalidate ?? ruta.shouldRevalidate,
+        handle: handle ?? ruta.handle,
+        headers: headers ?? ruta.headers,
+      };
+    })
+  );

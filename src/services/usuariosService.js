@@ -16,7 +16,7 @@ export const approveUsuario = (id) =>
 
 export const updateUsuarioEstado = (id, estado) =>
   apiClient
-    .patch(`/auth/usuarios/${id}`, {
+    .put(`${RESOURCE}/${id}`, {
       estado,
       status: estado,
     })

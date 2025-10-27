@@ -14,24 +14,26 @@ import { Button } from "../ui/Button";
 export const TurnoForm = ({ onVolver }) => {
   // --- Estado local y helpers del formulario ---
   const { createTurno, turnosLoading } = useAppData();
-  const [values, setValues] = useState(() => formValuesFromTurno(null));
-  const [errors, setErrors] = useState({});
+  const [valoresFormulario, establecerValoresFormulario] = useState(() =>
+    formValuesFromTurno(null)
+  );
+  const [erroresFormulario, establecerErroresFormulario] = useState({});
 
-  const handleChange = (name, value) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+  const manejarCambioCampo = (nombre, valor) => {
+    establecerValoresFormulario((previos) => ({ ...previos, [nombre]: valor }));
+    establecerErroresFormulario((previos) => ({ ...previos, [nombre]: "" }));
   };
 
-  const handleSubmit = async () => {
-    const nextErrors = validateTurnoForm(values);
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
+  const manejarEnvio = async () => {
+    const erroresDetectados = validateTurnoForm(valoresFormulario);
+    if (Object.keys(erroresDetectados).length > 0) {
+      establecerErroresFormulario(erroresDetectados);
       showToast("Revisa los datos del formulario.", "warning");
       return;
     }
 
     try {
-      await createTurno(buildTurnoPayloadFromForm(values));
+      await createTurno(buildTurnoPayloadFromForm(valoresFormulario));
       showToast("Turno creado correctamente.");
       onVolver?.();
     } catch (error) {
@@ -52,14 +54,15 @@ export const TurnoForm = ({ onVolver }) => {
         </div>
 
         <ItemForm
-          values={values}
-          errors={errors}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          submitLabel="Guardar turno"
-          loading={turnosLoading}
+          valores={valoresFormulario}
+          errores={erroresFormulario}
+          alCambiar={manejarCambioCampo}
+          alEnviar={manejarEnvio}
+          etiquetaEnvio="Guardar turno"
+          estaCargando={turnosLoading}
         />
       </div>
     </div>
   );
 };
+

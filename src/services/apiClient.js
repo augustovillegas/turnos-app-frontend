@@ -1,37 +1,35 @@
 import axios from "axios";
 
-const DEV_BASE_URL = "http://localhost:3000";
-const PROD_BASE_URL =
-  import.meta.env?.VITE_PROD_API_BASE_URL ||
-  "https://servidor-turnosapp-dip-fullstack.onrender.com/";
+// =========================================
+// Configuración base de la API
+// =========================================
 
-const sanitizeBaseUrl = (value) =>
-  typeof value === "string" ? value.replace(/\/+$/, "") : "";
+// Usa la variable de entorno definida en `.env`
+const sanitizarUrlBase = (valor) =>
+  typeof valor === "string" ? valor.replace(/\/+$/, "") : "";
 
-const resolveBaseUrl = () => {
-  const explicit = sanitizeBaseUrl(import.meta.env?.VITE_API_BASE_URL);
-  if (explicit) return explicit;
+// Lee la URL desde las variables de entorno de Vite
+const urlBase = sanitizarUrlBase(import.meta.env.VITE_API_BASE_URL);
 
-  const isDevEnv =
-    typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    (import.meta.env.DEV === true ||
-      String(import.meta.env.MODE).toLowerCase() === "development");
+// Si no existe la variable, lanza un aviso
+if (!urlBase) {
+  console.warn(
+    "[apiClient] ⚠️ No se encontró VITE_API_BASE_URL en las variables de entorno."
+  );
+}
 
-  const fallback = isDevEnv ? DEV_BASE_URL : PROD_BASE_URL;
-  return sanitizeBaseUrl(fallback);
-};
-
-const baseURL = resolveBaseUrl();
-
+// Crea el cliente Axios configurado
 export const apiClient = axios.create({
-  baseURL,
+  baseURL: urlBase,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-const getStorage = () => {
+// =========================================
+// Manejo de almacenamiento local
+// =========================================
+const obtenerStorage = () => {
   if (typeof globalThis !== "undefined" && globalThis.localStorage) {
     return globalThis.localStorage;
   }
@@ -41,39 +39,46 @@ const getStorage = () => {
   return null;
 };
 
-const storage = getStorage();
+const almacenamiento = obtenerStorage();
 
-const normalizeRequestPath = (url) => {
+// =========================================
+// Utilidades internas
+// =========================================
+const normalizarRutaSolicitud = (url) => {
   if (!url) return "";
   try {
-    const parsed = new URL(url, baseURL || DEV_BASE_URL);
-    return parsed.pathname || "";
+    const analizada = new URL(url, urlBase);
+    return analizada.pathname || "";
   } catch {
     return url;
   }
 };
 
-const shouldRedirectOn401 = (error) => {
+const debeRedirigirPor401 = (error) => {
   if (error?.response?.status !== 401) {
     return false;
   }
 
-  const hasStoredToken = Boolean(storage?.getItem("token"));
-  const hadAuthHeader = Boolean(error?.config?.headers?.Authorization);
-  const path = normalizeRequestPath(error?.config?.url);
-  const publicAuthRoutes = ["/auth/login", "/auth/register", "/auth/forgot"];
+  const existeToken = Boolean(almacenamiento?.getItem("token"));
+  const teniaHeaderAuth = Boolean(error?.config?.headers?.Authorization);
+  const ruta = normalizarRutaSolicitud(error?.config?.url);
+  const rutasPublicas = ["/auth/login", "/auth/register", "/auth/forgot"];
 
-  if (publicAuthRoutes.some((route) => path.startsWith(route))) {
+  if (rutasPublicas.some((target) => ruta.startsWith(target))) {
     return false;
   }
 
-  return hasStoredToken && hadAuthHeader;
+  return existeToken && teniaHeaderAuth;
 };
 
-// Attach JWT automatically if it exists in localStorage.
+// =========================================
+// Interceptores
+// =========================================
+
+// Adjunta el JWT automáticamente
 apiClient.interceptors.request.use(
   (config) => {
-    const token = storage?.getItem("token");
+    const token = almacenamiento?.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -82,14 +87,14 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Uniformly handle common auth errors.
+// Manejo uniforme de errores 401
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (shouldRedirectOn401(error)) {
-      console.warn("[apiClient] Sesion expirada o token invalido");
-      storage?.removeItem("token");
-      storage?.removeItem("user");
+    if (debeRedirigirPor401(error)) {
+      console.warn("[apiClient] Sesión expirada o token inválido");
+      almacenamiento?.removeItem("token");
+      almacenamiento?.removeItem("user");
       if (typeof window !== "undefined" && window.location) {
         window.location.href = "/login";
       }

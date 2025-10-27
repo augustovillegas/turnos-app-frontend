@@ -1,7 +1,8 @@
 // === Floating Requests Panel ===
-// Permite revisar, paginar y cancelar turnos solicitados desde cualquier dashboard.
+// Panel lateral para revisar y liberar turnos solicitados sin dejar el dashboard.
 import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "../../context/AppContext";
+import { useModal } from "../../context/ModalContext";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
 import { showToast } from "../../utils/feedback/toasts";
@@ -11,65 +12,76 @@ import {
 } from "../../utils/turnos/form";
 import { Pagination } from "../ui/Pagination";
 
+const TURNOS_POR_PAGINA = 5;
+
 export const RequestsPanel = () => {
   const { turnos, updateTurno, turnosLoading, totalTurnosSolicitados } =
     useAppData();
-  const [open, setOpen] = useState(false);
-  const [processingId, setProcessingId] = useState(null);
-  const ITEMS_PER_PAGE = 5;
-  const [page, setPage] = useState(1);
+  const { showModal } = useModal();
+  const [panelAbierto, establecerPanelAbierto] = useState(false);
+  const [turnoProcesandoId, establecerTurnoProcesandoId] = useState(null);
+  const [pagina, establecerPagina] = useState(1);
 
-  // --- Deriva el listado de solicitudes activas ---
-  const solicitudes = useMemo(
-    () => turnos.filter((t) => t.estado === "Solicitado"),
+  const solicitudesPendientes = useMemo(
+    () => turnos.filter((turno) => turno.estado === "Solicitado"),
     [turnos]
   );
-  const totalSolicitudes = solicitudes.length;
+  const totalSolicitudes = solicitudesPendientes.length;
 
-  // --- Al abrir el panel vuelve a la primera pagina ---
   useEffect(() => {
-    if (open) {
-      setPage(1);
+    if (panelAbierto) {
+      establecerPagina(1);
     }
-  }, [open]);
+  }, [panelAbierto]);
 
-  // --- Ajusta la pagina si cambia la cantidad total ---
   useEffect(() => {
-    const totalPages = Math.max(
+    const paginasTotales = Math.max(
       1,
-      Math.ceil((totalSolicitudes || 0) / ITEMS_PER_PAGE)
+      Math.ceil((totalSolicitudes || 0) / TURNOS_POR_PAGINA)
     );
-    setPage((prev) => {
+    establecerPagina((paginaActual) => {
       if (totalSolicitudes === 0) return 1;
-      if (prev > totalPages) return totalPages;
-      if (prev < 1) return 1;
-      return prev;
+      if (paginaActual > paginasTotales) return paginasTotales;
+      if (paginaActual < 1) return 1;
+      return paginaActual;
     });
-  }, [totalSolicitudes, ITEMS_PER_PAGE]);
+  }, [totalSolicitudes]);
 
-  // --- Paginacion client-side para mostrar bloques pequenos ---
-  const paginatedSolicitudes = useMemo(() => {
-    const totalPages =
-      Math.ceil((totalSolicitudes || 0) / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const solicitudesPaginadas = useMemo(() => {
+    const paginasTotales =
+      Math.ceil((totalSolicitudes || 0) / TURNOS_POR_PAGINA) || 1;
+    const paginaNormalizada = Math.min(Math.max(pagina, 1), paginasTotales);
+    const inicio = (paginaNormalizada - 1) * TURNOS_POR_PAGINA;
     return {
-      items: solicitudes.slice(start, start + ITEMS_PER_PAGE),
+      items: solicitudesPendientes.slice(
+        inicio,
+        inicio + TURNOS_POR_PAGINA
+      ),
       totalItems: totalSolicitudes,
-      totalPages,
-      currentPage,
+      totalPages: paginasTotales,
+      currentPage: paginaNormalizada,
     };
-  }, [solicitudes, totalSolicitudes, page, ITEMS_PER_PAGE]);
+  }, [solicitudesPendientes, totalSolicitudes, pagina]);
 
-  // --- Devuelve un turno solicitado a estado disponible ---
-  const handleCancelarTurno = async (id) => {
-    const turno = turnos.find((item) => String(item.id) === String(id));
-    if (!turno) return;
-    const confirmado = window.confirm(
-      `Cancelar la solicitud del turno "${turno.sala}"?`
-    );
-    if (!confirmado) return;
-    setProcessingId(id);
+  const gestionarCancelacionTurno = (turnoId) => {
+    const turno = turnos.find((item) => String(item.id) === String(turnoId));
+    if (!turno) {
+      showToast("No encontramos el turno seleccionado.", "error");
+      return;
+    }
+
+    showModal({
+      type: "warning",
+      title: "Cancelar solicitud",
+      message: `¿Cancelar la solicitud del turno "${turno.sala}"?`,
+      onConfirm: () => {
+        void ejecutarCancelacion(turno);
+      },
+    });
+  };
+
+  const ejecutarCancelacion = async (turno) => {
+    establecerTurnoProcesandoId(turno.id);
     try {
       const payload = buildTurnoPayloadFromForm({
         ...formValuesFromTurno(turno),
@@ -78,72 +90,87 @@ export const RequestsPanel = () => {
         estado: "Disponible",
       });
       await updateTurno(turno.id, payload);
-      showToast("Solicitud cancelada. El turno volviÃƒÂ³ a estar disponible.");
+      showToast("Solicitud cancelada. El turno volvió a estar disponible.");
     } catch (error) {
       showToast(
         error.message ||
-          "No pudimos cancelar la solicitud. Intentalo nuevamente en unos segundos.",
+          "No pudimos cancelar la solicitud. Inténtalo nuevamente en unos segundos.",
         "error"
       );
     } finally {
-      setProcessingId(null);
+      establecerTurnoProcesandoId(null);
     }
   };
 
   return (
     <>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => establecerPanelAbierto((previo) => !previo)}
         className="fixed bottom-16 right-4 z-50 bg-[#FFD700] text-black border-2 border-[#111827] rounded-full px-4 py-2 font-bold shadow-md hover:opacity-90"
       >
         Solicitudes ({totalTurnosSolicitados})
       </button>
 
-      {open && (
+      {panelAbierto && (
         <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)}></div>
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => establecerPanelAbierto(false)}
+          ></div>
           <div className="absolute right-0 top-0 h-full w-80 bg-[#E5E5E5] border-l-2 border-[#111827] shadow-xl p-4 overflow-y-auto">
             <div className="flex justify-between mb-3">
               <h3 className="font-bold text-[#1E3A8A]">Solicitudes activas</h3>
-              <Button variant="secondary" onClick={() => setOpen(false)}>Cerrar</Button>
+              <Button
+                variant="secondary"
+                onClick={() => establecerPanelAbierto(false)}
+              >
+                Cerrar
+              </Button>
             </div>
+
             {totalSolicitudes === 0 ? (
-              <p className="text-sm text-[#111827]">No hay solicitudes pendientes.</p>
+              <p className="text-sm text-[#111827]">
+                No hay solicitudes pendientes.
+              </p>
             ) : (
               <>
                 <ul className="space-y-3">
-                  {paginatedSolicitudes.items.map((t) => (
+                  {solicitudesPaginadas.items.map((turno) => (
                     <li
-                      key={t.id}
+                      key={turno.id}
                       className="border-2 border-[#111827] bg-white p-3 rounded-md"
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-bold">Review {t.review}</p>
+                          <p className="font-bold">Review {turno.review}</p>
                           <p>
-                            {t.fecha} - {t.horario}
+                            {turno.fecha} - {turno.horario}
                           </p>
-                          <p>Sala: {t.sala}</p>
+                          <p>Sala: {turno.sala}</p>
                         </div>
-                        <Status status={t.estado} />
+                        <Status status={turno.estado} />
                       </div>
                       <div className="text-right mt-2">
                         <Button
                           variant="secondary"
-                          onClick={() => handleCancelarTurno(t.id)}
-                          disabled={turnosLoading || processingId === t.id}
+                          onClick={() => gestionarCancelacionTurno(turno.id)}
+                          disabled={
+                            turnosLoading || turnoProcesandoId === turno.id
+                          }
                         >
-                          {processingId === t.id ? "Procesando..." : "Cancelar"}
+                          {turnoProcesandoId === turno.id
+                            ? "Procesando..."
+                            : "Cancelar"}
                         </Button>
                       </div>
                     </li>
                   ))}
                 </ul>
                 <Pagination
-                  totalItems={paginatedSolicitudes.totalItems}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  currentPage={paginatedSolicitudes.currentPage}
-                  onPageChange={setPage}
+                  totalItems={solicitudesPaginadas.totalItems}
+                  itemsPerPage={TURNOS_POR_PAGINA}
+                  currentPage={solicitudesPaginadas.currentPage}
+                  onPageChange={establecerPagina}
                 />
               </>
             )}

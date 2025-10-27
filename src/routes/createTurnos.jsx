@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { CreateTurnos } from "../pages/CreateTurnos";
-import { requireAuth } from "../router/session";
+import { requerirAutenticacion } from "../router/session";
 
 export function loader() {
-  return requireAuth(["profesor", "superadmin"]);
+  return requerirAutenticacion(["profesor", "superadmin"]);
 }
 
 export function Component() {

@@ -13,7 +13,7 @@ import { showToast } from "../utils/feedback/toasts";
 export const EvaluarEntregas = () => {
   // --- Contexto de datos compartido ---
   const { entregas, updateEntrega } = useAppData();
-  const { user } = useAuth();
+  const { usuario: usuarioActual } = useAuth();
   const ITEMS_PER_PAGE = 5; // --- Cantidad de entregas por pagina ---
   const [page, setPage] = useState(1);
   const [processingEntregaId, setProcessingEntregaId] = useState(null);
@@ -30,7 +30,7 @@ export const EvaluarEntregas = () => {
       showToast(
         nuevoEstado === "Aprobado"
           ? "Entrega aprobada correctamente."
-          : "Entrega rechazada."
+          : "Entrega desaprobada."
       );
     } catch (error) {
       showToast(
@@ -44,7 +44,7 @@ export const EvaluarEntregas = () => {
 
   const handleAprobarEntrega = (entrega) => actualizarEstado(entrega, "Aprobado");
   const handleDesaprobarEntrega = (entrega) =>
-    actualizarEstado(entrega, "Rechazado");
+    actualizarEstado(entrega, "Desaprobado");
 
   // 🛠️ Fix lógica: contemplar `estado` y `reviewStatus` como equivalentes para "pendiente"
   const esPendiente = (e) => {
@@ -59,12 +59,12 @@ export const EvaluarEntregas = () => {
   };
 
   const moduloActual = useMemo(() => {
-    if (!user) return null;
+    if (!usuarioActual) return null;
     const candidates = [
-      user.cohort,
-      user.cohorte,
-      user.modulo,
-      user.module,
+      usuarioActual.cohort,
+      usuarioActual.cohorte,
+      usuarioActual.modulo,
+      usuarioActual.module,
     ];
     const found = candidates.find(
       (candidate) =>
@@ -73,7 +73,7 @@ export const EvaluarEntregas = () => {
         String(candidate).trim() !== ""
     );
     return found ? String(found).trim() : null;
-  }, [user]);
+  }, [usuarioActual]);
   const moduloActualNormalized = moduloActual
     ? moduloActual.toLowerCase()
     : null;
@@ -101,9 +101,9 @@ export const EvaluarEntregas = () => {
 
   const entregasFiltradas = useMemo(() => {
     const listado = Array.isArray(entregas) ? entregas : [];
-    if (!user) return listado;
-    if (user.role === "superadmin") return listado;
-    if (user.role === "profesor" && moduloActualNormalized) {
+    if (!usuarioActual) return listado;
+    if (usuarioActual.role === "superadmin") return listado;
+    if (usuarioActual.role === "profesor" && moduloActualNormalized) {
       return listado.filter((entrega) => {
         const candidates = [
           entrega.modulo,
@@ -119,7 +119,7 @@ export const EvaluarEntregas = () => {
       });
     }
     return listado;
-  }, [entregas, user, moduloActualNormalized, moduloCoincide]);
+  }, [entregas, usuarioActual, moduloActualNormalized, moduloCoincide]);
 
   // 🛠️ Fix lógica: usar esPendiente para derivar la lista a evaluar
   const entregasPendientes = entregasFiltradas.filter(esPendiente);
