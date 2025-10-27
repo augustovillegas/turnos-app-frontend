@@ -148,6 +148,7 @@ export const DashboardAlumno = () => {
   const [pageTurnosDisponibles, setPageTurnosDisponibles] = useState(1);
   const [pageMisTurnos, setPageMisTurnos] = useState(1);
   const [pageEntregas, setPageEntregas] = useState(1);
+  const [modoEntrega, setModoEntrega] = useState("listar");
 
   // --- Items de navegacion lateral del dashboard ---
   const items = [
@@ -255,8 +256,7 @@ export const DashboardAlumno = () => {
           await updateTurno(turno.id, payload);
           showToast("Solicitud cancelada."); // Notificación visual
         } catch (error) {
-          const message =
-            error?.message || "No se pudo cancelar la solicitud.";
+          const message = error?.message || "No se pudo cancelar la solicitud.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al cancelar la solicitud.", {
@@ -326,8 +326,7 @@ export const DashboardAlumno = () => {
       setRenderLink("");
       setComentarios("");
     } catch (error) {
-      const message =
-        error?.message || "No se pudo registrar la entrega.";
+      const message = error?.message || "No se pudo registrar la entrega.";
       showToast(message, "error");
       if (pushError) {
         pushError("Error al registrar la entrega.", {
@@ -349,8 +348,7 @@ export const DashboardAlumno = () => {
           await removeEntregaRemoto(entrega.id);
           showToast("Entrega cancelada.", "info");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo cancelar la entrega.";
+          const message = error?.message || "No se pudo cancelar la entrega.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al cancelar la entrega.", {
@@ -361,7 +359,6 @@ export const DashboardAlumno = () => {
       },
     });
   };
-
 
   // --- Utilidad comun para aplicar el filtro de review ---
   const aplicarFiltro = (lista) => {
@@ -567,7 +564,7 @@ export const DashboardAlumno = () => {
                 }}
               />
 
-                {/* Tabla Desktop */}
+              {/* Tabla Desktop */}
               <div className="hidden sm:block">
                 {isTurnosSectionLoading ? (
                   <div className="flex flex-col gap-2">
@@ -763,7 +760,11 @@ export const DashboardAlumno = () => {
                         </td>
                         <td className="border p-2 text-center dark:border-[#333]">
                           {t.zoomLink ? (
-                            <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                            <a
+                              href={t.zoomLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               <img
                                 src="/icons/video_-2.png"
                                 alt="Zoom"
@@ -840,155 +841,202 @@ export const DashboardAlumno = () => {
             SECCIÓN: ENTREGABLES
         ========================== */}
         {active === "Entregables" && (
-          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-              {/* ====== TÍTULO ====== */}
-              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-                  Entregables (Trabajos Prácticos)
-                </h1>
-              </div>
+          <div className="min-h-screen bg-[#017F82] transition-colors duration-300 dark:bg-[#0F3D3F] text-[#111827] dark:text-gray-100 rounded-lg">
+            {modoEntrega === "listar" && (
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+                <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                  <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                    Entregables (Trabajos Prácticos)
+                  </h1>
+                  <Button
+                    variant="primary"
+                    className="self-start md:self-auto"
+                    onClick={() => setModoEntrega("crear")}
+                  >
+                    Nueva Entrega
+                  </Button>
+                </div>
 
-              {/* ====== FORMULARIO SIN DOBLE FONDO ====== */}
-              <EntregaForm
-                sprint={sprint}
-                githubLink={githubLink}
-                renderLink={renderLink}
-                comentarios={comentarios}
-                setSprint={setSprint}
-                setGithubLink={setGithubLink}
-                setRenderLink={setRenderLink}
-                setComentarios={setComentarios}
-                errors={entregaErrors}
-                onAgregar={handleAgregarEntrega}
-              />
+                <SearchBar
+                  data={entregasAlumno}
+                  fields={[
+                    "sprint",
+                    "githubLink",
+                    "renderLink",
+                    "comentarios",
+                    "reviewStatus",
+                  ]}
+                  placeholder="Buscar entregas"
+                  onSearch={(results) => {
+                    setEntregasBuscadas(results);
+                    setPageEntregas(1);
+                  }}
+                />
 
-              {/* ====== BUSCADOR ====== */}
-              <SearchBar
-                data={entregasAlumno}
-                fields={[
-                  "sprint",
-                  "githubLink",
-                  "renderLink",
-                  "comentarios",
-                  "reviewStatus",
-                ]}
-                placeholder="Buscar entregas"
-                onSearch={(results) => {
-                  setEntregasBuscadas(results);
-                  setPageEntregas(1);
-                }}
-              />
-
-
-              {/* ====== TABLA DESKTOP ====== */}
-              <div className="hidden sm:block">
-                {isEntregasSectionLoading ? (
-                  <div className="space-y-3 py-6">
-                    {Array.from({ length: 4 }).map((_, index) => (
-                      <Skeleton key={index} height="2.75rem" />
-                    ))}
-                  </div>
-                ) : (
-                  <Table
-                    columns={[
-                      "Sprint",
-                      "GitHub",
-                      "Render",
-                      "Comentarios",
-                      "Estado",
-                      "Acci??n",
-                    ]}
-                    data={paginatedEntregas.items}
-                    minWidth="min-w-[680px]"
-                    containerClass="px-4"
-                    renderRow={(e) => (
-                      <>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                          {e.sprint}
-                        </td>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                          <a
-                            href={e.githubLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                {/* ====== TABLA DESKTOP ====== */}
+                <div className="hidden sm:block">
+                  {isEntregasSectionLoading ? (
+                    <div className="space-y-3 py-6">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <Skeleton key={index} height="2.75rem" />
+                      ))}
+                    </div>
+                  ) : (
+                    <Table
+                      columns={[
+                        "Sprint",
+                        "GitHub",
+                        "Render",
+                        "Comentarios",
+                        "Estado",
+                        "Acción",
+                      ]}
+                      data={
+                        hasEntregas
+                          ? paginatedEntregas.items
+                          : [
+                              {
+                                sprint: "-",
+                                githubLink: "-",
+                                renderLink: "-",
+                                comentarios: "No hay entregas registradas.",
+                                reviewStatus: "-",
+                                estado: "-",
+                              },
+                            ]
+                      } // 🎨 Siempre renderiza la tabla, aunque vacía
+                      minWidth="min-w-[680px]"
+                      containerClass="px-4"
+                      renderRow={(e, index) =>
+                        hasEntregas ? (
+                          <>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                              {e.sprint}
+                            </td>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                              <a
+                                href={e.githubLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                              >
+                                {e.githubLink}
+                              </a>
+                            </td>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                              {e.renderLink ? (
+                                <a
+                                  href={e.renderLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                                >
+                                  {e.renderLink}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                              {e.comentarios || "-"}
+                            </td>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                              <Status status={e.reviewStatus} />
+                            </td>
+                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                              {e.reviewStatus === "A revisar" && (
+                                <Button
+                                  variant="danger"
+                                  className="py-1"
+                                  onClick={() => handleCancelarEntrega(e)}
+                                  disabled={isEntregasSectionLoading}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
+                            </td>
+                          </>
+                        ) : (
+                          // 🎨 Fila vacía con mensaje centrado
+                          <td
+                            colSpan={6}
+                            className="p-6 text-center text-sm text-gray-100 dark:text-gray-300"
                           >
-                            {e.githubLink}
-                          </a>
-                        </td>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                          {e.renderLink ? (
-                            <a
-                              href={e.renderLink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-                            >
-                              {e.renderLink}
-                            </a>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                          {e.comentarios || "-"}
-                        </td>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                          <Status status={e.reviewStatus} />
-                        </td>
-                        <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                          {e.reviewStatus === "A revisar" && (
-                            <Button
-                              variant="danger"
-                              className="py-1"
-                              onClick={() => handleCancelarEntrega(e)}
-                              disabled={isEntregasSectionLoading}
-                            >
-                              Cancelar
-                            </Button>
-                          )}
-                        </td>
-                      </>
-                    )}
-                  />
-                )}
-              </div>
-
-              {/* ====== TARJETAS MOBILE ====== */}
-              <div className="mt-4 space-y-4 px-2 sm:hidden">
-                {isEntregasSectionLoading ? (
-                  <div className="space-y-3 py-4">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <Skeleton key={index} height="4.5rem" />
-                    ))}
-                  </div>
-                ) : hasEntregas ? (
-                  paginatedEntregas.items.map((entrega) => (
-                    <CardEntrega
-                      key={entrega.id}
-                      entrega={entrega}
-                      onCancelar={() => handleCancelarEntrega(entrega)}
-                      disabled={isEntregasSectionLoading}
+                            No hay entregas registradas.
+                          </td>
+                        )
+                      }
                     />
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay entregas registradas.
-                  </p>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {!isEntregasSectionLoading && hasEntregas && (
+                {/* ====== TARJETAS MOBILE ====== */}
+                <div className="mt-4 space-y-4 px-2 sm:hidden">
+                  {isEntregasSectionLoading ? (
+                    <div className="space-y-3 py-4">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <Skeleton key={index} height="4.5rem" />
+                      ))}
+                    </div>
+                  ) : hasEntregas ? (
+                    paginatedEntregas.items.map((entrega) => (
+                      <CardEntrega
+                        key={entrega.id}
+                        entrega={entrega}
+                        onCancelar={() => handleCancelarEntrega(entrega)}
+                        disabled={isEntregasSectionLoading}
+                      />
+                    ))
+                  ) : (
+                    // 🎨 Agrega recuadro vacío para mantener consistencia visual en móvil
+                    <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                      <p className="text-sm text-gray-100 dark:text-gray-300">
+                        No hay entregas registradas.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 🎨 Paginación visible aunque vacía */}
                 <Pagination
-                  totalItems={paginatedEntregas.totalItems}
+                  totalItems={paginatedEntregas.totalItems || 0}
                   itemsPerPage={ITEMS_PER_PAGE}
-                  currentPage={paginatedEntregas.currentPage}
+                  currentPage={paginatedEntregas.currentPage || 1}
                   onPageChange={setPageEntregas}
                 />
-              )}
+              </div>
+            )}
 
-            </div>
+            {/* ====== FORMULARIO DE CREACIÓN ====== */}
+            {modoEntrega === "crear" && (
+              <div className="p-6 flex flex-col gap-4">
+                <div className="flex justify-end mx-auto w-full max-w-5xl">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setModoEntrega("listar")}
+                    className="px-6 py-2"
+                  >
+                    Volver
+                  </Button>
+                </div>
+
+                <EntregaForm
+                  sprint={sprint}
+                  githubLink={githubLink}
+                  renderLink={renderLink}
+                  comentarios={comentarios}
+                  setSprint={setSprint}
+                  setGithubLink={setGithubLink}
+                  setRenderLink={setRenderLink}
+                  setComentarios={setComentarios}
+                  errors={entregaErrors}
+                  onAgregar={async () => {
+                    await handleAgregarEntrega();
+                    setModoEntrega("listar");
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
 

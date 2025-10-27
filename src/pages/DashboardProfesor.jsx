@@ -174,8 +174,7 @@ export const DashboardProfesor = () => {
           await updateTurno(turno.id, payload);
           showToast("Turno rechazado correctamente.");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo rechazar el turno.";
+          const message = error?.message || "No se pudo rechazar el turno.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al rechazar turno.", {
@@ -205,8 +204,7 @@ export const DashboardProfesor = () => {
           await approveUsuarioRemoto(usuario.id);
           showToast("Usuario aprobado.");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo aprobar al usuario.";
+          const message = error?.message || "No se pudo aprobar al usuario.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al aprobar usuario.", {
@@ -242,8 +240,9 @@ export const DashboardProfesor = () => {
 
   // --- Turnos en estado solicitado filtrados segun la vista ---
   const turnosSolicitadosFiltrados = aplicarFiltro(turnosSolicitados);
-  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] =
-    useState(turnosSolicitadosFiltrados);
+  const [turnosSolicitadosBuscados, setTurnosSolicitadosBuscados] = useState(
+    turnosSolicitadosFiltrados
+  );
   const [usuariosPendientesBuscados, setUsuariosPendientesBuscados] =
     useState(usuariosPendientes);
   const totalSolicitudes = turnosSolicitadosBuscados.length;
@@ -305,7 +304,6 @@ export const DashboardProfesor = () => {
     ITEMS_PER_PAGE,
   ]);
 
-
   // --- Paginacion de usuarios a aprobar ---
   const paginatedUsuariosPendientes = useMemo(() => {
     const totalPages =
@@ -343,11 +341,7 @@ export const DashboardProfesor = () => {
 
     const fetchData = async () => {
       try {
-        await Promise.all([
-          loadTurnos(),
-          loadEntregas(),
-          loadUsuarios(),
-        ]);
+        await Promise.all([loadTurnos(), loadEntregas(), loadUsuarios()]);
       } catch (error) {
         console.error("Error al cargar los datos del profesor", error);
         showToast("No se pudo cargar la información del módulo.", "error");
@@ -408,31 +402,12 @@ export const DashboardProfesor = () => {
             SECCIÓN: SOLICITUDES
         ========================== */}
         {active === "solicitudes" && (
-          <>
-            <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6">
-              Solicitudes de Turnos
-            </h2>
-
-            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-
-            <SearchBar
-              data={turnosSolicitados}
-              fields={["sala", "fecha", "horario", "estado", "review"]}
-              placeholder="Buscar solicitudes"
-              onSearch={(results) => {
-                setTurnosSolicitadosBuscados(results);
-                setPageSolicitudes(1);
-              }}
-            />
-            {/* ---- Desktop (tabla) ---- */}
-            <div className="hidden sm:block">
-              {isTurnosSectionLoading ? (
-                <div className="space-y-3 py-6">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <Skeleton key={index} height="2.75rem" />
-                  ))}
-                </div>
-              ) : hasSolicitudes ? (
+          <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                Solicitudes de Turnos
+              </h2>
+              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
               <Table
                 columns={[
                   "Review",
@@ -443,230 +418,161 @@ export const DashboardProfesor = () => {
                   "Estado",
                   "Acción",
                 ]}
-                data={paginatedTurnosSolicitados.items}
-                renderRow={(t) => {
-                  return (
-                    <>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.review}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.fecha}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.horario}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.sala}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        {t.zoomLink && (
-                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                            <img
-                              src="/icons/video_-2.png"
-                              alt="Zoom"
-                              className="w-5 h-5 mx-auto hover:opacity-80"
-                            />
-                          </a>
-                        )}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        <Status status={t.estado} />
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        {t.estado === "Solicitado" && (
-                          <div className="flex justify-center gap-2">
-                            <Button
-                              variant="success"
-                              className="py-1"
-                              onClick={() => handleAprobarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Aprobar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="py-1"
-                              onClick={() => handleRechazarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Rechazar
-                            </Button>
-                          </div>
-                        )}
-                      </td>
-                    </>
-                  );
-                }}
+                data={turnosSolicitadosBuscados}
+                minWidth="min-w-[680px]"
+                containerClass="px-4"
+                renderRow={(t) => (
+                  <>
+                    <td className="border p-2 text-center">{t.review}</td>
+                    <td className="border p-2 text-center">{t.fecha}</td>
+                    <td className="border p-2 text-center">{t.horario}</td>
+                    <td className="border p-2 text-center">{t.sala}</td>
+                    <td className="border p-2 text-center">
+                      {t.zoomLink && (
+                        <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                          <img
+                            src="/icons/video_-2.png"
+                            alt="Zoom"
+                            className="w-5 h-5 mx-auto"
+                          />
+                        </a>
+                      )}
+                    </td>
+                    <td className="border p-2 text-center">
+                      <Status status={t.estado} />
+                    </td>
+                  </>
+                )}
               />
-              ) : (
-                <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-                  No hay solicitudes pendientes.
-                </p>
-              )}
             </div>
-
-            {/* ---- Mobile (tarjetas) ---- */}
-            <div className="block sm:hidden space-y-4 mt-4 px-2">
-              {isTurnosSectionLoading ? (
-                <div className="space-y-3 py-4">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} height="4rem" />
-                  ))}
-                </div>
-              ) : hasSolicitudes ? (
-                paginatedTurnosSolicitados.items.map((t) => (
-                  <CardTurno
-                    key={t.id}
-                    turno={t}
-                    onAprobar={() => handleAprobarTurno(t)}
-                    onRechazar={() => handleRechazarTurno(t)}
-                    disabled={
-                      isTurnosSectionLoading || processingTurno === t.id
-                    }
-                  />
-                ))
-              ) : (
-                <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-                  No hay solicitudes pendientes.
-                </p>
-              )}
-            </div>
-
-            {!isTurnosSectionLoading && hasSolicitudes && (
-              <Pagination
-                totalItems={paginatedTurnosSolicitados.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedTurnosSolicitados.currentPage}
-                onPageChange={setPageSolicitudes}
-              />
-            )}
-          </>
+          </div>
         )}
 
         {/* =========================
             SECCIÓN: SOLICITUD ALUMNOS
         ========================== */}
         {active === "usuarios" && (
-          <>
-            <h2 className="text-2xl font-bold text-[#1E3A8A] dark:text-[#93C5FD] mb-6">
-              Usuarios Pendientes
-            </h2>
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+            {/* 🎨 Ajuste: se reemplaza el fragmento <> por un contenedor principal con padding y color coherente */}
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              {/* 🎨 Ajuste: se centra el contenido y se limita el ancho máximo igual que en DashboardSuperadmin */}
+              <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
+                  Usuarios Pendientes
+                </h2>
+              </div>
 
-            <SearchBar
-              data={usuariosPendientes}
-              fields={["nombre", "rol", "estado"]}
-              placeholder="Buscar usuarios pendientes"
-              onSearch={(results) => {
-                setUsuariosPendientesBuscados(results);
-                setPageUsuariosPendientes(1);
-              }}
-            />
-
-            <div className="hidden sm:block">
-              {isUsuariosSectionLoading ? (
-                <div className="space-y-3 py-6">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} height="2.75rem" />
-                  ))}
-                </div>
-              ) : hasUsuariosPendientes ? (
-              <Table
-                columns={["Nombre", "Rol", "Estado", "Acción"]}
-                data={paginatedUsuariosPendientes.items}
-                renderRow={(u) => {
-                  return (
-                    <>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.nombre}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.rol}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        <Status status={u.estado} />
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        <Button
-                          variant="success"
-                          className="py-1"
-                          onClick={() => handleAprobarUsuario(u)}
-                          disabled={
-                            isUsuariosSectionLoading ||
-                            processingUsuario === u.id
-                          }
-                        >
-                          Aprobar usuario
-                        </Button>
-                      </td>
-                    </>
-                  );
+              <SearchBar
+                data={usuariosPendientes}
+                fields={["nombre", "rol", "estado"]}
+                placeholder="Buscar usuarios pendientes"
+                onSearch={(results) => {
+                  setUsuariosPendientesBuscados(results);
+                  setPageUsuariosPendientes(1);
                 }}
-                />
-              ) : (
-                <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-                  No hay usuarios pendientes de aprobación.
-                </p>
-              )}
-            </div>
-
-            <div className="mt-4 space-y-4 px-2 sm:hidden">
-              {isUsuariosSectionLoading ? (
-                <div className="space-y-3 py-4">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} height="4.5rem" />
-                  ))}
-                </div>
-              ) : hasUsuariosPendientes ? (
-                paginatedUsuariosPendientes.items.map((u, idx) => (
-                  <div
-                    key={u.id || `${u.nombre}-${idx}`}
-                    className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                        {u.nombre}
-                      </h3>
-                      <Status status={u.estado} />
-                    </div>
-                    <p className="text-sm text-[#111827] dark:text-gray-200">
-                      <strong>Rol:</strong> {u.rol}
-                    </p>
-                    <Button
-                      variant="success"
-                      className="w-full py-1"
-                      onClick={() => handleAprobarUsuario(u)}
-                      disabled={
-                        isUsuariosSectionLoading ||
-                        processingUsuario === u.id
-                      }
-                    >
-                      Aprobar usuario
-                    </Button>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-                  No hay usuarios pendientes de aprobación.
-                </p>
-              )}
-            </div>
-
-            {!isUsuariosSectionLoading && hasUsuariosPendientes && (
-              <Pagination
-                totalItems={paginatedUsuariosPendientes.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedUsuariosPendientes.currentPage}
-                onPageChange={setPageUsuariosPendientes}
               />
-            )}
-          </>
+
+              {/* 🎨 Tabla Desktop alineada visualmente */}
+              <div className="hidden sm:block">
+                {isUsuariosSectionLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : hasUsuariosPendientes ? (
+                  <Table
+                    columns={["Nombre", "Rol", "Estado", "Acción"]}
+                    data={paginatedUsuariosPendientes.items}
+                    minWidth="min-w-[680px]" // 🎨 Ajuste: ancho mínimo coherente con DashboardSuperadmin
+                    containerClass="px-4" // 🎨 Ajuste: padding horizontal uniforme en la tabla
+                    renderRow={(u) => (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.nombre}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.rol}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Status status={u.estado} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Button
+                            variant="success"
+                            className="py-1"
+                            onClick={() => handleAprobarUsuario(u)}
+                            disabled={
+                              isUsuariosSectionLoading ||
+                              processingUsuario === u.id
+                            }
+                          >
+                            Aprobar usuario
+                          </Button>
+                        </td>
+                      </>
+                    )}
+                  />
+                ) : (
+                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay usuarios pendientes de aprobación.
+                  </p>
+                )}
+              </div>
+
+              {/* 🎨 Tarjetas Mobile con márgenes coherentes */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {isUsuariosSectionLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Skeleton key={index} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasUsuariosPendientes ? (
+                  paginatedUsuariosPendientes.items.map((u, idx) => (
+                    <div
+                      key={u.id || `${u.nombre}-${idx}`}
+                      className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                          {u.nombre}
+                        </h3>
+                        <Status status={u.estado} />
+                      </div>
+                      <p className="text-sm text-[#111827] dark:text-gray-200">
+                        <strong>Rol:</strong> {u.rol}
+                      </p>
+                      <Button
+                        variant="success"
+                        className="w-full py-1"
+                        onClick={() => handleAprobarUsuario(u)}
+                        disabled={
+                          isUsuariosSectionLoading || processingUsuario === u.id
+                        }
+                      >
+                        Aprobar usuario
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
+                    No hay usuarios pendientes de aprobación.
+                  </p>
+                )}
+              </div>
+
+              {/* 🎨 Ajuste: paginación alineada visualmente al final */}
+              {!isUsuariosSectionLoading && hasUsuariosPendientes && (
+                <Pagination
+                  totalItems={paginatedUsuariosPendientes.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedUsuariosPendientes.currentPage}
+                  onPageChange={setPageUsuariosPendientes}
+                />
+              )}
+            </div>
+          </div>
         )}
 
         {/* =========================
