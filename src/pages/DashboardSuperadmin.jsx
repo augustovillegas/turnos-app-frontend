@@ -15,10 +15,7 @@ import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
 import { useModal } from "../context/ModalContext";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../utils/turnos/form";
+import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -377,83 +374,79 @@ export const DashboardSuperadmin = () => {
                       <Skeleton key={index} height="2.75rem" />
                     ))}
                   </div>
-                ) : hasTurnosSolicitados ? (
-                <Table
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acción",
-                  ]}
-                  data={paginatedTurnosSolicitados.items}
-                  minWidth="min-w-[680px]" // 🎨 Ajuste visual: mantiene consistencia con tablas del dashboard alumno
-                  containerClass="px-4"
-                  renderRow={(t) => (
-                    <>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.review}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.fecha}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.horario}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {t.sala}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        {t.zoomLink && (
-                          <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                            <img
-                              src="/icons/video_-2.png"
-                              alt="Zoom"
-                              className="mx-auto h-5 w-5 hover:opacity-80"
-                            />
-                          </a>
-                        )}
-                      </td>
-                      <td className="border p-2 text-center dark:border-[#333]">
-                        <Status status={t.estado} />
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        {t.estado === "Solicitado" && (
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="success"
-                              className="py-1"
-                              onClick={() => handleAprobarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Aprobar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="py-1"
-                              onClick={() => handleRechazarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Rechazar
-                            </Button>
-                          </div>
-                        )}
-                      </td>
-                    </>
-                  )}
-                />
                 ) : (
-                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay solicitudes pendientes.
-                  </p>
+                  <Table
+                    columns={[
+                      "Review",
+                      "Fecha",
+                      "Horario",
+                      "Sala",
+                      "Zoom",
+                      "Estado",
+                      "Accion",
+                    ]}
+                    data={paginatedTurnosSolicitados.items || []}
+                    minWidth="min-w-[680px]" // 🎨 Ajuste visual: mantiene consistencia con tablas del dashboard alumno
+                    containerClass="px-4"
+                    renderRow={(t) => (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.review}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.fecha}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.horario}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {t.sala}
+                        </td>
+                        <td className="border p-2 text-center dark:border-[#333]">
+                          {t.zoomLink && (
+                            <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                              <img
+                                src="/icons/video_-2.png"
+                                alt="Zoom"
+                                className="mx-auto h-5 w-5 hover:opacity-80"
+                              />
+                            </a>
+                          )}
+                        </td>
+                        <td className="border p-2 text-center dark:border-[#333]">
+                          <Status status={t.estado} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          {t.estado === "Solicitado" && (
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="success"
+                                className="py-1"
+                                onClick={() => handleAprobarTurno(t)}
+                                disabled={
+                                  isTurnosSectionLoading ||
+                                  processingTurno === t.id
+                                }
+                              >
+                                Aprobar
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="py-1"
+                                onClick={() => handleRechazarTurno(t)}
+                                disabled={
+                                  isTurnosSectionLoading ||
+                                  processingTurno === t.id
+                                }
+                              >
+                                Rechazar
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  />
                 )}
               </div>
 
@@ -478,14 +471,14 @@ export const DashboardSuperadmin = () => {
                     />
                   ))
                 ) : (
-                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay solicitudes pendientes.
-                  </p>
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                  </div>
                 )}
               </div>
 
               {/* 🎨 Ajuste visual: Espaciado y paginación alineados con el resto de dashboards */}
-              {!isTurnosSectionLoading && hasTurnosSolicitados && (
+              {!isTurnosSectionLoading && (
                 <Pagination
                   totalItems={paginatedTurnosSolicitados.totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -528,56 +521,52 @@ export const DashboardSuperadmin = () => {
                       <Skeleton key={index} height="2.75rem" />
                     ))}
                   </div>
-                ) : hasUsuariosPendientes ? (
-                <Table
-                  columns={["Nombre", "Rol", "Estado", "Acción"]}
-                  data={paginatedUsuariosPendientes.items}
-                  minWidth="min-w-[680px]" // 🎨 Consistencia con las tablas de otras secciones
-                  containerClass="px-4"
-                  renderRow={(u) => (
-                    <>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.nombre}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                        {u.rol}
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <Status status={u.estado} />
-                      </td>
-                      <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="success"
-                            className="py-1"
-                            onClick={() => handleAprobarUsuario(u)}
-                            disabled={
-                              isUsuariosSectionLoading ||
-                              processingUsuario === u.id
-                            }
-                          >
-                            Aprobar
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="py-1"
-                            onClick={() => handleRechazarUsuario(u)}
-                            disabled={
-                              isUsuariosSectionLoading ||
-                              processingUsuario === u.id
-                            }
-                          >
-                            Rechazar
-                          </Button>
-                        </div>
-                      </td>
-                    </>
-                  )}
-                />
                 ) : (
-                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay usuarios pendientes por aprobar.
-                  </p>
+                  <Table
+                    columns={["Nombre", "Rol", "Estado", "Accion"]}
+                    data={paginatedUsuariosPendientes.items || []}
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
+                    renderRow={(u) => (
+                      <>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.nombre}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
+                          {u.rol}
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <Status status={u.estado} />
+                        </td>
+                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="success"
+                              className="py-1"
+                              onClick={() => handleAprobarUsuario(u)}
+                              disabled={
+                                isUsuariosSectionLoading ||
+                                processingUsuario === u.id
+                              }
+                            >
+                              Aprobar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="py-1"
+                              onClick={() => handleRechazarUsuario(u)}
+                              disabled={
+                                isUsuariosSectionLoading ||
+                                processingUsuario === u.id
+                              }
+                            >
+                              Rechazar
+                            </Button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  />
                 )}
               </div>
 
@@ -631,14 +620,14 @@ export const DashboardSuperadmin = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay usuarios pendientes por aprobar.
-                  </p>
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                  </div>
                 )}
               </div>
 
               {/* 🎨 Paginación alineada visualmente */}
-              {!isUsuariosSectionLoading && hasUsuariosPendientes && (
+              {!isUsuariosSectionLoading && (
                 <Pagination
                   totalItems={paginatedUsuariosPendientes.totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -668,3 +657,6 @@ export const DashboardSuperadmin = () => {
     </div>
   );
 };
+
+
+

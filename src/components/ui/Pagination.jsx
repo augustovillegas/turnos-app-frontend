@@ -15,7 +15,7 @@ export const Pagination = ({
   onPageChange,
   currentPage: controlledPage,
 }) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const [page, setPage] = useState(controlledPage || 1);
   const [inputPage, setInputPage] = useState("");
 
@@ -25,9 +25,10 @@ export const Pagination = ({
   }, [controlledPage]);
 
   const handleGoToPage = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setPage(newPage);
-    onPageChange?.(newPage);
+    const nextPage = Math.min(Math.max(newPage, 1), totalPages);
+    if (nextPage === page) return;
+    setPage(nextPage);
+    onPageChange?.(nextPage);
   };
 
   const handleSubmit = (e) => {
@@ -51,7 +52,6 @@ export const Pagination = ({
     return pages;
   };
 
-  if (totalPages <= 1) return null; // no renderiza si no hay varias páginas
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-4">

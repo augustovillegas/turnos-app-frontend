@@ -201,9 +201,9 @@ export const EvaluarEntregas = () => {
               "Comentarios",
               "Fecha",
               "Estado",
-              "Acción",
+              "Accion",
             ]}
-            data={paginatedEntregasPendientes.items}
+            data={paginatedEntregasPendientes.items || []}
             minWidth="min-w-[680px]" // 🎨 Alineado con las tablas de otros módulos
             containerClass="px-4"
             renderRow={(e) => (
@@ -281,109 +281,113 @@ export const EvaluarEntregas = () => {
 
         {/* ---- Versión Mobile (Cards) ---- */}
         <div className="mt-4 space-y-4 px-2 sm:hidden">
-          {paginatedEntregasPendientes.items.map((e) => (
-            <div
-              key={e.id}
-              className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-2xl p-4 shadow-md transition-all hover:shadow-lg"
-            >
-              {/* 🎨 Alineado con cards del dashboard */}
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-                  Sprint {e.sprint}
-                </h3>
-                <Status status={getEstadoUI(e)} />             
-              </div>
+          {paginatedEntregasPendientes.items.length > 0 ? (
+            paginatedEntregasPendientes.items.map((e) => (
+              <div
+                key={e.id}
+                className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-2xl p-4 shadow-md transition-all hover:shadow-lg"
+              >
+                {/* Alineado con cards del dashboard */}
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                    Sprint {e.sprint}
+                  </h3>
+                  <Status status={getEstadoUI(e)} />
+                </div>
 
-              <p className="mb-1 text-sm dark:text-gray-200">
-                <span className="font-semibold">Alumno:</span>{" "}
-                {e.alumno || "Sin asignar"}
-              </p>
-              {e.fechaEntrega && (
                 <p className="mb-1 text-sm dark:text-gray-200">
-                  <span className="font-semibold">Fecha de entrega:</span>{" "}
-                  {e.fechaEntrega}
+                  <span className="font-semibold">Alumno:</span>{" "}
+                  {e.alumno || "Sin asignar"}
                 </p>
-              )}
-              <p className="mb-2 text-sm dark:text-gray-200">
-                <span className="font-semibold">Comentarios:</span>{" "}
-                {e.comentarios || "Sin comentarios."}
-              </p>
-
-              {/* Enlaces */}
-              <div className="mt-2 space-y-1 text-sm">
-                <div className="flex items-center gap-2">
-                  <img
-                    src="/icons/github_icon.png"
-                    alt="GitHub"
-                    className="h-4 w-4"
-                  />
-                  {e.githubLink ? (
-                    <a
-                      href={e.githubLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      Ver repositorio GitHub
-                    </a>
-                  ) : (
-                    <span className="text-gray-500 dark:text-gray-400">
-                      No entregado
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <img
-                    src="/icons/render_icon.png"
-                    alt="Render"
-                    className="h-4 w-4"
-                  />
-                  {e.renderLink ? (
-                    <a
-                      href={e.renderLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      Ver Render Deploy
-                    </a>
-                  ) : (
-                    <span className="text-gray-500 dark:text-gray-400">
-                      No entregado
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Acciones */}
-              <div className="mt-4 flex justify-end gap-2">
-                {esPendiente(e) && ( // 🛠️ Fix lógica
-                  <>
-                    <Button
-                      variant="success"
-                      className="py-1 text-xs"
-                    onClick={() => handleAprobarEntrega(e)}
-                      disabled={processingEntregaId === e.id}
-                    >
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="py-1 text-xs"
-                    onClick={() => handleDesaprobarEntrega(e)}
-                      disabled={processingEntregaId === e.id}
-                    >
-                      Desaprobar
-                    </Button>
-                  </>
+                {e.fechaEntrega && (
+                  <p className="mb-1 text-sm dark:text-gray-200">
+                    <span className="font-semibold">Fecha de entrega:</span>{" "}
+                    {e.fechaEntrega}
+                  </p>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
+                <p className="mb-2 text-sm dark:text-gray-200">
+                  <span className="font-semibold">Comentarios:</span>{" "}
+                  {e.comentarios || "Sin comentarios."}
+                </p>
 
-        {/* 🎨 Paginación alineada visualmente */}
+                {/* Enlaces */}
+                <div className="mt-2 space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="/icons/github_icon.png"
+                      alt="GitHub"
+                      className="h-4 w-4"
+                    />
+                    {e.githubLink ? (
+                      <a
+                        href={e.githubLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        Ver repositorio GitHub
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        No entregado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="/icons/render_icon.png"
+                      alt="Render"
+                      className="h-4 w-4"
+                    />
+                    {e.renderLink ? (
+                      <a
+                        href={e.renderLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        Ver Render Deploy
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        No entregado
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                <div className="mt-4 flex justify-end gap-2">
+                  {esPendiente(e) && (
+                    <>
+                      <Button
+                        variant="success"
+                        className="py-1 text-xs"
+                        onClick={() => handleAprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
+                      >
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="py-1 text-xs"
+                        onClick={() => handleDesaprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
+                      >
+                        Desaprobar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+              <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+            </div>
+          )}
+        </div>
         <Pagination
           totalItems={paginatedEntregasPendientes.totalItems}
           itemsPerPage={ITEMS_PER_PAGE}
@@ -394,3 +398,5 @@ export const EvaluarEntregas = () => {
     </div>
   );
 };
+
+

@@ -2,7 +2,6 @@
 // Configura rutas publicas/privadas y expone el enrutador principal listo para tests.
 import { useMemo } from "react";
 import { RouterProvider } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
 import { createAppRouter } from "./router/createAppRouter";
 
 function App({ router: enrutadorInyectado } = {}) {
@@ -20,7 +19,6 @@ function App({ router: enrutadorInyectado } = {}) {
           v7_startTransition: true,
         }}
       />
-      <ToastContainer />
     </>
   );
 }

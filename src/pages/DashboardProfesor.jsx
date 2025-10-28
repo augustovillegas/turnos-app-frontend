@@ -124,7 +124,7 @@ export const DashboardProfesor = () => {
   const [pageSolicitudes, setPageSolicitudes] = useState(1);
   const [pageUsuariosPendientes, setPageUsuariosPendientes] = useState(1);
 
-  // ---- Funciones de gestión de turnos ----
+  // ---- Funciones de gestion de turnos ----
   // --- Acciones sobre turnos solicitados ---
   const handleAprobarTurno = async (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
@@ -158,9 +158,9 @@ export const DashboardProfesor = () => {
     showModal({
       type: "warning",
       title: "Rechazar turno",
-      message: `¿Confirmás el rechazo del turno para la sala ${turno.sala}?`,
+      message: `Confirmas el rechazo del turno para la sala ${turno.sala}?`,
 
-      // Acción que se ejecuta al confirmar
+      // Accion que se ejecuta al confirmar
       onConfirm: async () => {
         setProcessingTurno(turno.id);
         try {
@@ -188,8 +188,8 @@ export const DashboardProfesor = () => {
     });
   };
 
-  // ---- Gestión de usuarios ----
-  // --- Operaciones de gestión sobre usuarios pendientes ---
+  // ---- Gestion de usuarios ----
+  // --- Operaciones de gestion sobre usuarios pendientes ---
   const handleAprobarUsuario = (usuario) => {
     if (!usuario?.id) return;
 
@@ -197,7 +197,7 @@ export const DashboardProfesor = () => {
     showModal({
       type: "warning",
       title: "Aprobar usuario",
-      message: `¿Confirmás la aprobación de ${nombre}?`,
+      message: `Confirmas la aprobacion de ${nombre}?`,
       onConfirm: async () => {
         setProcessingUsuario(usuario.id);
         try {
@@ -344,7 +344,7 @@ export const DashboardProfesor = () => {
         await Promise.all([loadTurnos(), loadEntregas(), loadUsuarios()]);
       } catch (error) {
         console.error("Error al cargar los datos del profesor", error);
-        showToast("No se pudo cargar la información del módulo.", "error");
+        showToast("No se pudo cargar la informacion del modulo.", "error");
         if (pushError) {
           pushError("Error al cargar datos del modulo.", {
             description:
@@ -361,7 +361,7 @@ export const DashboardProfesor = () => {
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
       cerrarSesion();
-      showToast("Sesión cerrada correctamente.", "info");
+      showToast("Sesion cerrada correctamente.", "info");
       navigate("/", { replace: true });
       return;
     }
@@ -399,7 +399,7 @@ export const DashboardProfesor = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCIÓN: SOLICITUDES
+            SECCION: SOLICITUDES
         ========================== */}
         {active === "solicitudes" && (
           <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
@@ -416,9 +416,9 @@ export const DashboardProfesor = () => {
                   "Sala",
                   "Zoom",
                   "Estado",
-                  "Acción",
+                  "Accion",
                 ]}
-                data={turnosSolicitadosBuscados}
+                data={paginatedTurnosSolicitados.items || []}
                 minWidth="min-w-[680px]"
                 containerClass="px-4"
                 renderRow={(t) => (
@@ -441,21 +441,86 @@ export const DashboardProfesor = () => {
                     <td className="border p-2 text-center">
                       <Status status={t.estado} />
                     </td>
+                    <td className="border p-2 text-center">
+                      {t.estado === "Solicitado" && (
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="success"
+                            className="py-1"
+                            onClick={() => handleAprobarTurno(t)}
+                            disabled={
+                              isTurnosSectionLoading ||
+                              processingTurno === t.id
+                            }
+                          >
+                            Aprobar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="py-1"
+                            onClick={() => handleRechazarTurno(t)}
+                            disabled={
+                              isTurnosSectionLoading ||
+                              processingTurno === t.id
+                            }
+                          >
+                            Rechazar
+                          </Button>
+                        </div>
+                      )}
+                    </td>
                   </>
                 )}
               />
             </div>
+
+            <div className="mt-4 space-y-4 px-2 sm:hidden">
+              {isTurnosSectionLoading ? (
+                <div className="space-y-3 py-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} height="4.5rem" />
+                  ))}
+                </div>
+              ) : hasSolicitudes ? (
+                paginatedTurnosSolicitados.items.map((t) => (
+                  <CardTurno
+                    key={t.id}
+                    turno={t}
+                    onAprobar={() => handleAprobarTurno(t)}
+                    onRechazar={() => handleRechazarTurno(t)}
+                    disabled={
+                      isTurnosSectionLoading || processingTurno === t.id
+                    }
+                  />
+                ))
+              ) : (
+                <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                  <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                    No hay registros.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!isTurnosSectionLoading && (
+              <Pagination
+                totalItems={paginatedTurnosSolicitados.totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={paginatedTurnosSolicitados.currentPage}
+                onPageChange={setPageSolicitudes}
+              />
+            )}
           </div>
         )}
 
         {/* =========================
-            SECCIÓN: SOLICITUD ALUMNOS
+            SECCION: SOLICITUD ALUMNOS
         ========================== */}
         {active === "usuarios" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
-            {/* 🎨 Ajuste: se reemplaza el fragmento <> por un contenedor principal con padding y color coherente */}
+            {/*  Ajuste: se reemplaza el fragmento <> por un contenedor principal con padding y color coherente */}
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-              {/* 🎨 Ajuste: se centra el contenido y se limita el ancho máximo igual que en DashboardSuperadmin */}
+              {/*  Ajuste: se centra el contenido y se limita el ancho maximo igual que en DashboardSuperadmin */}
               <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                 <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
                   Usuarios Pendientes
@@ -472,7 +537,7 @@ export const DashboardProfesor = () => {
                 }}
               />
 
-              {/* 🎨 Tabla Desktop alineada visualmente */}
+              {/*  Tabla Desktop alineada visualmente */}
               <div className="hidden sm:block">
                 {isUsuariosSectionLoading ? (
                   <div className="space-y-3 py-6">
@@ -480,12 +545,12 @@ export const DashboardProfesor = () => {
                       <Skeleton key={index} height="2.75rem" />
                     ))}
                   </div>
-                ) : hasUsuariosPendientes ? (
+                ) : (
                   <Table
-                    columns={["Nombre", "Rol", "Estado", "Acción"]}
-                    data={paginatedUsuariosPendientes.items}
-                    minWidth="min-w-[680px]" // 🎨 Ajuste: ancho mínimo coherente con DashboardSuperadmin
-                    containerClass="px-4" // 🎨 Ajuste: padding horizontal uniforme en la tabla
+                    columns={["Nombre", "Rol", "Estado", "Accion"]}
+                    data={paginatedUsuariosPendientes.items || []}
+                    minWidth="min-w-[680px]" //  Ajuste: ancho minimo coherente con DashboardSuperadmin
+                    containerClass="px-4" //  Ajuste: padding horizontal uniforme en la tabla
                     renderRow={(u) => (
                       <>
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
@@ -513,14 +578,10 @@ export const DashboardProfesor = () => {
                       </>
                     )}
                   />
-                ) : (
-                  <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay usuarios pendientes de aprobación.
-                  </p>
                 )}
               </div>
 
-              {/* 🎨 Tarjetas Mobile con márgenes coherentes */}
+              {/*  Tarjetas Mobile con margenes coherentes */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
                 {isUsuariosSectionLoading ? (
                   <div className="space-y-3 py-4">
@@ -556,14 +617,14 @@ export const DashboardProfesor = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-                    No hay usuarios pendientes de aprobación.
-                  </p>
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                  </div>
                 )}
               </div>
 
-              {/* 🎨 Ajuste: paginación alineada visualmente al final */}
-              {!isUsuariosSectionLoading && hasUsuariosPendientes && (
+              {/*  Ajuste: paginacion alineada visualmente al final */}
+              {!isUsuariosSectionLoading && (
                 <Pagination
                   totalItems={paginatedUsuariosPendientes.totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -576,20 +637,22 @@ export const DashboardProfesor = () => {
         )}
 
         {/* =========================
-            SECCIÓN: CREAR TURNOS
+            SECCION: CREAR TURNOS
         ========================== */}
         {active === "crear-turnos" && <CreateTurnos />}
 
         {/* =========================
-            SECCIÓN: EVALUAR ENTREGAS
+            SECCION: EVALUAR ENTREGAS
         ========================== */}
         {active === "evaluar-entregas" && <EvaluarEntregas />}
 
         {/* =========================
-            SECCIÓN: CONFIGURACIÓN
+            SECCION: CONFIGURACION
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>
     </div>
   );
 };
+
+

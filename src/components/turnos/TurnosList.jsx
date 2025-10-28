@@ -91,7 +91,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100">
+    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
@@ -139,7 +139,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                 <Skeleton key={index} height="2.75rem" />
               ))}
             </div>
-          ) : hasTurnos ? (
+          ) : (
             <Table
               columns={[
                 "Review",
@@ -150,7 +150,9 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                 "Estado",
                 "Acción",
               ]}
-              data={paginatedTurnos}
+              data={paginatedTurnos || []}
+              minWidth="min-w-[680px]"
+              containerClass="px-4"
               renderRow={(turno) => (
                 <>
                   <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
@@ -212,10 +214,6 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                 </>
               )}
             />
-          ) : (
-            <p className="py-6 text-center text-sm text-gray-100 dark:text-gray-300">
-              No hay turnos para mostrar.
-            </p>
           )}
         </div>
 
@@ -238,13 +236,13 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
               />
             ))
           ) : (
-            <p className="text-center text-sm text-gray-100 dark:text-gray-300">
-              No hay turnos para mostrar.
-            </p>
+            <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+              <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+            </div>
           )}
         </div>
 
-        {!showLoader && hasTurnos && (
+        {!showLoader && (
           <Pagination
             totalItems={totalTurnos}
             itemsPerPage={ITEMS_PER_PAGE}
@@ -256,3 +254,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
     </div>
   );
 };
+
+
+
+

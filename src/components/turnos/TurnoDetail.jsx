@@ -7,7 +7,7 @@ import { Status } from "../ui/Status";
 import { showToast } from "../../utils/feedback/toasts";
 
 export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
-  const { findTurnoById } = useAppData();
+  const {findTurnoById} = useAppData();
   const [currentTurno, setCurrentTurno] = useState(turno ?? null);
   const [loadingTurno, setLoadingTurno] = useState(!turno && Boolean(turnoId));
   const [notFound, setNotFound] = useState(false);
@@ -168,3 +168,7 @@ export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
     </div>
   );
 };
+
+
+
+

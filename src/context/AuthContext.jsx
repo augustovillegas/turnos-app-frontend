@@ -1,7 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
 // === Auth Context ===
 // Gestiona sesión básica con token/usuario almacenado en localStorage.
 import { createContext, useContext, useEffect, useState } from "react";
+import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
 
 export const AuthContext = createContext();
 
@@ -13,9 +13,11 @@ export const AuthProvider = ({ children }) => {
       return almacenado ? JSON.parse(almacenado) : null;
     } catch (error) {
       console.error("No se pudo leer el usuario almacenado", error);
+      showToast("Error al leer el usuario almacenado", "error");
       return null;
     }
   });
+
   const [token, establecerToken] = useState(() => localStorage.getItem("token"));
 
   // --- Propaga cambios de sesión entre pestañas ---
@@ -30,6 +32,7 @@ export const AuthProvider = ({ children }) => {
               "No se pudo interpretar el usuario desde storage",
               error
             );
+            showToast("Error al sincronizar usuario desde storage", "error");
             establecerUsuario(null);
           }
         } else {
@@ -48,31 +51,39 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", manejarStorage);
   }, []);
 
+  // --- Función auxiliar para persistir o limpiar sesión ---
   const actualizarSesion = (siguienteToken, siguienteUsuario) => {
-    if (siguienteToken) {
-      localStorage.setItem("token", siguienteToken);
-      establecerToken(siguienteToken);
-    } else {
-      localStorage.removeItem("token");
-      establecerToken(null);
-    }
+    try {
+      if (siguienteToken) {
+        localStorage.setItem("token", siguienteToken);
+        establecerToken(siguienteToken);
+      } else {
+        localStorage.removeItem("token");
+        establecerToken(null);
+      }
 
-    if (siguienteUsuario) {
-      localStorage.setItem("user", JSON.stringify(siguienteUsuario));
-      establecerUsuario(siguienteUsuario);
-    } else {
-      localStorage.removeItem("user");
-      establecerUsuario(null);
+      if (siguienteUsuario) {
+        localStorage.setItem("user", JSON.stringify(siguienteUsuario));
+        establecerUsuario(siguienteUsuario);
+      } else {
+        localStorage.removeItem("user");
+        establecerUsuario(null);
+      }
+    } catch (error) {
+      console.error("Error al actualizar la sesión", error);
+      showToast("Error al guardar los datos de sesión", "error");
     }
   };
 
+  // --- Métodos públicos ---
   const iniciarSesion = (siguienteToken, siguienteUsuario) => {
     actualizarSesion(siguienteToken, siguienteUsuario);
+    showToast("Sesión iniciada correctamente", "success"); 
   };
 
   const cerrarSesion = () => {
-    // --- Limpia credenciales y reinicia sesión ---
     actualizarSesion(null, null);
+    showToast("Sesión cerrada", "info"); 
   };
 
   return (

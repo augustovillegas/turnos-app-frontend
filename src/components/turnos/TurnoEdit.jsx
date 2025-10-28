@@ -1,7 +1,7 @@
 // === Turno Edit ===
 // Editor completo de turnos con carga diferida y validaciones.
 import { useEffect, useMemo, useState } from "react";
-import { ItemForm } from "../items/ItemForm";
+import { ItemForm } from "../turnos/ItemForm";
 import { useAppData } from "../../context/AppContext";
 import { useModal } from "../../context/ModalContext";
 import {
@@ -180,3 +180,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
     </div>
   );
 };
+
+
+
+

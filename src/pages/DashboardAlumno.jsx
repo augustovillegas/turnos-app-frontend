@@ -26,7 +26,7 @@ import { useError } from "../context/ErrorContext";
 import { Skeleton } from "../components/ui/Skeleton";
 
 export const DashboardAlumno = () => {
-  // --- Contexto compartido y autenticación del alumno ---
+  // --- Contexto compartido y autenticacion del alumno ---
   // App context
   const {
     turnos,
@@ -134,7 +134,7 @@ export const DashboardAlumno = () => {
     );
   };
 
-  // --- Estado local: pestaña activa y formularios de entregas ---
+  // --- Estado local: pestana activa y formularios de entregas ---
   const [active, setActive] = useState("turnos");
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
@@ -233,13 +233,13 @@ export const DashboardAlumno = () => {
   const handleCancelarTurno = (turno) => {
     if (!turno || turno.estado !== "Solicitado") return;
 
-    // Mostramos el modal global con tipo "warning" y texto dinámico
+    // Mostramos el modal global con tipo "warning" y texto dinamico
     showModal({
       type: "warning",
       title: "Cancelar solicitud",
-      message: `¿Cancelar la solicitud para la sala ${turno.sala}?`,
+      message: `Cancelar la solicitud para la sala ${turno.sala}?`,
 
-      // onConfirm: lo que sucede si el usuario confirma la acción
+      // onConfirm: lo que sucede si el usuario confirma la accion
       onConfirm: async () => {
         setProcessingTurno(turno.id);
 
@@ -249,12 +249,12 @@ export const DashboardAlumno = () => {
               ...formValuesFromTurno(turno),
               review: turno.review,
               comentarios: turno.comentarios || "",
-              estado: "Disponible", // 🔁 se revierte el estado del turno
+              estado: "Disponible", // se revierte el estado del turno
             }),
             solicitanteId: null,
           };
           await updateTurno(turno.id, payload);
-          showToast("Solicitud cancelada."); // Notificación visual
+          showToast("Solicitud cancelada."); // Notificacion visual
         } catch (error) {
           const message = error?.message || "No se pudo cancelar la solicitud.";
           showToast(message, "error");
@@ -270,24 +270,24 @@ export const DashboardAlumno = () => {
     });
   };
 
-  // --- Gestión de nuevas entregas cargadas por el alumno ---
+  // --- Gestion de nuevas entregas cargadas por el alumno ---
   const handleAgregarEntrega = async () => {
     const validation = {};
     if (!sprint) {
-      validation.sprint = "Seleccioná el sprint a entregar.";
+      validation.sprint = "Selecciona el sprint a entregar.";
     }
     if (!githubLink.trim()) {
-      validation.githubLink = "Ingresá el enlace del repositorio.";
+      validation.githubLink = "Ingresa el enlace del repositorio.";
     } else if (!githubLink.startsWith("http")) {
-      validation.githubLink = "El enlace de GitHub debe ser válido.";
+      validation.githubLink = "El enlace de GitHub debe ser valido.";
     }
     if (renderLink && !renderLink.startsWith("http")) {
-      validation.renderLink = "El enlace de deploy debe ser válido.";
+      validation.renderLink = "El enlace de deploy debe ser valido.";
     }
 
     if (Object.keys(validation).length > 0) {
       setEntregaErrors(validation);
-      showToast("Revisá los datos de la entrega.", "warning");
+      showToast("Revisa los datos de la entrega.", "warning");
       return;
     }
 
@@ -342,7 +342,7 @@ export const DashboardAlumno = () => {
     showModal({
       type: "warning",
       title: "Cancelar entrega",
-      message: `¿Cancelar la entrega del sprint ${entrega.sprint}?`,
+      message: `Cancelar la entrega del sprint ${entrega.sprint}?`,
       onConfirm: async () => {
         try {
           await removeEntregaRemoto(entrega.id);
@@ -521,7 +521,7 @@ export const DashboardAlumno = () => {
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
       cerrarSesion();
-      showToast("Sesión cerrada correctamente.", "info");
+      showToast("Sesion cerrada correctamente.", "info");
       navigate("/", { replace: true });
       return;
     }
@@ -534,15 +534,15 @@ export const DashboardAlumno = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCIÓN: TURNOS DISPONIBLES
+            SECCION: TURNOS DISPONIBLES
         ========================== */}
         {active === "turnos" && (
-          <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100 rounded-lg shadow-md">
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
               <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
                   Listado de Turnos Disponibles
-                </h1>
+                </h2>
               </div>
 
               <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
@@ -581,9 +581,9 @@ export const DashboardAlumno = () => {
                       "Sala",
                       "Zoom",
                       "Estado",
-                      "Acci??n",
+                      "Accion",
                     ]}
-                    data={paginatedTurnosDisponibles.items}
+                    data={paginatedTurnosDisponibles.items || []}
                     minWidth="min-w-[680px]"
                     containerClass="px-4"
                     renderRow={(t) => (
@@ -673,13 +673,13 @@ export const DashboardAlumno = () => {
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No hay turnos disponibles.
-                  </p>
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                  </div>
                 )}
               </div>
 
-              {!isTurnosSectionLoading && hasTurnosDisponibles && (
+              {!isTurnosSectionLoading && (
                 <Pagination
                   totalItems={paginatedTurnosDisponibles.totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -692,15 +692,15 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-            SECCIÓN: MIS TURNOS
+            SECCION: MIS TURNOS
         ========================== */}
         {active === "mis-turnos" && (
-          <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100 rounded-lg shadow-md">
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
               <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
                   Mis Turnos
-                </h1>
+                </h2>
               </div>
 
               <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
@@ -739,9 +739,9 @@ export const DashboardAlumno = () => {
                       "Sala",
                       "Zoom",
                       "Estado",
-                      "Acci??n",
+                      "Accion",
                     ]}
-                    data={paginatedTurnosHistorial.items}
+                    data={paginatedTurnosHistorial.items || []}
                     minWidth="min-w-[680px]"
                     containerClass="px-4"
                     renderRow={(t) => (
@@ -819,13 +819,13 @@ export const DashboardAlumno = () => {
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-gray-100 dark:text-gray-300 text-center">
-                    No tenes turnos registrados.
-                  </p>
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                  </div>
                 )}
               </div>
 
-              {!isTurnosSectionLoading && hasTurnosHistorial && (
+              {!isTurnosSectionLoading && (
                 <Pagination
                   totalItems={paginatedTurnosHistorial.totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -838,16 +838,16 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-            SECCIÓN: ENTREGABLES
+            SECCION: ENTREGABLES
         ========================== */}
         {active === "Entregables" && (
-          <div className="min-h-screen bg-[#017F82] transition-colors duration-300 dark:bg-[#0F3D3F] text-[#111827] dark:text-gray-100 rounded-lg">
+          <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
             {modoEntrega === "listar" && (
               <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
                 <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                  <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-                    Entregables (Trabajos Prácticos)
-                  </h1>
+                  <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
+                    Entregables (Trabajos Practicos)
+                  </h2>
                   <Button
                     variant="primary"
                     className="self-start md:self-auto"
@@ -889,83 +889,61 @@ export const DashboardAlumno = () => {
                         "Render",
                         "Comentarios",
                         "Estado",
-                        "Acción",
+                        "Accion",
                       ]}
-                      data={
-                        hasEntregas
-                          ? paginatedEntregas.items
-                          : [
-                              {
-                                sprint: "-",
-                                githubLink: "-",
-                                renderLink: "-",
-                                comentarios: "No hay entregas registradas.",
-                                reviewStatus: "-",
-                                estado: "-",
-                              },
-                            ]
-                      } // 🎨 Siempre renderiza la tabla, aunque vacía
+                      data={paginatedEntregas.items || []} //  Siempre renderiza la tabla, aunque vacia
                       minWidth="min-w-[680px]"
                       containerClass="px-4"
-                      renderRow={(e, index) =>
-                        hasEntregas ? (
-                          <>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                              {e.sprint}
-                            </td>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                      renderRow={(e) => (
+                        <>
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                            {e.sprint}
+                          </td>
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                            <a
+                              href={e.githubLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                            >
+                              {e.githubLink}
+                            </a>
+                          </td>
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                            {e.renderLink ? (
                               <a
-                                href={e.githubLink}
+                                href={e.renderLink}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                               >
-                                {e.githubLink}
+                                {e.renderLink}
                               </a>
-                            </td>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                              {e.renderLink ? (
-                                <a
-                                  href={e.renderLink}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-                                >
-                                  {e.renderLink}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
-                              {e.comentarios || "-"}
-                            </td>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                              <Status status={e.reviewStatus} />
-                            </td>
-                            <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                              {e.reviewStatus === "A revisar" && (
-                                <Button
-                                  variant="danger"
-                                  className="py-1"
-                                  onClick={() => handleCancelarEntrega(e)}
-                                  disabled={isEntregasSectionLoading}
-                                >
-                                  Cancelar
-                                </Button>
-                              )}
-                            </td>
-                          </>
-                        ) : (
-                          // 🎨 Fila vacía con mensaje centrado
-                          <td
-                            colSpan={6}
-                            className="p-6 text-center text-sm text-gray-100 dark:text-gray-300"
-                          >
-                            No hay entregas registradas.
+                            ) : (
+                              "-"
+                            )}
                           </td>
-                        )
-                      }
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                            {e.comentarios || "-"}
+                          </td>
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                            <Status status={e.reviewStatus} />
+                          </td>
+                          <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                            {e.reviewStatus === "A revisar" && (
+                              <Button
+                                variant="danger"
+                                className="py-1"
+                                onClick={() => handleCancelarEntrega(e)}
+                                disabled={isEntregasSectionLoading}
+                              >
+                                Cancelar
+                              </Button>
+                            )}
+                          </td>
+                        </>
+                      
+                      )}
                     />
                   )}
                 </div>
@@ -988,16 +966,16 @@ export const DashboardAlumno = () => {
                       />
                     ))
                   ) : (
-                    // 🎨 Agrega recuadro vacío para mantener consistencia visual en móvil
+                    // Agrega recuadro vacio para mantener consistencia visual en movil
                     <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                      <p className="text-sm text-gray-100 dark:text-gray-300">
-                        No hay entregas registradas.
+                      <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                        No hay registros.
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* 🎨 Paginación visible aunque vacía */}
+                {/*  Paginacion visible aunque vacia */}
                 <Pagination
                   totalItems={paginatedEntregas.totalItems || 0}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -1007,7 +985,7 @@ export const DashboardAlumno = () => {
               </div>
             )}
 
-            {/* ====== FORMULARIO DE CREACIÓN ====== */}
+            {/* ====== FORMULARIO DE CREACION ====== */}
             {modoEntrega === "crear" && (
               <div className="p-6 flex flex-col gap-4">
                 <div className="flex justify-end mx-auto w-full max-w-5xl">
@@ -1041,10 +1019,15 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-            SECCIÓN: CONFIGURACIÓN
+            SECCION: CONFIGURACION
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>
     </div>
   );
 };
+
+
+
+
+

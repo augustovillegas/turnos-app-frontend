@@ -1,5 +1,5 @@
 // === Providers compartidos ===
-// Composición de Auth, Theme y App data para que el arbol tenga contexto listo.
+// Composicion de Auth, Theme y App data para que el arbol tenga contexto listo.
 import { AuthProvider } from "./AuthContext";
 import { AppProvider } from "./AppContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -7,8 +7,8 @@ import { SoundProvider } from "./SoundContext";
 import { ModalProvider } from "./ModalContext";
 import { LoadingProvider } from "./LoadingContext";
 import { ErrorProvider } from "./ErrorContext";
+import { RetroToaster } from "../utils/feedback/toasts";
 
-// Se mantiene el orden original de providers y se agrega ErrorProvider junto a AppProvider.
 export const AppProviders = ({ children }) => (
   <AuthProvider>
     <ThemeProvider>
@@ -17,6 +17,7 @@ export const AppProviders = ({ children }) => (
           <LoadingProvider>
             <ErrorProvider>
               <AppProvider>{children}</AppProvider>
+              <RetroToaster />
             </ErrorProvider>
           </LoadingProvider>
         </ModalProvider>

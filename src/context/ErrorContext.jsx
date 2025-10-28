@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 // === ErrorContext (Windows 98 look) ===
 // Provee una cola global de mensajes de error con estética Win98.
 import {
@@ -10,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
 
 const ErrorContext = createContext(undefined);
 
@@ -42,6 +42,7 @@ export const ErrorProvider = ({
     setItems((prev) => prev.filter((it) => it.id !== id));
   }, []);
 
+  // --- Función base para crear mensajes ---
   const pushBase = useCallback(
     (level, message, options = {}) => {
       const id = nextId();
@@ -62,6 +63,25 @@ export const ErrorProvider = ({
 
       setItems((prev) => [payload, ...prev].slice(0, maxStack));
 
+      // --- Dispara toast global según el nivel ---
+      try {
+        switch (level) {
+          case "error":
+            showToast(payload.message, "error");
+            break;
+          case "warning":
+            showToast(payload.message, "warning");
+            break;
+          case "info":
+          default:
+            showToast(payload.message, "info");
+            break;
+        }
+      } catch (e) {
+        console.warn("No se pudo mostrar toast global del ErrorContext", e);
+      }
+
+      // --- Autodescarta mensajes no sticky ---
       if (!payload.sticky && autoDismissMs > 0) {
         timers.current[id] = setTimeout(() => {
           setItems((prev) => prev.filter((it) => it.id !== id));

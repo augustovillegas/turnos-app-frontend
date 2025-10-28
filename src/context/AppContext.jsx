@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 // === App Data Context ===
 // Centraliza la cache local de turnos, entregas y usuarios junto a operaciones CRUD.
 import {
@@ -32,6 +31,7 @@ import {
   approveUsuario as apiApproveUsuario,
   updateUsuarioEstado as apiUpdateUsuarioEstado,
 } from "../services/usuariosService";
+import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
 
 // --- Utilidades internas para normalizar ids y colecciones ---
 
@@ -127,16 +127,19 @@ export const AppProvider = ({ children }) => {
 
   const notifyError = useCallback(
     (message, error, title = "Error en la operación") => {
-      if (!pushError) return;
-      const description =
-        error?.message && error.message !== message
-          ? error.message
-          : "Inténtalo nuevamente en unos instantes.";
-      pushError(message, {
-        title,
-        description,
-        autoDismiss: false,
-      });
+      if (pushError) {
+        const description =
+          error?.message && error.message !== message
+            ? error.message
+            : "Inténtalo nuevamente en unos instantes.";
+        pushError(message, {
+          title,
+          description,
+          autoDismiss: false,
+        });
+      }
+      // ⬇️ toast global para mantener el mismo comportamiento que el toasty anterior
+      showToast(message, "error");
     },
     [pushError]
   );
@@ -189,8 +192,9 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error("No se pudo inicializar la coleccion App-turnos", error);
       setTurnos(DEFAULT_TURNOS_SEED);
+      notifyError("No se pudo inicializar la colección de turnos.", error, "Error de inicialización");
     }
-  }, [setTurnos]);
+  }, [setTurnos, notifyError]);
 
   useEffect(() => {
     entregasRef.current = normalizeCollection(entregas);
@@ -232,12 +236,13 @@ export const AppProvider = ({ children }) => {
         }
       } catch (error) {
         console.error("No se pudo sincronizar datos desde storage", error);
+        notifyError("No se pudo sincronizar datos desde storage.", error, "Error de sincronización");
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, [setTurnos, setEntregas, setUsuarios]);
+  }, [setTurnos, setEntregas, setUsuarios, notifyError]);
 
   // --- Operaciones remotas: turnos, entregas, usuarios ---
   const loadTurnos = useCallback(
@@ -249,7 +254,7 @@ export const AppProvider = ({ children }) => {
         setTurnosError(null);
         return fallback;
       }
-       start("turnos");
+      start("turnos");
       try {
         const remoteTurnos = await getTurnos(params);
         const normalized = normalizeCollection(remoteTurnos);
@@ -335,10 +340,12 @@ export const AppProvider = ({ children }) => {
           });
         }
         setEntregasError(null);
+        showToast("Entrega creada correctamente", "success");
         return normalized;
       } catch (error) {
         console.error("Error al crear entrega", error);
         setEntregasError(error.message);
+        showToast("Error al crear la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
@@ -381,10 +388,12 @@ export const AppProvider = ({ children }) => {
           return [...base, nextEntrega];
         });
         setEntregasError(null);
+        showToast("Entrega actualizada", "success");
         return nextEntrega;
       } catch (error) {
         console.error("Error al actualizar entrega", error);
         setEntregasError(error.message);
+        showToast("Error al actualizar la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
@@ -404,9 +413,11 @@ export const AppProvider = ({ children }) => {
           )
         );
         setEntregasError(null);
+        showToast("Entrega eliminada", "success");
       } catch (error) {
         console.error("Error al eliminar entrega", error);
         setEntregasError(error.message);
+        showToast("Error al eliminar la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
@@ -457,10 +468,12 @@ export const AppProvider = ({ children }) => {
         });
 
         setUsuariosError(null);
+        showToast("Usuario aprobado", "success");
         return merged;
       } catch (error) {
         console.error("Error al aprobar usuario", error);
         setUsuariosError(error.message);
+        showToast("Error al aprobar usuario", "error");
         throw error;
       } finally {
         stop("usuarios");
@@ -521,10 +534,15 @@ export const AppProvider = ({ children }) => {
         });
 
         setUsuariosError(null);
+        showToast(
+          `Estado de usuario actualizado${estado ? ` a "${estado}"` : ""}`,
+          "success"
+        );
         return merged;
       } catch (error) {
         console.error("Error al actualizar estado del usuario", error);
         setUsuariosError(error.message);
+        showToast("Error al actualizar estado del usuario", "error");
         throw error;
       } finally {
         stop("usuarios");
@@ -548,10 +566,12 @@ export const AppProvider = ({ children }) => {
           return [...base, normalized];
         });
         setTurnosError(null);
+        showToast("Turno creado", "success");
         return normalized;
       } catch (error) {
         console.error("Error al crear turno", error);
         setTurnosError(error.message);
+        showToast("Error al crear el turno", "error");
         throw error;
       } finally {
         stop("turnos");
@@ -581,10 +601,12 @@ export const AppProvider = ({ children }) => {
             : [nextTurno]
         );
         setTurnosError(null);
+        showToast("Turno actualizado", "success");
         return nextTurno;
       } catch (error) {
         console.error("Error al actualizar turno", error);
         setTurnosError(error.message);
+        showToast("Error al actualizar el turno", "error");
         throw error;
       } finally {
         stop("turnos");
@@ -604,9 +626,11 @@ export const AppProvider = ({ children }) => {
             : []
         );
         setTurnosError(null);
+        showToast("Turno eliminado", "success");
       } catch (error) {
         console.error("Error al eliminar turno", error);
         setTurnosError(error.message);
+        showToast("Error al eliminar el turno", "error");
         throw error;
       } finally {
         stop("turnos");
@@ -646,12 +670,13 @@ export const AppProvider = ({ children }) => {
       } catch (error) {
         console.error("Error al obtener turno", error);
         setTurnosError(error.message);
+        notifyError("No se pudo obtener el turno solicitado.", error, "Error al obtener turno");
         throw error;
       } finally {
         stop("turnos");
       }
     },
-    [setTurnos, start, stop]
+    [setTurnos, start, stop, notifyError]
   );
 
   useEffect(() => {
