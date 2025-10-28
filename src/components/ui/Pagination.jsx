@@ -1,14 +1,7 @@
 // === Pagination ===
-// Componente reutilizable para navegar listas largas en bloques.
+// Componente reutilizable y adaptable para navegación de listas.
 import { useState, useEffect } from "react";
 
-/**
- * Pagination Component
- * @param {number} totalItems - Total de elementos a paginar
- * @param {number} itemsPerPage - Elementos por página (default: 5)
- * @param {function} onPageChange - Callback(page) => void
- * @param {number} currentPage - Página actual (opcional si se controla externamente)
- */
 export const Pagination = ({
   totalItems = 0,
   itemsPerPage = 5,
@@ -19,7 +12,6 @@ export const Pagination = ({
   const [page, setPage] = useState(controlledPage || 1);
   const [inputPage, setInputPage] = useState("");
 
-  // Si el componente es controlado externamente
   useEffect(() => {
     if (controlledPage) setPage(controlledPage);
   }, [controlledPage]);
@@ -40,80 +32,81 @@ export const Pagination = ({
     }
   };
 
-  // Rango visible de páginas (ej: 1 2 3 4 5 ...)
-  const getPageNumbers = () => {
-    const delta = 2;
-    const start = Math.max(1, page - delta);
-    const end = Math.min(totalPages, page + delta);
-    const pages = [];
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
-
-
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-4">
-      {/* Controles principales */}
-      <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-semibold">
-        <button
-          onClick={() => handleGoToPage(1)}
-          disabled={page === 1}
-          className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
-                      hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
-                      ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          ⏮ Primera
-        </button>
+    <div className="flex flex-col items-center justify-center gap-3 py-4">
+      {/* Fila principal: anterior / número / siguiente */}
+      <div className="flex items-center justify-center gap-2 text-sm font-semibold">
+        {/* Botón anterior */}
         <button
           onClick={() => handleGoToPage(page - 1)}
           disabled={page === 1}
-          className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
-                      hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
+          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
+                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
+                      hover:text-black dark:hover:text-white transition
                       ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          ◀ Anterior
+          <img src="/src/left.svg" alt="prev" className="w-4 h-4 sm:hidden" />
+          <span className="hidden sm:inline">Anterior</span>
         </button>
 
-        {/* Números de página */}
-        {getPageNumbers().map((num) => (
-          <button
-            key={num}
-            onClick={() => handleGoToPage(num)}
-            className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                        transition-colors duration-300
-                        ${
-                          num === page
-                            ? "bg-[#FFD700] dark:bg-[#B8860B] text-black dark:text-white font-bold"
-                            : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white"
-                        }`}
-          >
-            {num}
-          </button>
-        ))}
+        {/* Página actual */}
+        <span
+          className="px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
+                     bg-[#FFD700] dark:bg-[#B8860B] text-black dark:text-white font-bold"
+        >
+          {page}
+        </span>
 
+        {/* Botón siguiente */}
         <button
           onClick={() => handleGoToPage(page + 1)}
           disabled={page === totalPages}
-          className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
-                      hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
-                      ${page === totalPages ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
+                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
+                      hover:text-black dark:hover:text-white transition
+                      ${
+                        page === totalPages
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
         >
-          Siguiente ▶
-        </button>
-        <button
-          onClick={() => handleGoToPage(totalPages)}
-          disabled={page === totalPages}
-          className={`px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444] bg-[#E5E5E5] dark:bg-[#2A2A2A]
-                      hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white
-                      ${page === totalPages ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          Última ⏭
+          <span className="hidden sm:inline">Siguiente</span>
+          <img src="/src/right.svg" alt="next" className="w-4 h-4 sm:hidden" />
         </button>
       </div>
 
-      {/* Ir a página específica */}
+      {/* Fila inferior: primera / última */}
+      <div className="flex items-center justify-center gap-2 text-sm font-semibold">
+        <button
+          onClick={() => handleGoToPage(1)}
+          disabled={page === 1}
+          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
+                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
+                      hover:text-black dark:hover:text-white transition
+                      ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <img src="/src/first.svg" alt="first" className="w-4 h-4 sm:hidden" />
+          <span className="hidden sm:inline">Primera</span>
+        </button>
+
+        <button
+          onClick={() => handleGoToPage(totalPages)}
+          disabled={page === totalPages}
+          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
+                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
+                      hover:text-black dark:hover:text-white transition
+                      ${
+                        page === totalPages
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+        >
+          <span className="hidden sm:inline">Última</span>
+          <img src="/src/last.svg" alt="last" className="w-4 h-4 sm:hidden" />
+        </button>
+      </div>
+
+      {/* Formulario ir a página */}
       <form
         onSubmit={handleSubmit}
         className="flex items-center gap-2 mt-2 text-xs sm:text-sm"

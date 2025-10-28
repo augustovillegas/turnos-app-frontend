@@ -24,6 +24,7 @@ import { Pagination } from "../components/ui/Pagination";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
+import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const DashboardProfesor = () => {
   // --- Contexto y permisos del profesor ---
@@ -123,6 +124,9 @@ export const DashboardProfesor = () => {
   const ITEMS_PER_PAGE = 5;
   const [pageSolicitudes, setPageSolicitudes] = useState(1);
   const [pageUsuariosPendientes, setPageUsuariosPendientes] = useState(1);
+
+  const isTurnosLoading = turnosLoading || isLoading("turnos");
+  const isUsuariosLoading = isLoading("usuarios");
 
   // ---- Funciones de gestion de turnos ----
   // --- Acciones sobre turnos solicitados ---
@@ -399,7 +403,7 @@ export const DashboardProfesor = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCION: SOLICITUDES
+            SECCION: SOLICITUDES DE TURNOS
         ========================== */}
         {active === "solicitudes" && (
           <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
@@ -407,120 +411,129 @@ export const DashboardProfesor = () => {
               <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
                 Solicitudes de Turnos
               </h2>
-              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-              <Table
-                columns={[
-                  "Review",
-                  "Fecha",
-                  "Horario",
-                  "Sala",
-                  "Zoom",
-                  "Estado",
-                  "Accion",
-                ]}
-                data={paginatedTurnosSolicitados.items || []}
-                minWidth="min-w-[680px]"
-                containerClass="px-4"
-                renderRow={(t) => (
-                  <>
-                    <td className="border p-2 text-center">{t.review}</td>
-                    <td className="border p-2 text-center">{t.fecha}</td>
-                    <td className="border p-2 text-center">{t.horario}</td>
-                    <td className="border p-2 text-center">{t.sala}</td>
-                    <td className="border p-2 text-center">
-                      {t.zoomLink && (
-                        <a href={t.zoomLink} target="_blank" rel="noreferrer">
-                          <img
-                            src="/icons/video_-2.png"
-                            alt="Zoom"
-                            className="w-5 h-5 mx-auto"
-                          />
-                        </a>
-                      )}
-                    </td>
-                    <td className="border p-2 text-center">
-                      <Status status={t.estado} />
-                    </td>
-                    <td className="border p-2 text-center">
-                      {t.estado === "Solicitado" && (
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="success"
-                            className="py-1"
-                            onClick={() => handleAprobarTurno(t)}
-                            disabled={
-                              isTurnosSectionLoading ||
-                              processingTurno === t.id
-                            }
-                          >
-                            Aprobar
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="py-1"
-                            onClick={() => handleRechazarTurno(t)}
-                            disabled={
-                              isTurnosSectionLoading ||
-                              processingTurno === t.id
-                            }
-                          >
-                            Rechazar
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </>
-                )}
-              />
-            </div>
 
-            <div className="mt-4 space-y-4 px-2 sm:hidden">
-              {isTurnosSectionLoading ? (
-                <div className="space-y-3 py-4">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} height="4.5rem" />
-                  ))}
-                </div>
-              ) : hasSolicitudes ? (
-                paginatedTurnosSolicitados.items.map((t) => (
-                  <CardTurno
-                    key={t.id}
-                    turno={t}
-                    onAprobar={() => handleAprobarTurno(t)}
-                    onRechazar={() => handleRechazarTurno(t)}
-                    disabled={
-                      isTurnosSectionLoading || processingTurno === t.id
-                    }
+              <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+
+              {/* Tabla Desktop */}
+              <div className="hidden sm:block">
+                {isTurnosLoading ? (
+                  <div className="space-y-3 py-6">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} height="2.75rem" />
+                    ))}
+                  </div>
+                ) : (
+                  <Table
+                    columns={[
+                      "Review",
+                      "Fecha",
+                      "Horario",
+                      "Sala",
+                      "Zoom",
+                      "Estado",
+                      "Acción",
+                    ]}
+                    data={paginatedTurnosSolicitados.items}
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
+                    renderRow={(t) => (
+                      <>
+                        <td className="border p-2 text-center">{t.review}</td>
+                        <td className="border p-2 text-center">{t.fecha}</td>
+                        <td className="border p-2 text-center">{t.horario}</td>
+                        <td className="border p-2 text-center">{t.sala}</td>
+                        <td className="border p-2 text-center">
+                          {t.zoomLink && (
+                            <a
+                              href={t.zoomLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <img
+                                src="/icons/video_-2.png"
+                                alt="Zoom"
+                                className="mx-auto h-5 w-5 hover:opacity-80"
+                              />
+                            </a>
+                          )}
+                        </td>
+                        <td className="border p-2 text-center">
+                          <Status status={t.estado} />
+                        </td>
+                        <td className="border p-2 text-center">
+                          {t.estado === "Solicitado" && (
+                            <div className="flex justify-center gap-2">
+                              <Button
+                                variant="success"
+                                className="py-1"
+                                onClick={() => handleAprobarTurno(t)}
+                                disabled={processingTurno === t.id}
+                              >
+                                Aprobar
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="py-1"
+                                onClick={() => handleRechazarTurno(t)}
+                                disabled={processingTurno === t.id}
+                              >
+                                Rechazar
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    )}
                   />
-                ))
-              ) : (
-                <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                  <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
-                    No hay registros.
-                  </p>
-                </div>
+                )}
+              </div>
+
+              {/* Tarjetas Mobile */}
+              <div className="mt-4 space-y-4 px-2 sm:hidden">
+                {isTurnosLoading ? (
+                  <div className="space-y-3 py-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} height="4.5rem" />
+                    ))}
+                  </div>
+                ) : hasSolicitudes ? (
+                  paginatedTurnosSolicitados.items.map((t) => (
+                    <CardTurno
+                      key={t.id}
+                      turno={t}
+                      onAprobar={() => handleAprobarTurno(t)}
+                      onRechazar={() => handleRechazarTurno(t)}
+                      disabled={processingTurno === t.id}
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+                    <p className="text-sm font-mono text-[#111827] dark:text-gray-300">
+                      No hay registros.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {!isTurnosLoading && (
+                <Pagination
+                  totalItems={paginatedTurnosSolicitados.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={paginatedTurnosSolicitados.currentPage}
+                  onPageChange={setPageSolicitudes}
+                />
               )}
             </div>
-
-            {!isTurnosSectionLoading && (
-              <Pagination
-                totalItems={paginatedTurnosSolicitados.totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={paginatedTurnosSolicitados.currentPage}
-                onPageChange={setPageSolicitudes}
-              />
-            )}
           </div>
         )}
 
         {/* =========================
-            SECCION: SOLICITUD ALUMNOS
+            SECCION: SOLICITUD USUARIOS
         ========================== */}
         {active === "usuarios" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
-            {/*  Ajuste: se reemplaza el fragmento <> por un contenedor principal con padding y color coherente */}
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-              {/*  Ajuste: se centra el contenido y se limita el ancho maximo igual que en DashboardSuperadmin */}
+              {/* Encabezado */}
               <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                 <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
                   Usuarios Pendientes
@@ -537,7 +550,7 @@ export const DashboardProfesor = () => {
                 }}
               />
 
-              {/*  Tabla Desktop alineada visualmente */}
+              {/* Tabla Desktop */}
               <div className="hidden sm:block">
                 {isUsuariosSectionLoading ? (
                   <div className="space-y-3 py-6">
@@ -547,10 +560,10 @@ export const DashboardProfesor = () => {
                   </div>
                 ) : (
                   <Table
-                    columns={["Nombre", "Rol", "Estado", "Accion"]}
+                    columns={["Nombre", "Rol", "Estado", "Acción"]}
                     data={paginatedUsuariosPendientes.items || []}
-                    minWidth="min-w-[680px]" //  Ajuste: ancho minimo coherente con DashboardSuperadmin
-                    containerClass="px-4" //  Ajuste: padding horizontal uniforme en la tabla
+                    minWidth="min-w-[680px]"
+                    containerClass="px-4"
                     renderRow={(u) => (
                       <>
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
@@ -581,7 +594,7 @@ export const DashboardProfesor = () => {
                 )}
               </div>
 
-              {/*  Tarjetas Mobile con margenes coherentes */}
+              {/* Tarjetas Mobile */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
                 {isUsuariosSectionLoading ? (
                   <div className="space-y-3 py-4">
@@ -617,13 +630,16 @@ export const DashboardProfesor = () => {
                     </div>
                   ))
                 ) : (
+                  // Card retro de EmptyRow
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                    <p className="text-sm font-mono text-[#111827] dark:text-gray-300">
+                      No hay registros.
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/*  Ajuste: paginacion alineada visualmente al final */}
+              {/* Paginación */}
               {!isUsuariosSectionLoading && (
                 <Pagination
                   totalItems={paginatedUsuariosPendientes.totalItems}
@@ -654,5 +670,3 @@ export const DashboardProfesor = () => {
     </div>
   );
 };
-
-
