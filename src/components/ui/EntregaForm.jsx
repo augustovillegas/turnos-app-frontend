@@ -14,8 +14,9 @@ export const EntregaForm = ({
   onVolver,
 }) => {
   return (
-    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="min-h-screen bg-[#017F82] p-6 transition-colors duration-300 dark:bg-[#0F3D3F] text-[#111827] dark:text-gray-100">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+        {/* Encabezado */}
         <div className="flex items-center justify-between">
           {onVolver && (
             <Button
@@ -27,14 +28,21 @@ export const EntregaForm = ({
               Volver
             </Button>
           )}
-          <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
-            Nueva Entrega
-          </h2>
         </div>
 
-        <div className="rounded-md border-2 border-[#111827] bg-white p-6 shadow-md transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E]">
-          <div className="flex flex-col gap-4">
-            <div>
+        {/* Contenedor principal */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onAgregar?.();
+          }}
+          className="space-y-6 rounded-md border-2 border-[#111827] bg-white p-6 shadow-md 
+                     dark:border-[#333] dark:bg-[#1E1E1E] transition-colors duration-300"
+        >
+          {/* Grid responsiva */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Sprint */}
+            <div className="md:col-span-2">
               <label
                 htmlFor="sprint-select"
                 className="mb-1 block text-sm font-bold dark:text-gray-200"
@@ -43,7 +51,8 @@ export const EntregaForm = ({
               </label>
               <select
                 id="sprint-select"
-                className="w-full rounded border px-2 py-1 dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] 
+                           dark:bg-[#2A2A2A] dark:text-gray-200"
                 value={sprint}
                 onChange={(e) => setSprint(e.target.value)}
                 aria-invalid={!!errors.sprint}
@@ -54,13 +63,14 @@ export const EntregaForm = ({
                 ))}
               </select>
               {errors.sprint && (
-                <p id="sprint-error" className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
                   {errors.sprint}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* GitHub */}
+            <div className="md:col-span-2">
               <label
                 htmlFor="github-link"
                 className="mb-1 block text-sm font-bold dark:text-gray-200"
@@ -70,21 +80,21 @@ export const EntregaForm = ({
               <input
                 id="github-link"
                 type="url"
-                className="w-full rounded border px-2 py-1 dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] 
+                           dark:bg-[#2A2A2A] dark:text-gray-200"
                 placeholder="https://github.com/usuario/proyecto"
                 value={githubLink}
                 onChange={(e) => setGithubLink(e.target.value)}
-                aria-invalid={!!errors.githubLink}
-                aria-describedby={errors.githubLink ? "github-error" : undefined}
               />
               {errors.githubLink && (
-                <p id="github-error" className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
                   {errors.githubLink}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* Render */}
+            <div className="md:col-span-2">
               <label
                 htmlFor="render-link"
                 className="mb-1 block text-sm font-bold dark:text-gray-200"
@@ -94,21 +104,21 @@ export const EntregaForm = ({
               <input
                 id="render-link"
                 type="url"
-                className="w-full rounded border px-2 py-1 dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] 
+                           dark:bg-[#2A2A2A] dark:text-gray-200"
                 placeholder="https://render.com/..."
                 value={renderLink}
                 onChange={(e) => setRenderLink(e.target.value)}
-                aria-invalid={!!errors.renderLink}
-                aria-describedby={errors.renderLink ? "render-error" : undefined}
               />
               {errors.renderLink && (
-                <p id="render-error" className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
                   {errors.renderLink}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* Comentarios */}
+            <div className="md:col-span-2">
               <label
                 htmlFor="comentarios"
                 className="mb-1 block text-sm font-bold dark:text-gray-200"
@@ -118,25 +128,36 @@ export const EntregaForm = ({
               <textarea
                 id="comentarios"
                 rows="3"
-                className="w-full rounded border px-2 py-1 dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] 
+                           dark:bg-[#2A2A2A] dark:text-gray-200"
                 placeholder="Notas adicionales..."
                 value={comentarios}
                 onChange={(e) => setComentarios(e.target.value)}
               />
             </div>
-
-            <div className="mt-4 flex justify-center">
-              <Button
-                variant="primary"
-                className="px-6 py-2"
-                onClick={onAgregar}
-                aria-label="Agregar nueva entrega"
-              >
-                Agregar Entrega
-              </Button>
-            </div>
           </div>
-        </div>
+
+          {/* Acciones */}
+          <div className="flex flex-col gap-3 md:flex-row md:justify-end">
+            {onVolver && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full md:w-auto px-6 py-2"
+                onClick={onVolver}
+              >
+                Volver
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full md:w-auto px-6 py-2"
+            >
+              Agregar Entrega
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

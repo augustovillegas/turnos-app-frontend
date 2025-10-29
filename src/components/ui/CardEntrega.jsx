@@ -1,52 +1,82 @@
+// === CardEntrega ===
+// Tarjeta visual coherente con CardTurno (modo móvil y desktop)
+
+import { Button } from "./Button";
 import { Status } from "./Status";
 
 export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
+  if (!entrega) return null;
+
   return (
-    <div className="border-2 border-[#111827] dark:border-[#333] rounded-md p-4 bg-white dark:bg-[#1E1E1E] shadow space-y-2">
-      <p className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-        Sprint {entrega.sprint}
-      </p>
-      <p className="text-sm dark:text-gray-200">
-        <strong>GitHub:</strong>{" "}
-        <a
-          href={entrega.githubLink}
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-        >
-          {entrega.githubLink}
-        </a>
-      </p>
-      {entrega.renderLink && (
-        <p className="text-sm dark:text-gray-200">
+    <div
+      className="flex flex-col gap-3 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md 
+                 transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E]"
+    >
+      {/* Encabezado */}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-lg font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          Sprint {entrega.sprint ?? "-"}
+        </h3>
+        <Status status={entrega.reviewStatus || entrega.estado || "A revisar"} />
+      </div>
+
+      {/* Contenido */}
+      <div className="flex flex-col gap-1 text-sm text-[#111827] dark:text-gray-200">
+        <p className="truncate">
+          <strong>GitHub:</strong>{" "}
+          {entrega.githubLink ? (
+            <a
+              href={entrega.githubLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+            >
+              {entrega.githubLink}
+            </a>
+          ) : (
+            "-"
+          )}
+        </p>
+
+        <p className="truncate">
           <strong>Render:</strong>{" "}
-          <a
-            href={entrega.renderLink}
-            target="_blank"
-            rel="noreferrer"
-            className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
-          >
-            {entrega.renderLink}
-          </a>
+          {entrega.renderLink ? (
+            <a
+              href={entrega.renderLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+            >
+              {entrega.renderLink}
+            </a>
+          ) : (
+            "-"
+          )}
         </p>
-      )}
-      {entrega.comentarios && (
-        <p className="text-sm dark:text-gray-200">
-          <strong>Comentarios:</strong> {entrega.comentarios}
+
+        <p className="truncate">
+          <strong>Comentarios:</strong>{" "}
+          {entrega.comentarios && entrega.comentarios.trim() !== ""
+            ? entrega.comentarios
+            : "-"}
         </p>
-      )}
-      <div className="flex justify-between items-center pt-1">
-        <Status status={entrega.reviewStatus} />
-        {entrega.reviewStatus === "A revisar" && onCancelar && (
-          <button
-            onClick={onCancelar}
+      </div>
+
+      {/* Acción */}
+      {entrega.reviewStatus === "A revisar" && (
+        <div className="flex justify-end pt-2">
+          <Button
+            variant="danger"
+            onClick={() => onCancelar?.(entrega)}
             disabled={disabled}
-            className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full md:w-auto py-1"
           >
             Cancelar
-          </button>
-        )}
-      </div>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+
+

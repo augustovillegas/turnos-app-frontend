@@ -15,15 +15,13 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../utils/turnos/form";
+import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { Skeleton } from "../components/ui/Skeleton";
+import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const DashboardAlumno = () => {
   // --- Contexto compartido y autenticacion del alumno ---
@@ -674,7 +672,9 @@ export const DashboardAlumno = () => {
                   ))
                 ) : (
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                      No hay registros.
+                    </p>
                   </div>
                 )}
               </div>
@@ -820,7 +820,9 @@ export const DashboardAlumno = () => {
                   ))
                 ) : (
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                      No hay registros.
+                    </p>
                   </div>
                 )}
               </div>
@@ -838,25 +840,27 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-            SECCION: ENTREGABLES
-        ========================== */}
+    SECCION: ENTREGABLES
+========================== */}
         {active === "Entregables" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
             {modoEntrega === "listar" && (
-              <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
-                <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+                {/* Encabezado */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
-                    Entregables (Trabajos Practicos)
+                    Entregables (Trabajos Prácticos)
                   </h2>
                   <Button
                     variant="primary"
-                    className="self-start md:self-auto"
+                    className="px-6 py-2 self-start md:self-auto"
                     onClick={() => setModoEntrega("crear")}
                   >
                     Nueva Entrega
                   </Button>
                 </div>
 
+                {/* Buscador */}
                 <SearchBar
                   data={entregasAlumno}
                   fields={[
@@ -889,9 +893,9 @@ export const DashboardAlumno = () => {
                         "Render",
                         "Comentarios",
                         "Estado",
-                        "Accion",
+                        "Acción",
                       ]}
-                      data={paginatedEntregas.items || []} //  Siempre renderiza la tabla, aunque vacia
+                      data={paginatedEntregas.items || []}
                       minWidth="min-w-[680px]"
                       containerClass="px-4"
                       renderRow={(e) => (
@@ -942,9 +946,22 @@ export const DashboardAlumno = () => {
                             )}
                           </td>
                         </>
-                      
                       )}
-                    />
+                    >
+                      {/* Fila vacía con EmptyRow */}
+                      {!hasEntregas && (
+                        <EmptyRow
+                          columns={[
+                            "Sprint",
+                            "GitHub",
+                            "Render",
+                            "Comentarios",
+                            "Estado",
+                            "Acción",
+                          ]}
+                        />
+                      )}
+                    </Table>
                   )}
                 </div>
 
@@ -966,16 +983,12 @@ export const DashboardAlumno = () => {
                       />
                     ))
                   ) : (
-                    // Agrega recuadro vacio para mantener consistencia visual en movil
-                    <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                      <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
-                        No hay registros.
-                      </p>
-                    </div>
+                    // Recuadro vacío en móviles (mantiene coherencia visual)
+                    <EmptyRow.Mobile />
                   )}
                 </div>
 
-                {/*  Paginacion visible aunque vacia */}
+                {/* Paginación */}
                 <Pagination
                   totalItems={paginatedEntregas.totalItems || 0}
                   itemsPerPage={ITEMS_PER_PAGE}
@@ -987,12 +1000,16 @@ export const DashboardAlumno = () => {
 
             {/* ====== FORMULARIO DE CREACION ====== */}
             {modoEntrega === "crear" && (
-              <div className="p-6 flex flex-col gap-4">
-                <div className="flex justify-end mx-auto w-full max-w-5xl">
+              <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+                {/* Cabecera */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                    Nueva Entrega
+                  </h2>
                   <Button
                     variant="secondary"
                     onClick={() => setModoEntrega("listar")}
-                    className="px-6 py-2"
+                    className="px-6 py-2 self-start md:self-auto"
                   >
                     Volver
                   </Button>
@@ -1026,8 +1043,3 @@ export const DashboardAlumno = () => {
     </div>
   );
 };
-
-
-
-
-

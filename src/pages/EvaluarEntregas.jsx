@@ -176,107 +176,104 @@ export const EvaluarEntregas = () => {
 
         {/* ---- Versión Desktop ---- */}
         <div className="hidden sm:block">
-          {paginatedEntregasPendientes.items.length > 0 ? (
-            <Table
-              columns={[
-                "Sprint",
-                "Alumno",
-                "GitHub",
-                "Render",
-                "Comentarios",
-                "Fecha",
-                "Estado",
-                "Acción",
-              ]}
-              data={paginatedEntregasPendientes.items}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(e) => (
-                <>
-                  <td className="border p-2 text-center">Sprint {e.sprint}</td>
-                  <td className="border p-2 text-center">
-                    {e.alumno || "Sin asignar"}
-                  </td>
-                  <td className="border p-2 text-center">
-                    {e.githubLink ? (
-                      <a
-                        href={e.githubLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          <Table
+            columns={[
+              "Sprint",
+              "Alumno",
+              "GitHub",
+              "Render",
+              "Comentarios",
+              "Fecha",
+              "Estado",
+              "Acción",
+            ]}
+            data={paginatedEntregasPendientes.items || []}
+            minWidth="min-w-[680px]"
+            containerClass="px-4"
+            renderRow={(e) => (
+              <>
+                <td className="border p-2 text-center">Sprint {e.sprint}</td>
+                <td className="border p-2 text-center">
+                  {e.alumno || "Sin asignar"}
+                </td>
+                <td className="border p-2 text-center">
+                  {e.githubLink ? (
+                    <a
+                      href={e.githubLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      GitHub
+                    </a>
+                  ) : (
+                    "No entregado"
+                  )}
+                </td>
+                <td className="border p-2 text-center">
+                  {e.renderLink ? (
+                    <a
+                      href={e.renderLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      Render
+                    </a>
+                  ) : (
+                    "No entregado"
+                  )}
+                </td>
+                <td className="border p-2 text-center">
+                  {e.comentarios || "-"}
+                </td>
+                <td className="border p-2 text-center">
+                  {e.fechaEntrega || "—"}
+                </td>
+                <td className="border p-2 text-center">
+                  <Status status={getEstadoUI(e)} />
+                </td>
+                <td className="border p-2 text-center">
+                  {esPendiente(e) && (
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        variant="success"
+                        className="py-1"
+                        onClick={() => handleAprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
                       >
-                        GitHub
-                      </a>
-                    ) : (
-                      "No entregado"
-                    )}
-                  </td>
-                  <td className="border p-2 text-center">
-                    {e.renderLink ? (
-                      <a
-                        href={e.renderLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="py-1"
+                        onClick={() => handleDesaprobarEntrega(e)}
+                        disabled={processingEntregaId === e.id}
                       >
-                        Render
-                      </a>
-                    ) : (
-                      "No entregado"
-                    )}
-                  </td>
-                  <td className="border p-2 text-center">
-                    {e.comentarios || "-"}
-                  </td>
-                  <td className="border p-2 text-center">
-                    {e.fechaEntrega || "—"}
-                  </td>
-                  <td className="border p-2 text-center">
-                    <Status status={getEstadoUI(e)} />
-                  </td>
-                  <td className="border p-2 text-center">
-                    {esPendiente(e) && (
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          variant="success"
-                          className="py-1"
-                          onClick={() => handleAprobarEntrega(e)}
-                          disabled={processingEntregaId === e.id}
-                        >
-                          Aprobar
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="py-1"
-                          onClick={() => handleDesaprobarEntrega(e)}
-                          disabled={processingEntregaId === e.id}
-                        >
-                          Desaprobar
-                        </Button>
-                      </div>
-                    )}
-                  </td>
-                </>
-              )}
-            />
-          ) : (
-            <table className="w-full">
-              <tbody>
-                <EmptyRow
-                  columns={[
-                    "Sprint",
-                    "Alumno",
-                    "GitHub",
-                    "Render",
-                    "Comentarios",
-                    "Fecha",
-                    "Estado",
-                    "Acción",
-                  ]}
-                />
-              </tbody>
-            </table>
-          )}
+                        Desaprobar
+                      </Button>
+                    </div>
+                  )}
+                </td>
+              </>
+            )}
+          >
+            {/* Fila vacía dentro del mismo Table */}
+            {!paginatedEntregasPendientes.items.length && (
+              <EmptyRow
+                columns={[
+                  "Sprint",
+                  "Alumno",
+                  "GitHub",
+                  "Render",
+                  "Comentarios",
+                  "Fecha",
+                  "Estado",
+                  "Acción",
+                ]}
+              />
+            )}
+          </Table>
         </div>
 
         {/* ---- Versión Mobile ---- */}
@@ -354,12 +351,7 @@ export const EvaluarEntregas = () => {
               </div>
             ))
           ) : (
-            // Card retro tipo EmptyRow
-            <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-              <p className="text-sm font-mono text-[#111827] dark:text-gray-300">
-                No hay registros.
-              </p>
-            </div>
+            <EmptyRow.Mobile message="No hay entregas pendientes." />
           )}
         </div>
 
