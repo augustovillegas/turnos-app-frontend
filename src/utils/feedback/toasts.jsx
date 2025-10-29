@@ -8,76 +8,83 @@ const icons = {
   info: <span style={{ fontWeight: "bold" }}>i</span>,
 };
 
-// Estilo base estilo Windows 98
+// Estilo base con adaptación fluida y texto en una sola línea
 const baseLightStyle = {
   border: "2px solid #808080",
-  background: "#C0C0C0",
-  color: "#000000",
+  background: "#D4D4D4",
+  color: "#111",
   fontFamily: "'VT323', monospace",
-  fontSize: "1rem",
-  padding: "8px 16px",
+  fontSize: "clamp(0.85rem, 1vw + 0.2rem, 1.1rem)",
+  padding: "clamp(6px, 1vw, 10px) clamp(12px, 2vw, 20px)",
   letterSpacing: "0.5px",
   textTransform: "uppercase",
-  boxShadow: "3px 3px 0px #00000044",
+  boxShadow: "3px 3px 0px #00000033",
   display: "flex",
   alignItems: "center",
-  gap: "8px",
+  justifyContent: "flex-start",
+  flexWrap: "nowrap",
+  gap: "clamp(6px, 1vw, 10px)",
+  borderRadius: "4px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  maxWidth: "min(80vw, 420px)", // límite visual para textos largos
 };
 
 // Variante oscura inspirada en modo “terminal”
 const baseDarkStyle = {
   ...baseLightStyle,
-  border: "2px solid #404040",
-  background: "#1C1C1C",
-  color: "#E0E0E0",
-  boxShadow: "3px 3px 0px #000000aa",
+  border: "2px solid #3a3a3a",
+  background: "#181818",
+  color: "#EAEAEA",
+  boxShadow: "3px 3px 0px #00000088",
 };
 
-// Variantes tipo alerta — Win98 con tonos pastel/grisáceos
+// Variantes con tonos más equilibrados
 const variantLightStyle = {
   success: {
-    background: "#DFFFD6",
-    borderColor: "#008000",
-    color: "#003300",
+    background: "#E1F7DA",
+    borderColor: "#4AAE4A",
+    color: "#0C380C",
   },
   error: {
-    background: "#FFD6D6",
-    borderColor: "#CC0000",
-    color: "#330000",
+    background: "#F9D7D6",
+    borderColor: "#C13C3C",
+    color: "#400000",
   },
   warning: {
-    background: "#FFF6CC",
-    borderColor: "#C09000",
-    color: "#332800",
+    background: "#FFF3CC",
+    borderColor: "#C89B00",
+    color: "#3A2F00",
   },
   info: {
-    background: "#D6E6FF",
-    borderColor: "#000080",
-    color: "#000040",
+    background: "#DCE8FA",
+    borderColor: "#3C6FD1",
+    color: "#122E6E",
   },
 };
 
-// Versiones oscuras con contraste ajustado
+// Versiones oscuras con contraste y legibilidad mejorados
 const variantDarkStyle = {
   success: {
-    background: "#1E2E1E",
-    borderColor: "#00FF66",
-    color: "#BBF7D0",
+    background: "#1F2F23",
+    borderColor: "#32D96B",
+    color: "#BFFFCB",
   },
   error: {
-    background: "#2E1E1E",
-    borderColor: "#FF4D4D",
-    color: "#FECACA",
+    background: "#2B1C1C",
+    borderColor: "#E85050",
+    color: "#FCA5A5",
   },
   warning: {
-    background: "#2E2A1E",
-    borderColor: "#F5C542",
-    color: "#FDE68A",
+    background: "#2F2918",
+    borderColor: "#E9B43A",
+    color: "#FAE08B",
   },
   info: {
-    background: "#1E263A",
-    borderColor: "#66A3FF",
-    color: "#BFDBFE",
+    background: "#1C2538",
+    borderColor: "#4D8CF7",
+    color: "#C7DFFF",
   },
 };
 
