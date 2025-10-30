@@ -9,15 +9,17 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
 
   return (
     <div
-      className="flex flex-col gap-3 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md 
-                 transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E]"
+      className="w-full flex flex-col gap-3 rounded-lg border-2 border-[#111827]/40 bg-white p-4 shadow-md 
+            transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E]"
     >
       {/* Encabezado */}
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Sprint {entrega.sprint ?? "-"}
         </h3>
-        <Status status={entrega.reviewStatus || entrega.estado || "A revisar"} />
+        <Status
+          status={entrega.reviewStatus || entrega.estado || "A revisar"}
+        />
       </div>
 
       {/* Contenido */}
@@ -29,7 +31,7 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
               href={entrega.githubLink}
               target="_blank"
               rel="noreferrer"
-              className="text-blue-600 underline dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+              className="text-blue-600 underline dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 break-words"
             >
               {entrega.githubLink}
             </a>
@@ -78,5 +80,3 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
     </div>
   );
 };
-
-

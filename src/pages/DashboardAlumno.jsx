@@ -15,13 +15,17 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
-import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+} from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyRow } from "../components/ui/EmptyRow";
+import { AlumnoActions } from "../components/ui/AlumnoActions";
 
 export const DashboardAlumno = () => {
   // --- Contexto compartido y autenticacion del alumno ---
@@ -148,9 +152,12 @@ export const DashboardAlumno = () => {
   const [pageEntregas, setPageEntregas] = useState(1);
   const [modoEntrega, setModoEntrega] = useState("listar");
 
-  // --- Items de navegacion lateral del dashboard ---
   const items = [
-    { id: "turnos", label: "Solicitar turnos", icon: "/icons/calendar-1.png" },
+    {
+      id: "turnos",
+      label: "Solicitar turnos",
+      icon: "/icons/calendar-1.png",
+    },
     {
       id: "mis-turnos",
       label: "Mis turnos",
@@ -528,8 +535,27 @@ export const DashboardAlumno = () => {
 
   return (
     <div className="flex min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
-      <SideBar items={items} active={active} onSelect={handleSidebarSelect} />
-
+      <SideBar
+        items={[
+          {
+            id: "turnos",
+            label: "Solicitar turnos",
+            icon: "/icons/calendar-1.png",
+          },
+          {
+            id: "mis-turnos",
+            label: "Mis turnos",
+            icon: "/icons/directory_explorer-5.png",
+          },
+          {
+            id: "Entregables",
+            label: "Entregables",
+            icon: "/icons/directory_net_web-4.png",
+          },
+        ]}
+        active={active}
+        onSelect={handleSidebarSelect}
+      />
       <div className="flex-1 p-6">
         {/* =========================
             SECCION: TURNOS DISPONIBLES
@@ -617,32 +643,15 @@ export const DashboardAlumno = () => {
                           <Status status={t.estado || "Disponible"} />
                         </td>
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                          {t.estado === "Disponible" && (
-                            <Button
-                              variant="primary"
-                              className="py-1"
-                              onClick={() => handleSolicitarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Solicitar turno
-                            </Button>
-                          )}
-                          {t.estado === "Solicitado" && (
-                            <Button
-                              variant="secondary"
-                              className="py-1"
-                              onClick={() => handleCancelarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Cancelar solicitud
-                            </Button>
-                          )}
+                          <AlumnoActions
+                            tipo="turno"
+                            item={t}
+                            onSolicitar={handleSolicitarTurno}
+                            onCancelarTurno={handleCancelarTurno}
+                            disabled={
+                              isTurnosSectionLoading || processingTurno === t.id
+                            }
+                          />
                         </td>
                       </>
                     )}
@@ -650,7 +659,7 @@ export const DashboardAlumno = () => {
                 )}
               </div>
 
-              {/* Tarjetas Mobile */}
+              {/* ====== CARDS MOBILE ====== */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
                 {isTurnosSectionLoading ? (
                   <div className="space-y-3 py-4">
@@ -778,20 +787,18 @@ export const DashboardAlumno = () => {
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                           <Status status={t.estado || "-"} />
                         </td>
-                        <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                          {t.estado === "Solicitado" && (
-                            <Button
-                              variant="secondary"
-                              className="py-1"
-                              onClick={() => handleCancelarTurno(t)}
-                              disabled={
-                                isTurnosSectionLoading ||
-                                processingTurno === t.id
-                              }
-                            >
-                              Cancelar turno
-                            </Button>
-                          )}
+                        <td
+                          className="border border-[#111827] p-2 text-center dark:border-[#333]"
+                          style={{ overflow: "visible" }}
+                        >
+                          <AlumnoActions
+                            tipo="turno"
+                            item={t}
+                            onCancelarTurno={handleCancelarTurno}
+                            disabled={
+                              isTurnosSectionLoading || processingTurno === t.id
+                            }
+                          />
                         </td>
                       </>
                     )}
@@ -799,7 +806,7 @@ export const DashboardAlumno = () => {
                 )}
               </div>
 
-              {/* Tarjetas Mobile */}
+              {/* ====== CARDS MOBILE ====== */}
               <div className="mt-4 space-y-4 px-2 sm:hidden">
                 {isTurnosSectionLoading ? (
                   <div className="space-y-3 py-4">
@@ -821,7 +828,7 @@ export const DashboardAlumno = () => {
                 ) : (
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
                     <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
-                      No hay registros.
+                      <EmptyRow.Mobile />
                     </p>
                   </div>
                 )}
@@ -840,12 +847,12 @@ export const DashboardAlumno = () => {
         )}
 
         {/* =========================
-    SECCION: ENTREGABLES
-========================== */}
+            SECCION: ENTREGABLES
+        ========================== */}
         {active === "Entregables" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
             {modoEntrega === "listar" && (
-              <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+              <div className="mx-auto flex w-full flex-col gap-6 max-w-full sm:max-w-6xl px-2">
                 {/* Encabezado */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
@@ -934,16 +941,12 @@ export const DashboardAlumno = () => {
                             <Status status={e.reviewStatus} />
                           </td>
                           <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
-                            {e.reviewStatus === "A revisar" && (
-                              <Button
-                                variant="danger"
-                                className="py-1"
-                                onClick={() => handleCancelarEntrega(e)}
-                                disabled={isEntregasSectionLoading}
-                              >
-                                Cancelar
-                              </Button>
-                            )}
+                            <AlumnoActions
+                              tipo="entrega"
+                              item={e}
+                              onCancelarEntrega={handleCancelarEntrega}
+                              disabled={isEntregasSectionLoading}
+                            />
                           </td>
                         </>
                       )}
@@ -965,7 +968,7 @@ export const DashboardAlumno = () => {
                   )}
                 </div>
 
-                {/* ====== TARJETAS MOBILE ====== */}
+                {/* ====== CARDS MOBILE ====== */}
                 <div className="mt-4 space-y-4 px-2 sm:hidden">
                   {isEntregasSectionLoading ? (
                     <div className="space-y-3 py-4">
