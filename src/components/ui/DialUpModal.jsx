@@ -69,12 +69,7 @@ export const DialUpModal = ({ show, message }) => {
         <button
           type="button"
           onClick={() => setMuted((v) => !v)}
-          className="
-      bg-[#1E3A8A] dark:bg-[#017F82]
-      hover:brightness-110
-      rounded-full p-3
-      transition shadow-md
-    "
+          className="bg-white/45 dark:bg-white/35 hover:brightness-110 rounded-full p-3 transition shadow-md"
           aria-label={muted ? "Activar sonido" : "Silenciar sonido"}
         >
           <img
