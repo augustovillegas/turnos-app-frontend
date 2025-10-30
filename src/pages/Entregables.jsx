@@ -1,4 +1,3 @@
-// /pages/Entregables.jsx
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "../components/ui/Button";
 import { CardEntrega } from "../components/ui/CardEntrega";
@@ -62,7 +61,7 @@ export const Entregables = ({
             </h2>
             <Button
               variant="primary"
-              className="px-6 py-2 self-start md:self-auto"
+              className="w-full md:w-auto px-6 py-2 self-start md:self-auto"
               onClick={() => setModoEntrega("crear")}
             >
               Nueva Entrega
@@ -213,13 +212,6 @@ export const Entregables = ({
             <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
               Nueva Entrega
             </h2>
-            <Button
-              variant="secondary"
-              onClick={() => setModoEntrega("listar")}
-              className="px-6 py-2 self-start md:self-auto"
-            >
-              Volver
-            </Button>
           </div>
 
           <EntregaForm

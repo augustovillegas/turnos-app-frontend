@@ -163,7 +163,9 @@ export const DashboardAlumno = () => {
           await updateTurno(turno.id, payload);
           showToast("Solicitud cancelada", "info");
         } catch (error) {
-          pushError?.("Error al cancelar turno", { description: error.message });
+          pushError?.("Error al cancelar turno", {
+            description: error.message,
+          });
         } finally {
           setProcessingTurno(null);
         }
@@ -172,10 +174,16 @@ export const DashboardAlumno = () => {
   };
 
   // --- Manejo de entregas ---
-  const handleAgregarEntrega = async ({ sprint, githubLink, renderLink, comentarios }) => {
+  const handleAgregarEntrega = async ({
+    sprint,
+    githubLink,
+    renderLink,
+    comentarios,
+  }) => {
     const validation = {};
     if (!sprint) validation.sprint = "Selecciona el sprint a entregar.";
-    if (!githubLink?.trim()) validation.githubLink = "Ingresa el enlace del repositorio.";
+    if (!githubLink?.trim())
+      validation.githubLink = "Ingresa el enlace del repositorio.";
     else if (!githubLink.startsWith("http"))
       validation.githubLink = "El enlace de GitHub debe ser válido.";
     if (renderLink && !renderLink.startsWith("http"))
@@ -204,7 +212,9 @@ export const DashboardAlumno = () => {
       });
       showToast("Entrega registrada correctamente", "success");
     } catch (error) {
-      pushError?.("Error al registrar la entrega", { description: error.message });
+      pushError?.("Error al registrar la entrega", {
+        description: error.message,
+      });
     }
   };
 
@@ -219,7 +229,9 @@ export const DashboardAlumno = () => {
           await removeEntregaRemoto(entrega.id);
           showToast("Entrega cancelada", "info");
         } catch (error) {
-          pushError?.("Error al cancelar entrega", { description: error.message });
+          pushError?.("Error al cancelar entrega", {
+            description: error.message,
+          });
         }
       },
     });
@@ -255,9 +267,16 @@ export const DashboardAlumno = () => {
   // --- Sidebar ---
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
-      cerrarSesion();
-      showToast("Sesión cerrada correctamente.", "info");
-      navigate("/", { replace: true });
+      showModal({
+        type: "warning",
+        title: "¿Cerrar sesión?",
+        message: "¿Estás seguro de que deseas cerrar sesión?",
+        onConfirm: () => {
+          cerrarSesion();
+          showToast("Sesión cerrada correctamente", "info");
+          navigate("/", { replace: true });
+        },
+      });
       return;
     }
     setActive(id);
@@ -282,7 +301,7 @@ export const DashboardAlumno = () => {
             id: "Entregables",
             label: "Entregables",
             icon: "/icons/directory_net_web-4.png",
-          },
+          },         
         ]}
         active={active}
         onSelect={handleSidebarSelect}

@@ -6,6 +6,7 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
 import { CardTurno } from "../components/ui/CardTurno";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
+import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const TurnosDisponibles = ({
   turnos,
@@ -39,11 +40,16 @@ export const TurnosDisponibles = ({
 
         <SearchBar
           data={turnos}
-          fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
+          fields={[
+            "sala",
+            "fecha",
+            "horario",
+            "estado",
+            "review",
+            "comentarios",
+          ]}
           placeholder="Buscar turnos disponibles"
-          onSearch={(results) => {
-            setPageTurnosDisponibles(1);
-          }}
+          onSearch={() => setPageTurnosDisponibles(1)}
         />
 
         {/* Tabla Desktop */}
@@ -54,9 +60,17 @@ export const TurnosDisponibles = ({
                 <Skeleton key={index} height="2.75rem" />
               ))}
             </div>
-          ) : hasTurnos ? (
+          ) : (
             <Table
-              columns={["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acción"]}
+              columns={[
+                "Review",
+                "Fecha",
+                "Horario",
+                "Sala",
+                "Zoom",
+                "Estado",
+                "Acción",
+              ]}
               data={paginated}
               minWidth="min-w-[680px]"
               containerClass="px-4"
@@ -94,14 +108,28 @@ export const TurnosDisponibles = ({
                       item={t}
                       onSolicitar={onSolicitar}
                       onCancelarTurno={handleCancelarTurno}
-                      disabled={isTurnosSectionLoading || processingTurno === t.id}
+                      disabled={
+                        isTurnosSectionLoading || processingTurno === t.id
+                      }
                     />
                   </td>
                 </>
               )}
-            />
-          ) : (
-            <p className="text-center text-sm py-4">No hay registros.</p>
+            >
+              {!hasTurnos && (
+                <EmptyRow
+                  columns={[
+                    "Review",
+                    "Fecha",
+                    "Horario",
+                    "Sala",
+                    "Zoom",
+                    "Estado",
+                    "Acción",
+                  ]}
+                />
+              )}
+            </Table>
           )}
         </div>
 
@@ -124,7 +152,7 @@ export const TurnosDisponibles = ({
               />
             ))
           ) : (
-            <p className="text-center text-sm py-4">No hay registros.</p>
+            <EmptyRow.Mobile />
           )}
         </div>
 
