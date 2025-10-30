@@ -10,7 +10,7 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
   return (
     <div
       className="w-full flex flex-col gap-3 rounded-lg border-2 border-[#111827]/40 bg-white p-4 shadow-md 
-            transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E]"
+         transition-colors duration-300 dark:border-[#333] dark:bg-[#1E1E1E] overflow-hidden"
     >
       {/* Encabezado */}
       <div className="flex items-center justify-between gap-2">
@@ -24,7 +24,7 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
 
       {/* Contenido */}
       <div className="flex flex-col gap-1 text-sm text-[#111827] dark:text-gray-200">
-        <p className="truncate">
+        <p className="break-words text-sm overflow-hidden text-ellipsis">
           <strong>GitHub:</strong>{" "}
           {entrega.githubLink ? (
             <a
@@ -40,7 +40,7 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
           )}
         </p>
 
-        <p className="truncate">
+        <p className="break-words text-sm overflow-hidden text-ellipsis">
           <strong>Render:</strong>{" "}
           {entrega.renderLink ? (
             <a
@@ -56,7 +56,7 @@ export const CardEntrega = ({ entrega, onCancelar, disabled = false }) => {
           )}
         </p>
 
-        <p className="truncate">
+        <p className="break-words text-sm overflow-hidden text-ellipsis">
           <strong>Comentarios:</strong>{" "}
           {entrega.comentarios && entrega.comentarios.trim() !== ""
             ? entrega.comentarios
