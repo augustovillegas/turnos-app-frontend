@@ -46,12 +46,13 @@ export const DialUpModal = ({ show, message }) => {
     <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50 transition-colors duration-300">
       <div
         className="
-    bg-[#E5E5E5] dark:bg-[#1E1E1E]
-    border-2 border-[#111827] dark:border-[#333]
-    rounded-xl shadow-2xl px-8 py-6
-    flex flex-col items-center space-y-5
-    transition-all duration-300
-  "
+          relative
+          bg-[#E5E5E5] dark:bg-[#1E1E1E]
+          border-2 border-[#111827] dark:border-[#333]
+          rounded-xl shadow-2xl px-8 py-6
+          flex flex-col items-center space-y-5
+          transition-all duration-300
+        "
       >
         {/* 🔹 Ícono principal */}
         <img
@@ -77,6 +78,27 @@ export const DialUpModal = ({ show, message }) => {
             alt={muted ? "Sonido desactivado" : "Sonido activado"}
             className="w-6 h-6 filter brightness-110"
           />
+        </button>
+
+        {/* 🔹 Botón sutil de cancelar conexión */}
+        <button
+          type="button"
+          onClick={() => {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.pause();
+              audio.currentTime = 0;
+            }
+            window.location.href = "/";
+          }}
+          className="
+            absolute bottom-3 right-5
+            text-xs text-gray-500 dark:text-gray-400
+            hover:text-gray-700 dark:hover:text-gray-200
+            transition-colors duration-200
+          "
+        >
+          Cancelar conexión
         </button>
       </div>
     </div>
