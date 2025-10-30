@@ -2,30 +2,33 @@ import { DropdownActions } from "../ui/DropdownActions";
 
 export const AlumnoActions = ({
   item,
-  tipo = "turno", // "turno" | "entrega"
+  tipo = "turno",
   onSolicitar,
   onCancelarTurno,
   onCancelarEntrega,
+  // 🔹 nuevo:
+  onEditarEntrega,
   disabled = false,
 }) => {
   if (!item) return null;
 
   const options = [];
 
+  // === ACCIONES PARA TURNOS ===
   if (tipo === "turno") {
     const estado = String(item.estado || "").toLowerCase();
 
     if (estado === "disponible") {
       options.push({
         label: "Solicitar turno",
-        icon: "/icons/check.png", // ✅ icono verde de confirmar
+        icon: "/icons/check.png",
         onClick: () => onSolicitar?.(item),
         disabled,
       });
     } else if (estado === "solicitado") {
       options.push({
         label: "Cancelar turno",
-        icon: "/icons/close.png", // ✅ icono rojo de cancelar
+        icon: "/icons/close.png",
         danger: true,
         onClick: () => onCancelarTurno?.(item),
         disabled,
@@ -33,19 +36,27 @@ export const AlumnoActions = ({
     } else if (["aprobado", "rechazado"].includes(estado)) {
       options.push({
         label: "Ver detalle",
-        icon: "/icons/eye.png", // ✅ icono azul de “ver”
+        icon: "/icons/eye.png",
         onClick: () => console.log("Detalle del turno", item),
       });
     }
   }
 
+  // === ACCIONES PARA ENTREGAS ===
   if (tipo === "entrega") {
     const estado = String(item.reviewStatus || "").toLowerCase();
 
     if (estado === "a revisar") {
       options.push({
-        label: "Elminar entrega",
-        icon: "/icons/trash.png", // ✅ icono papelera
+        label: "Editar entrega",
+        icon: "/icons/edit.png",
+        onClick: () => onEditarEntrega?.(item),
+        disabled,
+      });
+
+      options.push({
+        label: "Eliminar entrega",
+        icon: "/icons/trash.png",
         danger: true,
         onClick: () => onCancelarEntrega?.(item),
         disabled,

@@ -9,6 +9,7 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { Table } from "../components/ui/Table";
+import { EntregaEdit } from "../components/ui/EntregaEdit";
 
 export const Entregables = ({
   entregas = [],
@@ -26,6 +27,7 @@ export const Entregables = ({
   const [entregaErrors, setEntregaErrors] = useState({});
   const [entregasBuscadas, setEntregasBuscadas] = useState(entregas);
   const [pageEntregas, setPageEntregas] = useState(1);
+  const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
 
   // 🔄 Actualizar resultados cuando cambien las entregas
   useEffect(() => setEntregasBuscadas(entregas), [entregas]);
@@ -108,26 +110,26 @@ export const Entregables = ({
                 containerClass="px-4"
                 renderRow={(e) => (
                   <>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       {e.sprint}
                     </td>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       <a
                         href={e.githubLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                        className="text-blue-600 underline dark:text-blue-400"
                       >
                         {e.githubLink}
                       </a>
                     </td>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       {e.renderLink ? (
                         <a
                           href={e.renderLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+                          className="text-blue-600 underline dark:text-blue-400"
                         >
                           {e.renderLink}
                         </a>
@@ -135,24 +137,27 @@ export const Entregables = ({
                         "-"
                       )}
                     </td>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333] dark:text-gray-200">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       {e.comentarios || "-"}
                     </td>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       <Status status={e.reviewStatus} />
                     </td>
-                    <td className="border border-[#111827]/30 p-2 text-center dark:border-[#333]">
+                    <td className="border p-2 text-center dark:border-[#333]">
                       <AlumnoActions
                         tipo="entrega"
                         item={e}
                         onCancelarEntrega={onCancelarEntrega}
+                        onEditarEntrega={() => {
+                          setEntregaSeleccionada(e); // 🔹 agregado
+                          setModoEntrega("editar"); // 🔹 agregado
+                        }}
                         disabled={entregasLoading}
                       />
                     </td>
                   </>
                 )}
               >
-                {/* Fila vacía con EmptyRow */}
                 {!hasEntregas && (
                   <EmptyRow
                     columns={[
@@ -183,16 +188,18 @@ export const Entregables = ({
                   key={entrega.id}
                   entrega={entrega}
                   onCancelar={() => onCancelarEntrega(entrega)}
+                  onEditar={() => {
+                    setEntregaSeleccionada(entrega); // 🔹 agregado
+                    setModoEntrega("editar"); // 🔹 agregado
+                  }}
                   disabled={entregasLoading}
                 />
               ))
             ) : (
-              // Recuadro vacío en móviles (mantiene coherencia visual)
               <EmptyRow.Mobile />
             )}
           </div>
 
-          {/* Paginación */}
           <Pagination
             totalItems={paginatedEntregas.totalItems || 0}
             itemsPerPage={ITEMS_PER_PAGE}
@@ -237,6 +244,20 @@ export const Entregables = ({
           />
         </div>
       )}
+
+      {/* =========================
+          FORMULARIO DE EDICIÓN
+      ========================== */}
+      {modoEntrega === "editar" &&
+        entregaSeleccionada && ( 
+          <EntregaEdit
+            entrega={entregaSeleccionada}
+            onVolver={() => {
+              setModoEntrega("listar");
+              setEntregaSeleccionada(null);
+            }}
+          />
+        )}
     </div>
   );
 };

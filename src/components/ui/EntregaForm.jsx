@@ -148,7 +148,7 @@ export const EntregaForm = ({
               variant="primary"
               className="w-full sm:w-auto px-5 py-2 font-semibold"
             >
-              Agregar Entrega
+              Guardar cambios
             </Button>
           </div>
         </form>

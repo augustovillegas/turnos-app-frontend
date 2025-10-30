@@ -92,9 +92,7 @@ export const DashboardProfesor = () => {
   }, [usuarioActual, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
 
   // === Manejo de navegación ===
-  const handleSidebarSelect = (id) => { 
-   
-
+  const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
       showModal({
         type: "warning",
