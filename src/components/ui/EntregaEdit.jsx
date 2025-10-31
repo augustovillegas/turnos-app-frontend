@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { EntregaForm } from "../ui/EntregaForm";
 
 export const EntregaEdit = ({ entrega, onVolver }) => {
-  const { updateEntrega, entregasLoading } = useAppData(); // 🔹 eliminado findEntregaById
+  const { updateEntrega, entregasLoading } = useAppData();
   const { showModal } = useModal();
 
   const [formValues, setFormValues] = useState({
@@ -66,15 +66,12 @@ export const EntregaEdit = ({ entrega, onVolver }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#017F82] p-6 transition-colors duration-300 dark:bg-[#0F3D3F]">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <div className="flex items-center justify-between">
+    <div className="w-full bg-transparent">
+      <div className="w-full flex flex-col gap-6">
+        <div className="flex items-center justify-between px-4 sm:px-6">
           <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Editar entrega
           </h1>
-          <Button variant="secondary" onClick={handleCancel}>
-            Cancelar
-          </Button>
         </div>
 
         <EntregaForm
