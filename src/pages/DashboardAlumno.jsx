@@ -1,6 +1,6 @@
 // === Dashboard Alumno ===
 // Panel del estudiante: solicitar turnos, ver historial y cargar entregables.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { useAppData } from "../context/AppContext";
@@ -13,6 +13,12 @@ import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
+import {
+  ensureModuleLabel,
+  matchesModule,
+  labelToModule,
+  moduleToLabel,
+} from "../utils/moduleMap";
 
 // Secciones modulares
 import { TurnosDisponibles } from "./TurnosDisponibles";
@@ -56,6 +62,39 @@ export const DashboardAlumno = () => {
   }, [usuarioActual]);
   const alumnoIdStr = alumnoId ? String(alumnoId).trim() : null;
 
+  const cohortAlumno = useMemo(() => {
+    if (!usuarioActual) return null;
+    const candidatos = [
+      usuarioActual.cohort,
+      usuarioActual.cohorte,
+      usuarioActual.cohortId,
+      usuarioActual?.datos?.cohort,
+    ];
+    for (const candidato of candidatos) {
+      const modulo = labelToModule(candidato);
+      if (modulo != null) return modulo;
+    }
+    const etiqueta = ensureModuleLabel(
+      usuarioActual.modulo ?? usuarioActual.module ?? usuarioActual.moduloSlug
+    );
+    if (etiqueta) {
+      const modulo = labelToModule(etiqueta);
+      if (modulo != null) return modulo;
+    }
+    return null;
+  }, [usuarioActual]);
+
+  const moduloAlumno = useMemo(() => {
+    if (!usuarioActual) return null;
+    const etiquetaDirecta = [
+      ensureModuleLabel(usuarioActual.modulo),
+      ensureModuleLabel(usuarioActual.module),
+      ensureModuleLabel(usuarioActual.moduloSlug),
+    ].find(Boolean);
+    if (etiquetaDirecta) return etiquetaDirecta;
+    return moduleToLabel(cohortAlumno);
+  }, [usuarioActual, cohortAlumno]);
+
   const resolveComparableId = (value) => {
     if (!value) return null;
     if (typeof value === "object") {
@@ -75,37 +114,80 @@ export const DashboardAlumno = () => {
     return String(value).trim() || null;
   };
 
-  const isTurnoDelAlumno = (turno) => {
-    if (!alumnoIdStr) return false;
-    const candidatos = [
-      turno.alumnoId,
-      turno.alumno?.id,
-      turno.alumno?._id,
-      turno.solicitanteId,
-      turno.solicitante?.id,
-      turno.userId,
-      turno.usuarioId,
-    ];
-    return candidatos.some((c) => resolveComparableId(c) === alumnoIdStr);
-  };
+  const isTurnoDelAlumno = useCallback(
+    (turno) => {
+      if (!alumnoIdStr) return false;
+      const candidatos = [
+        turno.alumnoId,
+        turno.alumno?.id,
+        turno.alumno?._id,
+        turno.solicitanteId,
+        turno.solicitante?.id,
+        turno.userId,
+        turno.usuarioId,
+      ];
+      return candidatos.some((c) => resolveComparableId(c) === alumnoIdStr);
+    },
+    [alumnoIdStr]
+  );
 
-  const isEntregaDelAlumno = (entrega) => {
-    if (!alumnoIdStr) return false;
-    const candidatos = [
-      entrega.alumnoId,
-      entrega.alumno?.id,
-      entrega.alumno?._id,
-      entrega.userId,
-      entrega.usuarioId,
-    ];
-    return candidatos.some((c) => resolveComparableId(c) === alumnoIdStr);
-  };
+  const isEntregaDelAlumno = useCallback(
+    (entrega) => {
+      if (!alumnoIdStr) return false;
+      const candidatos = [
+        entrega.alumnoId,
+        entrega.alumno?.id,
+        entrega.alumno?._id,
+        entrega.userId,
+        entrega.usuarioId,
+      ];
+      return candidatos.some((c) => resolveComparableId(c) === alumnoIdStr);
+    },
+    [alumnoIdStr]
+  );
 
   // --- Estado local ---
   const [active, setActive] = useState("turnos");
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
 
+  const coincideModuloAlumno = useCallback(
+    (turno) => {
+      if (!turno || typeof turno !== "object") return false;
+      const campos = [
+        turno?.modulo,
+        turno?.module,
+        turno?.moduloSlug,
+        turno?.cohort,
+        turno?.cohorte,
+        turno?.cohortId,
+        turno?.moduloId,
+        turno?.datos?.modulo,
+        turno?.datos?.module,
+        turno?.datos?.moduloSlug,
+        turno?.datos?.cohort,
+      ];
+      if (
+        moduloAlumno &&
+        campos.some((valor) => matchesModule(valor, moduloAlumno))
+      ) {
+        return true;
+      }
+      if (cohortAlumno != null) {
+        return campos.some((valor) => {
+          if (valor == null) return false;
+          const numero = Number(String(valor).trim());
+          if (Number.isFinite(numero)) {
+            return Math.trunc(numero) === cohortAlumno;
+          }
+          const normalizado = labelToModule(valor);
+          return normalizado != null && normalizado === cohortAlumno;
+        });
+      }
+      return !moduloAlumno && cohortAlumno == null;
+    },
+    [moduloAlumno, cohortAlumno]
+  );
   // --- Configuración de paginación ---
   const ITEMS_PER_PAGE = 5;
   const [pageTurnosDisponibles, setPageTurnosDisponibles] = useState(1);
@@ -113,17 +195,29 @@ export const DashboardAlumno = () => {
 
   // --- Cargar turnos y entregas al iniciar ---
   useEffect(() => {
-    if (!usuarioActual || !token) return;
+    if (!usuarioActual || !token || usuarioActual.role !== "alumno") return;
+    const filtrosTurnos = {};
+    if (cohortAlumno != null) filtrosTurnos.cohort = cohortAlumno;
+    if (moduloAlumno) filtrosTurnos.modulo = moduloAlumno;
+
     (async () => {
       try {
-        await Promise.all([loadTurnos(), loadEntregas()]);
+        await Promise.all([loadTurnos(filtrosTurnos), loadEntregas()]);
       } catch (error) {
         pushError?.("Error al cargar datos del alumno", {
           description: error?.message ?? "Fallo al recuperar información.",
         });
       }
     })();
-  }, [usuarioActual, token, loadTurnos, loadEntregas, pushError]);
+  }, [
+    usuarioActual,
+    token,
+    cohortAlumno,
+    moduloAlumno,
+    loadTurnos,
+    loadEntregas,
+    pushError,
+  ]);
 
   // --- Manejo de turnos ---
   const handleSolicitarTurno = async (turno) => {
@@ -246,8 +340,21 @@ export const DashboardAlumno = () => {
     return lista.filter((t) => t.review === Number(filtroReview));
   };
 
+  const turnosFiltradosPorModulo = useMemo(() => {
+    if (!moduloAlumno && cohortAlumno == null) return turnos || [];
+    return (turnos || []).filter(
+      (turno) => coincideModuloAlumno(turno) || isTurnoDelAlumno(turno)
+    );
+  }, [
+    turnos,
+    moduloAlumno,
+    cohortAlumno,
+    coincideModuloAlumno,
+    isTurnoDelAlumno,
+  ]);
+
   const turnosDisponibles = aplicarFiltro(
-    (turnos || []).filter(
+    turnosFiltradosPorModulo.filter(
       (t) =>
         ["disponible"].includes(String(t.estado || "").toLowerCase()) ||
         isTurnoDelAlumno(t)
@@ -255,7 +362,7 @@ export const DashboardAlumno = () => {
   );
 
   const turnosHistorial = aplicarFiltro(
-    (turnos || []).filter(
+    turnosFiltradosPorModulo.filter(
       (t) =>
         isTurnoDelAlumno(t) &&
         ["solicitado", "aprobado", "rechazado"].includes(

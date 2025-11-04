@@ -1,6 +1,6 @@
 // === Dashboard Profesor ===
 // Panel del docente: aprobar/rechazar turnos, gestionar usuarios y crear slots.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { useAppData } from "../context/AppContext";
@@ -9,6 +9,12 @@ import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
+import {
+  ensureModuleLabel,
+  labelToModule,
+  matchesModule,
+  moduleToLabel,
+} from "../utils/moduleMap";
 
 // === Secciones del dashboard ===
 import { CreateTurnos } from "./CreateTurnos";
@@ -33,55 +39,135 @@ export const DashboardProfesor = () => {
   const [active, setActive] = useState("solicitudes");
 
   // === Deducción del módulo del profesor ===
-  const moduloActual = useMemo(() => {
+  const moduloEtiqueta = useMemo(() => {
     if (!usuarioActual) return null;
-    const posibles = [
+    const etiquetaDirecta = [
+      ensureModuleLabel(usuarioActual.modulo),
+      ensureModuleLabel(usuarioActual.module),
+      ensureModuleLabel(usuarioActual.moduloSlug),
+    ].find(Boolean);
+    if (etiquetaDirecta) return etiquetaDirecta;
+
+    const desdeCohorte = [
       usuarioActual.cohort,
       usuarioActual.cohorte,
-      usuarioActual.modulo,
-      usuarioActual.module,
-    ];
-    return posibles.find((m) => m && String(m).trim() !== "") ?? null;
+      usuarioActual.cohortId,
+    ]
+      .map(moduleToLabel)
+      .find(Boolean);
+
+    return desdeCohorte ?? null;
   }, [usuarioActual]);
 
-  const moduloActualStr = moduloActual?.toString().toLowerCase().trim() ?? null;
-
-  const coincideModulo = (obj) => {
-    if (!obj || typeof obj !== "object") return false;
-    const campos = [
-      obj?.modulo,
-      obj?.module,
-      obj?.cohort,
-      obj?.cohorte,
-      obj?.moduloId,
-      obj?.cohortId,
-      obj?.datos?.modulo,
-      obj?.datos?.cohort,
+  const cohortAsignado = useMemo(() => {
+    if (!usuarioActual) return null;
+    const candidatos = [
+      usuarioActual.cohort,
+      usuarioActual.cohorte,
+      usuarioActual.cohortId,
     ];
-    return campos.some((val) =>
-      typeof val === "string"
-        ? val.toLowerCase().trim() === moduloActualStr
-        : false
-    );
-  };
+    for (const candidato of candidatos) {
+      if (candidato == null) continue;
+      const numeroDirecto = Number(String(candidato).trim());
+      if (Number.isFinite(numeroDirecto) && numeroDirecto > 0) {
+        return Math.trunc(numeroDirecto);
+      }
+      const numeroDesdeEtiqueta = labelToModule(candidato);
+      if (numeroDesdeEtiqueta != null) return numeroDesdeEtiqueta;
+    }
+    if (moduloEtiqueta) {
+      const numeroDesdeModulo = labelToModule(moduloEtiqueta);
+      if (numeroDesdeModulo != null) return numeroDesdeModulo;
+    }
+    return null;
+  }, [usuarioActual, moduloEtiqueta]);
+
+  const coincideModulo = useCallback(
+    (obj) => {
+      if (!obj || typeof obj !== "object") return false;
+      if (!moduloEtiqueta && cohortAsignado == null) return true;
+      const campos = [
+        obj?.modulo,
+        obj?.module,
+        obj?.moduloSlug,
+        obj?.cohort,
+        obj?.cohorte,
+        obj?.cohortId,
+        obj?.moduloId,
+        obj?.datos?.modulo,
+        obj?.datos?.module,
+        obj?.datos?.moduloSlug,
+        obj?.datos?.cohort,
+      ];
+      if (
+        moduloEtiqueta &&
+        campos.some((valor) => matchesModule(valor, moduloEtiqueta))
+      ) {
+        return true;
+      }
+      if (cohortAsignado != null) {
+        const cohortes = [
+          obj?.cohort,
+          obj?.cohorte,
+          obj?.cohortId,
+          obj?.datos?.cohort,
+        ];
+        return cohortes.some((valor) => {
+          if (valor == null) return false;
+          const numero = Number(String(valor).trim());
+          if (Number.isFinite(numero)) {
+            return Math.trunc(numero) === cohortAsignado;
+          }
+          const normalizado = labelToModule(valor);
+          return normalizado != null && normalizado === cohortAsignado;
+        });
+      }
+      return false;
+    },
+    [moduloEtiqueta, cohortAsignado]
+  );
 
   // === Filtrado de datos por módulo ===
   const turnosDelModulo = useMemo(
     () => (turnos || []).filter(coincideModulo),
-    [turnos, moduloActualStr]
+    [turnos, coincideModulo]
   );
 
   const usuariosDelModulo = useMemo(
     () => (usuarios || []).filter(coincideModulo),
-    [usuarios, moduloActualStr]
+    [usuarios, coincideModulo]
   );
 
   // === Carga inicial de datos del módulo ===
   useEffect(() => {
-    if (!usuarioActual || !token || usuarioActual.role !== "profesor") return;
+    if (
+      !usuarioActual ||
+      !token ||
+      usuarioActual.role !== "profesor"
+    )
+      return;
     (async () => {
       try {
-        await Promise.all([loadTurnos(), loadEntregas(), loadUsuarios()]);
+        const turnosParams =
+          cohortAsignado != null
+            ? { cohort: cohortAsignado }
+            : moduloEtiqueta
+              ? { modulo: moduloEtiqueta }
+              : {};
+        const usuariosParams = {
+          rol: "alumno",
+          ...(cohortAsignado != null
+            ? { cohort: cohortAsignado }
+            : moduloEtiqueta
+              ? { modulo: moduloEtiqueta }
+              : {}),
+        };
+
+        await Promise.all([
+          loadTurnos(turnosParams),
+          loadEntregas(),
+          loadUsuarios(usuariosParams),
+        ]);
       } catch (error) {
         showToast("Error al cargar datos del módulo", "error");
         pushError?.("Fallo al obtener datos del módulo", {
@@ -89,7 +175,16 @@ export const DashboardProfesor = () => {
         });
       }
     })();
-  }, [usuarioActual, token, loadTurnos, loadEntregas, loadUsuarios, pushError]);
+  }, [
+    usuarioActual,
+    token,
+    moduloEtiqueta,
+    cohortAsignado,
+    loadTurnos,
+    loadEntregas,
+    loadUsuarios,
+    pushError,
+  ]);
 
   // === Manejo de navegación ===
   const handleSidebarSelect = (id) => {

@@ -2,25 +2,76 @@
 // Componente reutilizable y adaptable para navegación de listas.
 import { useState, useEffect } from "react";
 
+const normalizeItemsPerPage = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 1;
+  return Math.trunc(numeric);
+};
+
+const clampPage = (proposed, totalPages) => {
+  const numeric = Number(proposed);
+  if (!Number.isFinite(numeric)) return 1;
+  const normalized = Math.trunc(numeric);
+  if (normalized < 1) return 1;
+  if (normalized > totalPages) return totalPages;
+  return normalized;
+};
+
 export const Pagination = ({
   totalItems = 0,
   itemsPerPage = 5,
   onPageChange,
   currentPage: controlledPage,
 }) => {
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const [page, setPage] = useState(controlledPage || 1);
+  const safeItemsPerPage = normalizeItemsPerPage(itemsPerPage);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(Number(totalItems) / safeItemsPerPage || 0)
+  );
+  const parsedControlledPage = Number(controlledPage);
+  const isControlled = Number.isFinite(parsedControlledPage);
+  const initialPage = clampPage(
+    isControlled ? parsedControlledPage : 1,
+    totalPages
+  );
+  const [page, setPage] = useState(initialPage);
   const [inputPage, setInputPage] = useState("");
+  const effectivePage = isControlled
+    ? clampPage(parsedControlledPage, totalPages)
+    : page;
 
   useEffect(() => {
-    if (controlledPage) setPage(controlledPage);
-  }, [controlledPage]);
+    if (!isControlled) return;
+    setPage((prev) => {
+      const next = clampPage(parsedControlledPage, totalPages);
+      return prev === next ? prev : next;
+    });
+  }, [parsedControlledPage, isControlled, totalPages]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    setPage((prev) => {
+      const next = clampPage(prev, totalPages);
+      if (next !== prev) {
+        onPageChange?.(next);
+      }
+      return next;
+    });
+  }, [isControlled, totalPages, onPageChange]);
 
   const handleGoToPage = (newPage) => {
-    const nextPage = Math.min(Math.max(newPage, 1), totalPages);
-    if (nextPage === page) return;
-    setPage(nextPage);
-    onPageChange?.(nextPage);
+    const nextPage = clampPage(newPage, totalPages);
+    if (isControlled) {
+      if (nextPage !== effectivePage) {
+        onPageChange?.(nextPage);
+      }
+      return;
+    }
+    setPage((prev) => {
+      if (nextPage === prev) return prev;
+      onPageChange?.(nextPage);
+      return nextPage;
+    });
   };
 
   const handleSubmit = (e) => {
@@ -38,12 +89,14 @@ export const Pagination = ({
       <div className="flex items-center justify-center gap-2 text-sm font-semibold">
         {/* Botón anterior */}
         <button
-          onClick={() => handleGoToPage(page - 1)}
-          disabled={page === 1}
+          onClick={() => handleGoToPage(effectivePage - 1)}
+          disabled={effectivePage === 1}
           className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
-                      ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+                      ${
+                        effectivePage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
         >
           <img src="/src/left.svg" alt="prev" className="w-4 h-4 sm:hidden" />
           <span className="hidden sm:inline">Anterior</span>
@@ -54,18 +107,18 @@ export const Pagination = ({
           className="px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                      bg-[#FFD700] dark:bg-[#B8860B] text-black dark:text-white font-bold"
         >
-          {page}
+          {effectivePage}
         </span>
 
         {/* Botón siguiente */}
         <button
-          onClick={() => handleGoToPage(page + 1)}
-          disabled={page === totalPages}
+          onClick={() => handleGoToPage(effectivePage + 1)}
+          disabled={effectivePage === totalPages}
           className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
                       ${
-                        page === totalPages
+                        effectivePage === totalPages
                           ? "opacity-50 cursor-not-allowed"
                           : ""
                       }`}
@@ -79,11 +132,13 @@ export const Pagination = ({
       <div className="flex items-center justify-center gap-2 text-sm font-semibold">
         <button
           onClick={() => handleGoToPage(1)}
-          disabled={page === 1}
+          disabled={effectivePage === 1}
           className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
-                      ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+                      ${
+                        effectivePage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
         >
           <img src="/src/first.svg" alt="first" className="w-4 h-4 sm:hidden" />
           <span className="hidden sm:inline">Primera</span>
@@ -91,12 +146,12 @@ export const Pagination = ({
 
         <button
           onClick={() => handleGoToPage(totalPages)}
-          disabled={page === totalPages}
+          disabled={effectivePage === totalPages}
           className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
                       ${
-                        page === totalPages
+                        effectivePage === totalPages
                           ? "opacity-50 cursor-not-allowed"
                           : ""
                       }`}
@@ -136,7 +191,7 @@ export const Pagination = ({
 
       {/* Info resumen */}
       <p className="text-xs text-[#111827] dark:text-gray-300 mt-1">
-        Página {page} de {totalPages} ({totalItems} registros)
+        Página {effectivePage} de {totalPages} ({totalItems} registros)
       </p>
     </div>
   );
