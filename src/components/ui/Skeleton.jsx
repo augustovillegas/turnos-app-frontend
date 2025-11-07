@@ -3,8 +3,10 @@ import clsx from "clsx";
 export const Skeleton = ({ width = "100%", height = "1rem", rounded = "md" }) => {
   return (
     <div
-      className={clsx(
-        "bg-[#D3D3D3] dark:bg-[#2A2A2A] border-2 border-t-white border-l-white border-b-[#808080] border-r-[#808080] dark:border-t-[#555] dark:border-l-[#555] dark:border-b-[#222] dark:border-r-[#222] animate-pulse",
+      className={clsx(      
+        "animate-pulse bg-gray-300 dark:bg-[#2A2A2A] transition-colors duration-300",        
+        "border border-[#111827]/20 dark:border-[#333]/40",        
+        "shadow-sm", 
         {
           "rounded-sm": rounded === "sm",
           "rounded-md": rounded === "md",
@@ -18,3 +20,4 @@ export const Skeleton = ({ width = "100%", height = "1rem", rounded = "md" }) =>
     ></div>
   );
 };
+

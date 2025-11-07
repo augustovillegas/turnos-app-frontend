@@ -163,7 +163,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
             Editar turno
           </h1>
           <Button variant="secondary" onClick={solicitarSalida}>
-            Cancelar
+            Volver
           </Button>
         </div>
 

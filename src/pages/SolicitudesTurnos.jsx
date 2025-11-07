@@ -121,11 +121,11 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
               containerClass="px-4"
               renderRow={(t) => (
                 <>
-                  <td className="border p-2 text-center">{t.review}</td>
-                  <td className="border p-2 text-center">{t.fecha}</td>
-                  <td className="border p-2 text-center">{t.horario}</td>
-                  <td className="border p-2 text-center">{t.sala}</td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.review}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.fecha}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.horario}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.sala}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.zoomLink && (
                       <a href={t.zoomLink} target="_blank" rel="noreferrer">
                         <img
@@ -136,10 +136,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
                       </a>
                     )}
                   </td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     <Status status={t.estado} />
                   </td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     <div className="flex justify-center gap-2">
                       <Button
                         variant="success"
