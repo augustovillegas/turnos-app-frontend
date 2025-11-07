@@ -7,6 +7,7 @@ export const CardTurno = ({
   onCancelar,
   onAprobar,
   onRechazar,
+  onVer,
   disabled = false,
 }) => {
   return (
@@ -41,7 +42,7 @@ export const CardTurno = ({
         </p>
       )}
 
-      {(onSolicitar || onCancelar || onAprobar || onRechazar) && (
+      {(onSolicitar || onCancelar || onAprobar || onRechazar || onVer) && (
         <div className="flex justify-end gap-2">
           {onSolicitar && turno.estado === "Disponible" && (
             <Button
@@ -81,6 +82,17 @@ export const CardTurno = ({
               disabled={disabled}
             >
               Rechazar
+            </Button>
+          )}
+
+          {onVer && (
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={onVer}
+              disabled={disabled}
+            >
+              Ver detalle
             </Button>
           )}
         </div>

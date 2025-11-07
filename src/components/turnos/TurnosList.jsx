@@ -13,6 +13,7 @@ import { SearchBar } from "../ui/SearchBar";
 import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
 import { Skeleton } from "../ui/Skeleton";
+import { EmptyRow } from "../ui/EmptyRow";
 
 export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
@@ -237,7 +238,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
             ))
           ) : (
             <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-              <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+              <EmptyRow columns={["Review","Fecha","Horario","Sala","Zoom","Estado","Acción"]}/>
             </div>
           )}
         </div>

@@ -5,8 +5,7 @@ export const AlumnoActions = ({
   tipo = "turno",
   onSolicitar,
   onCancelarTurno,
-  onCancelarEntrega,
-  // 🔹 nuevo:
+  onCancelarEntrega,  
   onEditarEntrega,
   disabled = false,
 }) => {

@@ -1,27 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { Table } from "../components/ui/Table";
-import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
-import { CardTurno } from "../components/ui/CardTurno";
+import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
+import { EmptyRow } from "../components/ui/EmptyRow";
+import { ProfesorActions } from "../components/ui/ProfesorActions";
+import { TurnoDetail } from "../components/turnos/TurnoDetail";
 import { useAppData } from "../context/AppContext";
 import { useModal } from "../context/ModalContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
-import { buildTurnoPayloadFromForm,  formValuesFromTurno } from "../utils/turnos/form";
-import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   const { updateTurno } = useAppData();
   const { showModal } = useModal();
   const { pushError } = useError();
 
+  // ---- Estado de filtros y paginado ----
   const [filtroReview, setFiltroReview] = useState("todos");
-  const [processingTurno, setProcessingTurno] = useState(null);
   const [page, setPage] = useState(1);
+  const [processingTurno, setProcessingTurno] = useState(null);
   const ITEMS_PER_PAGE = 5;
+
+  const [modo, setModo] = useState("listar");
+  const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
+  const goListar = () => {
+    setModo("listar");
+    setTurnoSeleccionado(null);
+  };
+
+  const onVer = (turno) => {
+    setTurnoSeleccionado(turno ?? null);
+    setModo("detalle");
+  };
 
   const turnosSolicitados = useMemo(
     () => turnos.filter((t) => String(t.estado).toLowerCase() === "solicitado"),
@@ -49,44 +62,75 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
 
   useEffect(() => setPage(1), [filtroReview]);
 
-  const handleAprobar = async (turno) => {
-    setProcessingTurno(turno.id);
+  const handleAprobar = async (t) => {
     try {
-      const payload = buildTurnoPayloadFromForm({
-        ...formValuesFromTurno(turno),
-        estado: "Aprobado",
-      });
-      await updateTurno(turno.id, payload);
-      showToast("Turno aprobado correctamente");
-    } catch (error) {
-      pushError("Error al aprobar turno", { description: error?.message });
+      setProcessingTurno(t.id);
+      await updateTurno?.(t.id, { estado: "Aprobado" });
+      showToast("Turno aprobado");
+    } catch (e) {
+      pushError?.(e);
+      showToast("No se pudo aprobar el turno", "error");
     } finally {
       setProcessingTurno(null);
     }
   };
 
-  const handleRechazar = (turno) => {
-    showModal({
-      type: "warning",
-      title: "Rechazar turno",
-      message: `¿Confirmas el rechazo del turno para la sala ${turno.sala}?`,
-      onConfirm: async () => {
-        setProcessingTurno(turno.id);
-        try {
-          const payload = buildTurnoPayloadFromForm({
-            ...formValuesFromTurno(turno),
-            estado: "Rechazado",
-          });
-          await updateTurno(turno.id, payload);
-          showToast("Turno rechazado correctamente");
-        } catch (error) {
-          pushError("Error al rechazar turno", { description: error?.message });
-        } finally {
-          setProcessingTurno(null);
-        }
-      },
+  // === Confirmación de rechazo ===
+  const confirmRechazo = (t) =>
+    new Promise((resolve) => {
+      showModal({
+        title: "Rechazar turno",
+        message:
+          t?.fecha && t?.horario
+            ? `¿Deseás rechazar el turno del ${t.fecha} a las ${t.horario}? Esta acción no se puede deshacer.`
+            : "¿Deseás rechazar este turno? Esta acción no se puede deshacer.",
+        type: "warning",
+        onClose: () => resolve(false),
+        onConfirm: () => resolve(true),
+      });
     });
+
+  const handleRechazar = async (t) => {
+    // Paso 1: pedir confirmación
+    const confirmado = await confirmRechazo(t);
+    if (!confirmado) return;
+
+    // Paso 2: ejecutar el rechazo
+    try {
+      setProcessingTurno(t.id);
+      await updateTurno?.(t.id, { estado: "Rechazado" });
+      showToast("Turno rechazado", "success");
+    } catch (e) {
+      pushError?.(e);
+      showToast("No se pudo rechazar el turno", "error");
+    } finally {
+      setProcessingTurno(null);
+    }
   };
+
+  const handleCopiarZoom = async (t) => {
+    try {
+      if (!t?.zoomLink) {
+        showToast("Este turno no tiene link de Zoom", "warning");
+        return;
+      }
+      await navigator.clipboard.writeText(t.zoomLink);
+      showToast("Link de Zoom copiado", "success");
+    } catch (e) {
+      showToast("No se pudo copiar el link", "error");
+    }
+  };
+
+  // ---------- RENDER POR MODO ----------
+  if (modo === "detalle") {
+    return (
+      <TurnoDetail
+        turno={turnoSeleccionado}
+        turnoId={turnoSeleccionado?.id}
+        onVolver={goListar}
+      />
+    );
+  }
 
   return (
     <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
@@ -121,10 +165,18 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
               containerClass="px-4"
               renderRow={(t) => (
                 <>
-                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.review}</td>
-                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.fecha}</td>
-                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.horario}</td>
-                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.sala}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {t.review}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {t.fecha}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {t.horario}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {t.sala}
+                  </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.zoomLink && (
                       <a href={t.zoomLink} target="_blank" rel="noreferrer">
@@ -139,25 +191,16 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     <Status status={t.estado} />
                   </td>
+
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        variant="success"
-                        className="py-1"
-                        onClick={() => handleAprobar(t)}
-                        disabled={processingTurno === t.id}
-                      >
-                        Aprobar
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="py-1"
-                        onClick={() => handleRechazar(t)}
-                        disabled={processingTurno === t.id}
-                      >
-                        Rechazar
-                      </Button>
-                    </div>
+                    <ProfesorActions
+                      item={t}
+                      onAprobar={handleAprobar}
+                      onRechazar={handleRechazar}
+                      onVer={onVer}
+                      onCopiarZoom={handleCopiarZoom}
+                      disabled={processingTurno === t.id}
+                    />
                   </td>
                 </>
               )}
@@ -189,11 +232,13 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
             </div>
           ) : paginated.items.length > 0 ? (
             paginated.items.map((t) => (
-              <CardTurno
+              <CardTurnosCreados
                 key={t.id}
                 turno={t}
+                onVer={() => onVer(t)}
                 onAprobar={() => handleAprobar(t)}
                 onRechazar={() => handleRechazar(t)}
+                onCopiarZoom={() => handleCopiarZoom(t)}
                 disabled={processingTurno === t.id}
               />
             ))
