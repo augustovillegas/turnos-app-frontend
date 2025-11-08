@@ -18,6 +18,8 @@ export const Button = ({
       "bg-[#16A34A] text-white border-[#111827] hover:opacity-90 dark:bg-[#15803D] dark:border-[#555]",
     secondary:
       "bg-[#E5E5E5] text-black border-[#111827] hover:opacity-90 dark:bg-[#2A2A2A] dark:text-gray-200 dark:border-[#444]",
+    copy:
+      "bg-[#93C5FD] text-[#111827] border-[#111827] hover:opacity-90 dark:bg-[#3B82F6] dark:text-white dark:border-[#555]",  
   };
 
   // Si el botón no tiene texto visible, generar una etiqueta accesible

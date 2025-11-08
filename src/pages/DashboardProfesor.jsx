@@ -9,12 +9,7 @@ import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
-import {
-  ensureModuleLabel,
-  labelToModule,
-  matchesModule,
-  moduleToLabel,
-} from "../utils/moduleMap";
+import { ensureModuleLabel, labelToModule, matchesModule, moduleToLabel } from "../utils/moduleMap";
 
 // === Secciones del dashboard ===
 import { CreateTurnos } from "./CreateTurnos";
@@ -212,18 +207,18 @@ export const DashboardProfesor = () => {
         items={[
           {
             id: "solicitudes",
-            label: "Solicitudes Pendientes",
+            label: "Turnos Pendientes",
             icon: "/icons/calendar-1.png",
           },
           {
             id: "usuarios",
             label: "Usuarios Pendientes",
-            icon: "/icons/users_key-4.png",
+            icon: "/icons/users-2.png",
           },
           {
             id: "crear-turnos",
             label: "Crear Turnos",
-            icon: "/icons/directory_explorer-5.png",
+            icon: "/icons/time_and_date-2.png",
           },
           {
             id: "evaluar-entregas",

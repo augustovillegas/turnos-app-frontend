@@ -81,7 +81,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
         setProcessingId(turno.id);
         try {
           await removeTurno(turno.id);
-          showToast("Turno eliminado con éxito.");
+          showToast("Turno eliminado con éxito.", "success");
         } catch (error) {
           showToast(error.message || "No se pudo eliminar el turno.", "error");
         } finally {

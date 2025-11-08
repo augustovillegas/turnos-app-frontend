@@ -6,7 +6,7 @@ export const CardTurnosCreados = ({
   onEditar,
   onEliminar,
   onCancelarAccion,
-  onVer,  
+  onVer,
   onAprobar,
   onRechazar,
   onCopiarZoom,
@@ -66,12 +66,12 @@ export const CardTurnosCreados = ({
           <div className="grid grid-cols-2 gap-2">
             {onAprobar && (
               <Button
-                variant="secondary"
+                variant="success"
                 className="flex w-full items-center justify-center gap-1 py-1"
                 onClick={onAprobar}
                 disabled={disabled}
               >
-                <i className="bi bi-check-lg text-sm" />
+                <i className="bi bi-check2-square text-sm" />
                 Aprobar
               </Button>
             )}
@@ -82,7 +82,7 @@ export const CardTurnosCreados = ({
                 onClick={onRechazar}
                 disabled={disabled}
               >
-                <i className="bi bi-x-lg text-sm" />
+                <i className="bi bi-trash text-sm" />
                 Rechazar
               </Button>
             )}
@@ -133,16 +133,15 @@ export const CardTurnosCreados = ({
         {/* Opcional: copiar Zoom si necesitás en mobile */}
         {onCopiarZoom && turno.zoomLink && (
           <Button
-            variant="secondary"
+            variant="copy"
             className="w-full py-1"
             onClick={onCopiarZoom}
             disabled={disabled}
           >
-            Copiar link (Zoom)
+            <i className="bi bi-clipboard-check text-sm" /> Copiar link
           </Button>
         )}
       </div>
     </div>
   );
 };
-
