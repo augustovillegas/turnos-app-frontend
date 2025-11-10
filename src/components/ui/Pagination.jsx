@@ -95,10 +95,12 @@ export const Pagination = ({
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
                       ${
-                        effectivePage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                        effectivePage === 1
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
                       }`}
         >
-          <img src="/src/left.svg" alt="prev" className="w-4 h-4 sm:hidden" />
+          <i className="bi bi-chevron-left w-4 h-4 sm:hidden"></i>
           <span className="hidden sm:inline">Anterior</span>
         </button>
 
@@ -124,7 +126,7 @@ export const Pagination = ({
                       }`}
         >
           <span className="hidden sm:inline">Siguiente</span>
-          <img src="/src/right.svg" alt="next" className="w-4 h-4 sm:hidden" />
+          <i className="bi bi-chevron-right w-4 h-4 sm:hidden"></i>
         </button>
       </div>
 
@@ -137,10 +139,12 @@ export const Pagination = ({
                       bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
                       hover:text-black dark:hover:text-white transition
                       ${
-                        effectivePage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                        effectivePage === 1
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
                       }`}
         >
-          <img src="/src/first.svg" alt="first" className="w-4 h-4 sm:hidden" />
+          <i className="bi bi-chevron-double-left w-4 h-4 sm:hidden"></i>
           <span className="hidden sm:inline">Primera</span>
         </button>
 
@@ -157,7 +161,7 @@ export const Pagination = ({
                       }`}
         >
           <span className="hidden sm:inline">Última</span>
-          <img src="/src/last.svg" alt="last" className="w-4 h-4 sm:hidden" />
+          <i className="bi bi-chevron-double-right w-4 h-4 sm:hidden"></i>
         </button>
       </div>
 

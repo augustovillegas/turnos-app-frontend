@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
 import { Outlet, useLocation, Navigate } from "react-router-dom";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
@@ -10,8 +10,8 @@ export const Layout = () => {
   const location = useLocation();
 
   const esDashboard = location.pathname.startsWith("/dashboard");
-  const esLandingOLogin =
-    location.pathname === "/" || location.pathname === "/login";
+  const rutasPublicasConLayout = ["/", "/login", "/contacto"];
+  const mostrarHeaderFooter = rutasPublicasConLayout.includes(location.pathname);
   const { usuario, token } = useAuth();
   const mostrarPanelSolicitudes = esDashboard && usuario && token;
 
@@ -21,7 +21,7 @@ export const Layout = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F4F4] dark:bg-[#0F3D3F] transition-colors duration-300">
-      {esLandingOLogin && <Header />}
+      {mostrarHeaderFooter && <Header />}
 
       <main className="flex-1">
         <Suspense fallback={<Loader />}>
@@ -30,7 +30,8 @@ export const Layout = () => {
       </main>
 
       {mostrarPanelSolicitudes && <RequestsPanel />}
-      {esLandingOLogin && <Footer />}
+      {mostrarHeaderFooter && <Footer />}
     </div>
   );
 };
+
