@@ -14,10 +14,13 @@ import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
 import { Skeleton } from "../ui/Skeleton";
 import { EmptyRow } from "../ui/EmptyRow";
+import { SuperadminActions } from "../ui/SuperadminActions";
+import { ProfesorActions } from "../ui/ProfesorActions";
 
-export const TurnosList = ({ onCrear, onEditar, onVer }) => {
+export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
-  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } = useAppData();
+  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } =
+    useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -30,7 +33,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
     loadTurnos();
   }, [loadTurnos]);
 
-  // --- Derivacion filtrada seg�n review seleccionado ---
+  // --- Derivacion filtrada según review seleccionado ---
   const turnosFiltrados = useMemo(() => {
     if (filtroReview === "todos") return turnos;
     return turnos.filter((turno) => String(turno.review) === filtroReview);
@@ -74,7 +77,7 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
   // --- Eliminacion con confirmacion estilo Win98 ---
   const handleConfirmarEliminacion = (turno) => {
     showModal({
-      type: "warning", 
+      type: "warning",
       title: "Eliminar turno",
       message: `¿Seguro que deseas eliminar la sala ${turno.sala}?`,
       onConfirm: async () => {
@@ -89,6 +92,33 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
         }
       },
     });
+  };
+
+  // --- Acciones del dropdown (compartidas) ---
+  const handleCopiarZoom = async (turno) => {
+    try {
+      if (!turno.zoomLink) {
+        showToast("Este turno no tiene enlace de Zoom.", "error");
+        return;
+      }
+      await navigator.clipboard.writeText(turno.zoomLink);
+      showToast("Enlace copiado al portapapeles.", "success");
+    } catch {
+      showToast("No se pudo copiar el enlace.", "error");
+    }
+  };
+
+  const handleAprobar = (turno) => {
+    showToast(
+      `Aprobar turno #${turno.id} — pendiente de implementar`,
+      "success"
+    );
+  };
+  const handleRechazar = (turno) => {
+    showToast(
+      `Rechazar turno #${turno.id} — pendiente de implementar`,
+      "success"
+    );
   };
 
   return (
@@ -109,23 +139,35 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
           </Button>
         </div>
 
-        <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-        <SearchBar
-          data={turnosFiltrados}
-          fields={[
-            "sala",
-            "fecha",
-            "horario",
-            "estado",
-            "review",
-            "comentarios",
-          ]}
-          placeholder="Buscar por sala, fecha o estado"
-          onSearch={(results) => {
-            setTurnosBuscados(results);
-            setPage(1);
-          }}
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-3 sm:mb-4">
+          {/* Izquierda: Search fluida */}
+          <div className="order-1 sm:order-none flex-1 min-w-0">
+            <SearchBar
+              fluid
+              className="w-full"
+              inputClassName="h-10"
+              data={turnosFiltrados}
+              fields={[
+                "sala",
+                "fecha",
+                "horario",
+                "estado",
+                "review",
+                "comentarios",
+              ]}
+              placeholder="Buscar por sala, fecha o estado"
+              onSearch={(results) => {
+                setTurnosBuscados(results);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Derecha: ReviewFilter tal cual */}
+          <div className="order-2 sm:order-none shrink-0">
+            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+          </div>
+        </div>
 
         {turnosError && (
           <div className="rounded-md border-2 border-[#B91C1C] bg-[#FEE2E2] p-3 text-sm font-semibold text-[#B91C1C]">
@@ -183,33 +225,30 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
                     <Status status={turno.estado || "Disponible"} />
                   </td>
                   <td className="border border-[#111827] p-2 dark:border-[#333]">
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      {onVer && (
-                        <button
-                          type="button"
-                          className="px-3 py-1 text-sm font-semibold underline"
-                          onClick={() => onVer?.(turno)}
+                    <div className="flex items-center justify-center">
+                      {role === "superadmin" ? (
+                        <SuperadminActions
+                          item={turno}
+                          onVer={onVer ? (t) => onVer(t) : undefined}
+                          onEditar={onEditar ? (t) => onEditar(t) : undefined}
+                          onEliminar={() => handleConfirmarEliminacion(turno)}
+                          onAprobar={handleAprobar}
+                          onRechazar={handleRechazar}
+                          onCopiarZoom={handleCopiarZoom}
                           disabled={showLoader || processingId === turno.id}
-                        >
-                          Ver
-                        </button>
+                        />
+                      ) : (
+                        <ProfesorActions
+                          item={turno}
+                          onVer={onVer ? (t) => onVer(t) : undefined}
+                          onEditar={onEditar ? (t) => onEditar(t) : undefined}
+                          onEliminar={() => handleConfirmarEliminacion(turno)}
+                          onAprobar={handleAprobar}
+                          onRechazar={handleRechazar}
+                          onCopiarZoom={handleCopiarZoom}
+                          disabled={showLoader || processingId === turno.id}
+                        />
                       )}
-                      <Button
-                        variant="secondary"
-                        onClick={() => onEditar?.(turno)}
-                        disabled={showLoader || processingId === turno.id}
-                        className="text-sm"
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => handleConfirmarEliminacion(turno)}
-                        disabled={showLoader || processingId === turno.id}
-                        className="text-sm"
-                      >
-                        Eliminar
-                      </Button>
                     </div>
                   </td>
                 </>
@@ -238,7 +277,17 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
             ))
           ) : (
             <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-              <EmptyRow columns={["Review","Fecha","Horario","Sala","Zoom","Estado","Acción"]}/>
+              <EmptyRow
+                columns={[
+                  "Review",
+                  "Fecha",
+                  "Horario",
+                  "Sala",
+                  "Zoom",
+                  "Estado",
+                  "Acción",
+                ]}
+              />
             </div>
           )}
         </div>
@@ -255,7 +304,3 @@ export const TurnosList = ({ onCrear, onEditar, onVer }) => {
     </div>
   );
 };
-
-
-
-

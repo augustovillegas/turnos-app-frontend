@@ -7,6 +7,8 @@ export const ProfesorActions = ({
   onVer,
   onVerDetalle,
   onCopiarZoom,
+  onEditar,      
+  onEliminar,    
   disabled = false,
 }) => {
   if (!item) return null;
@@ -14,43 +16,27 @@ export const ProfesorActions = ({
   const estado = String(item.estado || "").toLowerCase();
   const options = [];
 
-  // Acciones principales en estado "solicitado"
+  // 1) Gestión de solicitudes (solo si el turno está solicitado)
   if (estado === "solicitado") {
     options.push(
-      {
-        label: "Aprobar",
-        icon: "/icons/check.png",
-        onClick: () => onAprobar?.(item),
-        disabled,
-      },
-      {
-        label: "Rechazar",
-        icon: "/icons/close.png",
-        danger: true,
-        onClick: () => onRechazar?.(item),
-        disabled,
-      }
+      { label: "Aprobar",  icon: "/icons/check.png", onClick: () => onAprobar?.(item),  disabled },
+      { label: "Rechazar", icon: "/icons/close.png", danger: true, onClick: () => onRechazar?.(item), disabled },
+      { divider: true }
     );
   }
 
-  // Utilidad: copiar link de Zoom si está disponible
-  options.push({
-    label: "Copiar enlace",
-    icon: "/icons/copy.png",
-    onClick: () => onCopiarZoom?.(item),
-    disabled,
-  });
+  // 2) Edición / Eliminación (nuevo en Profesor)
+  options.push(
+    { label: "Editar turno",   icon: "/icons/edit.png",  onClick: () => onEditar?.(item),   disabled },
+    { label: "Eliminar turno", icon: "/icons/trash.png", danger: true, onClick: () => onEliminar?.(item), disabled },
+  );
 
-  // Siempre incluir "Ver detalle" (no dejar vacío otros estados)
-  options.push({
-    label: "Ver detalle",
-    icon: "/icons/eye.png",
-    onClick: () => {
-      if (onVer) return onVer(item);
-      if (onVerDetalle) return onVerDetalle(item);
-    },
-    disabled,
-  });
+  // 3) Utilidades
+  options.push(
+    { divider: true },
+    { label: "Copiar enlace", icon: "/icons/copy.png", onClick: () => onCopiarZoom?.(item), disabled },
+    { label: "Ver detalle",   icon: "/icons/eye.png",  onClick: () => onVer?.(item),       disabled },
+  );
 
   return <DropdownActions options={options} />;
 };
