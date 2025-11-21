@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from "react";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
@@ -20,12 +21,32 @@ export const TurnosDisponibles = ({
   setPageTurnosDisponibles,
   ITEMS_PER_PAGE,
 }) => {
-  const totalItems = turnos.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-  const currentPage = Math.min(pageTurnosDisponibles, totalPages);
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginated = turnos.slice(start, start + ITEMS_PER_PAGE);
-  const hasTurnos = paginated.length > 0;
+  const [turnosBuscados, setTurnosBuscados] = useState(turnos);
+
+  // Actualizar resultados cuando cambien los turnos
+  useEffect(() => {
+    setTurnosBuscados(turnos);
+  }, [turnos]);
+
+  // Resetear página cuando cambia el filtro de review
+  useEffect(() => {
+    setPageTurnosDisponibles(1);
+  }, [filtroReview, setPageTurnosDisponibles]);
+
+  const paginationData = useMemo(() => {
+    const totalItems = turnosBuscados.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(pageTurnosDisponibles, totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: turnosBuscados.slice(start, start + ITEMS_PER_PAGE),
+      totalItems,
+      totalPages,
+      currentPage,
+    };
+  }, [turnosBuscados, pageTurnosDisponibles, ITEMS_PER_PAGE]);
+
+  const hasTurnos = paginationData.items.length > 0;
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -49,7 +70,10 @@ export const TurnosDisponibles = ({
             "comentarios",
           ]}
           placeholder="Buscar turnos disponibles"
-          onSearch={() => setPageTurnosDisponibles(1)}
+          onSearch={(results) => {
+            setTurnosBuscados(results);
+            setPageTurnosDisponibles(1);
+          }}
         />
 
         {/* Tabla Desktop */}
@@ -71,7 +95,7 @@ export const TurnosDisponibles = ({
                 "Estado",
                 "Acción",
               ]}
-              data={paginated}
+              data={paginationData.items}
               minWidth="min-w-[680px]"
               containerClass="px-4"
               renderRow={(t) => (
@@ -142,7 +166,7 @@ export const TurnosDisponibles = ({
               ))}
             </div>
           ) : hasTurnos ? (
-            paginated.map((t) => (
+            paginationData.items.map((t) => (
               <CardTurno
                 key={t.id}
                 turno={t}
@@ -158,9 +182,9 @@ export const TurnosDisponibles = ({
 
         {!isTurnosSectionLoading && (
           <Pagination
-            totalItems={totalItems}
+            totalItems={paginationData.totalItems}
             itemsPerPage={ITEMS_PER_PAGE}
-            currentPage={currentPage}
+            currentPage={paginationData.currentPage}
             onPageChange={setPageTurnosDisponibles}
           />
         )}

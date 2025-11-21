@@ -1,19 +1,7 @@
 // === Search Bar ===
 // Campo de busqueda reutilizable con filtrado in-memory segun los campos indicados.
 import { useState, useEffect, useRef } from "react";
-
-const filtrarDatos = (coleccion, campos, termino) => {
-  const consulta = termino.toLowerCase().trim();
-  if (!consulta) return coleccion;
-
-  return coleccion.filter((item) =>
-    campos.some((field) => {
-      const valor = item?.[field];
-      if (valor == null) return false;
-      return String(valor).toLowerCase().includes(consulta);
-    })
-  );
-};
+import { filtrarDatos } from "../../utils/filterUtils";
 
 export const SearchBar = ({
   data = [],

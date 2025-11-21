@@ -9,7 +9,7 @@ import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
-import { ensureModuleLabel, labelToModule, matchesModule, moduleToLabel } from "../utils/moduleMap";
+import { ensureModuleLabel, labelToModule, coincideModulo, moduleToLabel } from "../utils/moduleMap";
 
 // === Secciones del dashboard ===
 import { CreateTurnos } from "./CreateTurnos";
@@ -17,13 +17,15 @@ import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { SolicitudesTurnos } from "./SolicitudesTurnos";
 import { UsuariosPendientes } from "./UsuariosPendientes";
+import { CreateUsers } from "./CreateUsers";
 
 const ITEMS_PER_PAGE = 5;
 
 export const DashboardProfesor = () => {
   // === Contextos globales ===
-  const { turnos, usuarios, loadTurnos, loadEntregas, loadUsuarios } =
-    useAppData();
+  const appData = useAppData();
+  const { turnos = [], usuarios = [], loadTurnos, loadEntregas, loadUsuarios } =
+    appData || {};
   const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { pushError } = useError();
   const navigate = useNavigate();
@@ -77,60 +79,15 @@ export const DashboardProfesor = () => {
     return null;
   }, [usuarioActual, moduloEtiqueta]);
 
-  const coincideModulo = useCallback(
-    (obj) => {
-      if (!obj || typeof obj !== "object") return false;
-      if (!moduloEtiqueta && cohortAsignado == null) return true;
-      const campos = [
-        obj?.modulo,
-        obj?.module,
-        obj?.moduloSlug,
-        obj?.cohort,
-        obj?.cohorte,
-        obj?.cohortId,
-        obj?.moduloId,
-        obj?.datos?.modulo,
-        obj?.datos?.module,
-        obj?.datos?.moduloSlug,
-        obj?.datos?.cohort,
-      ];
-      if (
-        moduloEtiqueta &&
-        campos.some((valor) => matchesModule(valor, moduloEtiqueta))
-      ) {
-        return true;
-      }
-      if (cohortAsignado != null) {
-        const cohortes = [
-          obj?.cohort,
-          obj?.cohorte,
-          obj?.cohortId,
-          obj?.datos?.cohort,
-        ];
-        return cohortes.some((valor) => {
-          if (valor == null) return false;
-          const numero = Number(String(valor).trim());
-          if (Number.isFinite(numero)) {
-            return Math.trunc(numero) === cohortAsignado;
-          }
-          const normalizado = labelToModule(valor);
-          return normalizado != null && normalizado === cohortAsignado;
-        });
-      }
-      return false;
-    },
-    [moduloEtiqueta, cohortAsignado]
-  );
-
   // === Filtrado de datos por módulo ===
   const turnosDelModulo = useMemo(
-    () => (turnos || []).filter(coincideModulo),
-    [turnos, coincideModulo]
+    () => (turnos || []).filter((obj) => coincideModulo(obj, moduloEtiqueta, cohortAsignado)),
+    [turnos, moduloEtiqueta, cohortAsignado]
   );
 
   const usuariosDelModulo = useMemo(
-    () => (usuarios || []).filter(coincideModulo),
-    [usuarios, coincideModulo]
+    () => (usuarios || []).filter((obj) => coincideModulo(obj, moduloEtiqueta, cohortAsignado)),
+    [usuarios, moduloEtiqueta, cohortAsignado]
   );
 
   // === Carga inicial de datos del módulo ===
@@ -214,16 +171,21 @@ export const DashboardProfesor = () => {
             id: "usuarios",
             label: "Usuarios Pendientes",
             icon: "/icons/users-2.png",
+          },          
+          {
+            id: "evaluar-entregas",
+            label: "Evaluar Entregables",
+            icon: "/icons/briefcase-4.png",
           },
           {
             id: "crear-turnos",
             label: "Crear Turnos",
             icon: "/icons/time_and_date-2.png",
           },
-          {
-            id: "evaluar-entregas",
-            label: "Evaluar Entregables",
-            icon: "/icons/briefcase-4.png",
+           {
+            id: "cargar-usuarios",
+            label: "Cargar Usuarios",
+            icon: "/icons/address_book_pad_users.png",
           },
         ]}
         active={active}
@@ -232,7 +194,7 @@ export const DashboardProfesor = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCION: SOLICITUDES DE TURNOS
+          SECCION: SOLICITUDES DE TURNOS
         ========================== */}
         {active === "solicitudes" && (
           <SolicitudesTurnos
@@ -243,7 +205,7 @@ export const DashboardProfesor = () => {
         )}
 
         {/* =========================
-            SECCION: SOLICITUD USUARIOS
+          SECCION: SOLICITUD USUARIOS
         ========================== */}
         {active === "usuarios" && (
           <UsuariosPendientes
@@ -254,17 +216,22 @@ export const DashboardProfesor = () => {
         )}
 
         {/* =========================
-            SECCION: CREAR TURNOS
+          SECCION: CREAR TURNOS
         ========================== */}
         {active === "crear-turnos" && <CreateTurnos />}
 
         {/* =========================
-            SECCION: EVALUAR ENTREGAS
+          SECCION: EVALUAR ENTREGAS
         ========================== */}
         {active === "evaluar-entregas" && <EvaluarEntregas />}
 
         {/* =========================
-            SECCION: CONFIGURACION
+          SECCION: CARGAR USUARIOS
+        ========================== */}
+        {active === "cargar-usuarios" && <CreateUsers />}
+
+        {/* =========================
+          SECCION: CONFIGURACION
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>

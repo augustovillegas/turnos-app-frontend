@@ -10,7 +10,10 @@ import {
   RUTAS_APLICACION,
   createRouterMemoria,
 } from "../../src/router/createAppRouter";
-import { authFixtures, fixtures } from "./mocks/fixtures";
+import {
+  resolveAuthSession,
+  clearStoredSession,
+} from "./realBackendSession";
 
 const asegurarDom = () => {
   if (typeof document !== "undefined" && typeof window !== "undefined") {
@@ -64,45 +67,28 @@ if (typeof globalThis.React === "undefined") {
   globalThis.React = React;
 }
 
-const persistirJSON = (llave, valor) => {
-  if (valor === undefined) return;
-  localStorage.setItem(llave, JSON.stringify(valor));
-};
-
-export const prepararEstadoApp = ({
-  turnos = fixtures.turnos,
-  entregas = fixtures.entregas,
-  usuarios = fixtures.usuarios,
-} = {}) => {
-  persistirJSON("turnos", turnos);
-  persistirJSON("entregas", entregas);
-  persistirJSON("usuarios", usuarios);
-};
-
-export const iniciarSesionComo = (rol) => {
-  const usuario =
-    typeof rol === "object" && rol !== null ? rol : authFixtures[rol] ?? null;
-
-  if (usuario) {
-    localStorage.setItem("token", "test-token");
-    persistirJSON("user", usuario);
-  } else {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+const resetPersistentState = () => {
+  clearStoredSession();
+  if (typeof sessionStorage !== "undefined" && sessionStorage !== null) {
+    sessionStorage.clear();
   }
-
-  return usuario;
 };
 
-export const loginAs = iniciarSesionComo;
-export const primeAppState = prepararEstadoApp;
-
-export const renderApp = async ({ route = "/", user, state } = {}) => {
-  if (state) {
-    prepararEstadoApp(state);
-  } else {
-    prepararEstadoApp();
+const resolveAuthConfig = (options = {}) => {
+  if (options.auth) return options.auth;
+  if (options.user) {
+    return typeof options.user === "string"
+      ? { role: options.user }
+      : options.user;
   }
+  return null;
+};
+
+export const renderApp = async ({ route = "/", user, auth } = {}) => {
+  resetPersistentState();
+
+  const authConfig = resolveAuthConfig({ user, auth });
+  const session = await resolveAuthSession(authConfig, { persist: true });
 
   if (route && typeof window !== "undefined" && window?.history) {
     window.history.replaceState({}, "Test", route);
@@ -113,8 +99,6 @@ export const renderApp = async ({ route = "/", user, state } = {}) => {
     entradasIniciales: [route],
     rutasPersonalizadas: rutasResueltas,
   });
-
-  const usuarioAutenticado = user ? iniciarSesionComo(user) : null;
 
   const resultado = render(
     <AppProviders>
@@ -127,7 +111,8 @@ export const renderApp = async ({ route = "/", user, state } = {}) => {
 
   return {
     ...resultado,
-    user: usuarioAutenticado,
+    user: session?.user ?? null,
+    token: session?.token ?? null,
     router: routerDeMemoria,
   };
 };

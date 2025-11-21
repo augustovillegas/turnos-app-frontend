@@ -11,7 +11,6 @@ export default function Contacto() {
     setEnviando(true);
 
     const data = Object.fromEntries(new FormData(e.currentTarget));
-    console.log("Contacto :: payload", data);
 
     // Simulación de envío
     await new Promise((r) => setTimeout(r, 800));
@@ -24,10 +23,9 @@ export default function Contacto() {
     <main
       role="main"
       aria-label="Página de contacto"
-      className="
-        min-h-[calc(100vh-2.5rem)]
+      className="min-h-[calc(100vh-5rem)]
         flex items-start justify-center
-        px-4 pt-6 pb-16
+        px-4 py-8
         bg-[#017F82] dark:bg-[#0F3D3F]
         transition-colors duration-300
       "
@@ -145,48 +143,36 @@ export default function Contacto() {
             <aside className="space-y-4">
               {/* Tarjeta de datos */}
               <div
-                className="
-  p-4 rounded
-  border-2 border-[#111827]
-  bg-white
-  text-[#111827]
-  dark:border-[#475569]          /* slate-500: más visible que #333 */
-  dark:bg-[#0f172a]              /* slate-900: fondo dark real */
-  dark:text-slate-100            /* texto bien claro */
-"
+                className="p-4 rounded
+                           border-2 border-[#111827] dark:border-[#333]
+                         bg-[#E5E5E5] dark:bg-[#2A2A2A]"
               >
-                <p className="font-semibold text-sm text-[#111827] dark:text-white">
+                <p className="font-semibold text-sm text-[#111827] dark:text-gray-100">
                   Datos de contacto
                 </p>
 
                 <ul className="mt-2 text-sm leading-6">
-                  <li className="dark:text-slate-200">
+                  <li className="dark:text-gray-300">
                     <span className="font-medium">Email:</span>{" "}
                     <a
-                      className="
-          underline underline-offset-2
-          text-blue-700 hover:text-blue-800
-          dark:text-sky-300 dark:hover:text-sky-200
-          decoration-sky-500/50 dark:decoration-sky-300/50
-          transition-colors
-        "
-                      href="mailto:hola@perfilhibrido.com"
+                      className="underline underline-offset-2 transition-colors
+                               text-blue-700 hover:text-blue-800
+                               dark:text-teal-300 dark:hover:text-teal-200
+                               dark:decoration-teal-400/50"
+                      href="mailto:universidad@unca.com"
                     >
-                      hola@perfilhibrido.com
+                      universidad@unca.com
                     </a>
                   </li>
 
-                  <li className="dark:text-slate-200">
+                  <li className="dark:text-gray-300">
                     <span className="font-medium">LinkedIn:</span>{" "}
                     <a
-                      className="
-          underline underline-offset-2
-          text-blue-700 hover:text-blue-800
-          dark:text-sky-300 dark:hover:text-sky-200
-          decoration-sky-500/50 dark:decoration-sky-300/50
-          transition-colors
-        "
-                      href="https://www.linkedin.com/company/perfil-hibrido"
+                      className="underline underline-offset-2 transition-colors
+                               text-blue-700 hover:text-blue-800
+                               dark:text-teal-300 dark:hover:text-teal-200
+                               dark:decoration-teal-400/50"
+                      href="https://www.linkedin.com/company/unca"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -194,16 +180,13 @@ export default function Contacto() {
                     </a>
                   </li>
 
-                  <li className="dark:text-slate-200">
+                  <li className="dark:text-gray-300">
                     <span className="font-medium">WhatsApp:</span>{" "}
                     <a
-                      className="
-          underline underline-offset-2
-          text-blue-700 hover:text-blue-800
-          dark:text-sky-300 dark:hover:text-sky-200
-          decoration-sky-500/50 dark:decoration-sky-300/50
-          transition-colors
-        "
+                      className="underline underline-offset-2 transition-colors
+                               text-blue-700 hover:text-blue-800
+                               dark:text-teal-300 dark:hover:text-teal-200
+                               dark:decoration-teal-400/50"
                       href="https://wa.me/5491112345678"
                       target="_blank"
                       rel="noreferrer"

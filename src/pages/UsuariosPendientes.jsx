@@ -7,19 +7,14 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
 import { SearchBar } from "../components/ui/SearchBar";
 import { useAppData } from "../context/AppContext";
-import { useModal } from "../context/ModalContext";
-import { useError } from "../context/ErrorContext";
-import { showToast } from "../utils/feedback/toasts";
+import { usePagination } from "../hooks/usePagination";
+import { useApproval } from "../hooks/useApproval";
 import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   const { approveUsuario } = useAppData();
-  const { showModal } = useModal();
-  const { pushError } = useError();
 
   const [usuariosBuscados, setUsuariosBuscados] = useState([]);
-  const [processingId, setProcessingId] = useState(null);
-  const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
   const usuariosPendientes = useMemo(
@@ -34,42 +29,23 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
     setUsuariosBuscados(usuariosPendientes);
   }, [usuariosPendientes]);
 
-  const paginated = useMemo(() => {
-    const totalPages =
-      Math.ceil((usuariosBuscados.length || 0) / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return {
-      items: usuariosBuscados.slice(start, start + ITEMS_PER_PAGE),
-      totalItems: usuariosBuscados.length,
-      totalPages,
-      currentPage,
-    };
-  }, [usuariosBuscados, page]);
+  // Hook de paginación
+  const paginated = usePagination(usuariosBuscados, ITEMS_PER_PAGE);
 
-  const handleAprobar = (usuario) => {
-    if (!usuario?.id) return;
-    const nombre = usuario.nombre || usuario.email || "este usuario";
+  // Hook de aprobación
+  const { handleApprove, processingId } = useApproval({
+    onApprove: async (usuario) => {
+      await approveUsuario(usuario.id);
+    },
+    messages: {
+      approveTitle: "Aprobar usuario",
+      approveMessage: "¿Confirmar aprobación de {name}?",
+      approveSuccess: "Usuario aprobado",
+      approveError: "Error al aprobar usuario",
+    },
+  });
 
-    showModal({
-      type: "warning",
-      title: "Aprobar usuario",
-      message: `Confirmas la aprobación de ${nombre}?`,
-      onConfirm: async () => {
-        setProcessingId(usuario.id);
-        try {
-          await approveUsuario(usuario.id);
-          showToast("Usuario aprobado.");
-        } catch (error) {
-          pushError?.("Error al aprobar usuario", {
-            description: error?.message,
-          });
-        } finally {
-          setProcessingId(null);
-        }
-      },
-    });
-  };
+  const handleAprobar = handleApprove;
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -86,7 +62,6 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
           placeholder="Buscar usuarios pendientes"
           onSearch={(results) => {
             setUsuariosBuscados(results);
-            setPage(1);
           }}
         />
 
@@ -174,7 +149,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
             totalItems={paginated.totalItems}
             itemsPerPage={ITEMS_PER_PAGE}
             currentPage={paginated.currentPage}
-            onPageChange={setPage}
+            onPageChange={paginated.goToPage}
           />
         )}
       </div>

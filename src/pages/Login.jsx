@@ -25,15 +25,9 @@ export const Login = () => {
     establecerMensajeModal("Conectando con el servidor remoto...");
 
     try {
-      console.log("[Login] Enviando solicitud de autenticación", { correo });
       const respuesta = await apiClient.post("/auth/login", {
         email: correo,
         password: contrasena,
-      });
-
-      console.log("[Login] Respuesta recibida", {
-        status: respuesta?.status,
-        hasData: Boolean(respuesta?.data),
       });
 
       const datos = respuesta?.data;
@@ -52,11 +46,6 @@ export const Login = () => {
       const rol = datos.user?.role;
       navigate(rutaInicioPorRol(rol));
     } catch (error) {
-      console.error("[Login] Error al autenticar", {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-      });
       const esErrorRed =
         error?.code === "ERR_NETWORK" || error?.message === "Network Error";
       const mensaje =

@@ -102,14 +102,15 @@ export const ItemForm = ({
 
         <div>
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
-            Sala o espacio *
+            Número de sala (room) *
           </label>
           <input
-            type="text"
+            type="number"
             name="sala"
             value={valores.sala}
             onChange={manejarCambio}
-            placeholder="Sala 101"
+            min={1}
+            placeholder="101"
             className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
           />
           {errores.sala && (

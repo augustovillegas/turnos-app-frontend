@@ -19,8 +19,7 @@ import { ProfesorActions } from "../ui/ProfesorActions";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
-  const { turnos, loadTurnos, removeTurno, turnosLoading, turnosError } =
-    useAppData();
+  const { turnos, loadTurnos, removeTurno } = useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -71,7 +70,8 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
     page,
     Math.ceil((turnosBuscados.length || 0) / ITEMS_PER_PAGE) || 1
   );
-  const showLoader = turnosLoading || isLoading("turnos");
+  const turnosLoading = isLoading("turnos");
+  const showLoader = turnosLoading;
   const hasTurnos = turnosBuscados.length > 0;
 
   // --- Eliminacion con confirmacion estilo Win98 ---
@@ -168,13 +168,6 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
           </div>
         </div>
-
-        {turnosError && (
-          <div className="rounded-md border-2 border-[#B91C1C] bg-[#FEE2E2] p-3 text-sm font-semibold text-[#B91C1C]">
-            {turnosError}. Trabajando con datos locales.
-          </div>
-        )}
-
         <div className="hidden sm:block">
           {showLoader ? (
             <div className="space-y-3 py-6">
@@ -304,3 +297,6 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
     </div>
   );
 };
+
+
+

@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import "dotenv/config";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createTurno,
   deleteTurno,
@@ -7,6 +8,7 @@ import {
   updateTurno,
 } from "../../src/services/turnosService";
 import { buildTurnoPayloadFromForm } from "../../src/utils/turnos/form";
+import { resolveAuthSession } from "../utils/realBackendSession";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -29,7 +31,8 @@ const buildFormValues = (overrides = {}) => {
     fecha: date,
     horaInicio: startTime,
     horaFin: endTime,
-    sala: `Sala Test ${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+    // Sala numeric (room) requerido por backend
+    sala: String(Math.floor(Date.now() / 60000)),
     zoomLink: "https://example.com/test",
     comentarios: "Generado automaticamente por tests",
     estado: "Disponible",
@@ -62,6 +65,11 @@ afterEach(async () => {
   await cleanupTurnos();
 });
 
+// Autenticación real antes de cada test para habilitar endpoints protegidos
+beforeEach(async () => {
+  await resolveAuthSession({ role: "superadmin" }, { persist: true });
+});
+
 describe.sequential("Servicios de turnos (API real)", () => {
   const TEST_TIMEOUT = 20_000;
 
@@ -73,15 +81,23 @@ describe.sequential("Servicios de turnos (API real)", () => {
 
       expect(payload).toMatchObject({
         review: Number(formValues.review),
-        sala: formValues.sala,
+        sala: Number(formValues.sala),
         estado: "Disponible",
       });
 
-      const created = await createTurno(payload);
+      let created;
+      try {
+        created = await createTurno(payload);
+      } catch (e) {
+        const status = e?.response?.status;
+        const data = e?.response?.data;
+        console.error("[TEST][turnos] Error al crear turno:", status, data);
+        throw e;
+      }
       registerCreated(created);
 
       expect(created).toMatchObject({
-        sala: payload.sala,
+        sala: Number(payload.sala),
         estado: payload.estado,
       });
       expect(typeof created.id).toBe("string");
@@ -99,7 +115,13 @@ describe.sequential("Servicios de turnos (API real)", () => {
     "actualiza un turno recien creado",
     async () => {
       const payload = buildTurnoPayloadFromForm(buildFormValues());
-      const created = await createTurno(payload);
+      let created;
+      try {
+        created = await createTurno(payload);
+      } catch (e) {
+        console.error("[TEST][turnos] Error al crear para update:", e?.response?.status, e?.response?.data);
+        throw e;
+      }
       registerCreated(created);
 
       const comentarios = "Actualizado por test";
@@ -125,7 +147,13 @@ describe.sequential("Servicios de turnos (API real)", () => {
     "elimina un turno y la busqueda posterior falla",
     async () => {
       const payload = buildTurnoPayloadFromForm(buildFormValues());
-      const turno = await createTurno(payload);
+      let turno;
+      try {
+        turno = await createTurno(payload);
+      } catch (e) {
+        console.error("[TEST][turnos] Error al crear para delete:", e?.response?.status, e?.response?.data);
+        throw e;
+      }
       registerCreated(turno);
 
       const response = await deleteTurno(turno.id);
@@ -173,7 +201,13 @@ describe.sequential("Servicios de turnos (API real)", () => {
     "devuelve listado de turnos incluyendo los nuevos",
     async () => {
       const payload = buildTurnoPayloadFromForm(buildFormValues());
-      const turno = await createTurno(payload);
+      let turno;
+      try {
+        turno = await createTurno(payload);
+      } catch (e) {
+        console.error("[TEST][turnos] Error al crear para listado:", e?.response?.status, e?.response?.data);
+        throw e;
+      }
       registerCreated(turno);
 
       const turnos = await getTurnos();

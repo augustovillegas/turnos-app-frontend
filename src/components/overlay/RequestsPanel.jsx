@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "../../context/AppContext";
 import { useModal } from "../../context/ModalContext";
+import { useLoading } from "../../context/LoadingContext";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
 import { showToast } from "../../utils/feedback/toasts";
@@ -15,8 +16,9 @@ import { Pagination } from "../ui/Pagination";
 const TURNOS_POR_PAGINA = 5;
 
 export const RequestsPanel = () => {
-  const { turnos, updateTurno, turnosLoading, totalTurnosSolicitados } =
-    useAppData();
+  const { turnos, updateTurno, totalTurnosSolicitados } = useAppData();
+  const { isLoading } = useLoading();
+  const turnosLoading = isLoading("turnos");
   const { showModal } = useModal();
   const [panelAbierto, establecerPanelAbierto] = useState(false);
   const [turnoProcesandoId, establecerTurnoProcesandoId] = useState(null);

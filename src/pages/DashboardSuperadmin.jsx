@@ -15,19 +15,22 @@ import { EvaluarEntregas } from "./EvaluarEntregas";
 import { Configuracion } from "./Configuracion";
 import { showToast } from "../utils/feedback/toasts";
 import { useModal } from "../context/ModalContext";
-import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../utils/turnos/form";
+import {
+  buildTurnoPayloadFromForm,
+  formValuesFromTurno,
+} from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { Pagination } from "../components/ui/Pagination";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
+import { CreateUsers } from "./CreateUsers";
 
 export const DashboardSuperadmin = () => {
   // --- Contexto global con acceso a todo el sistema ---
   const {
     turnos,
     updateTurno,
-    turnosLoading,
     usuarios,
     loadTurnos,
     loadEntregas,
@@ -39,6 +42,7 @@ export const DashboardSuperadmin = () => {
   const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
+  const turnosLoading = isLoading("turnos");
   const { pushError } = useError();
 
   // --- Estado local: pestañas y proceso actual ---
@@ -99,8 +103,7 @@ export const DashboardSuperadmin = () => {
           await updateTurno(turno.id, payload);
           showToast("Turno rechazado correctamente.");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo rechazar el turno.";
+          const message = error?.message || "No se pudo rechazar el turno.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al rechazar turno.", {
@@ -123,7 +126,6 @@ export const DashboardSuperadmin = () => {
       try {
         await Promise.all([loadTurnos(), loadEntregas(), loadUsuarios()]);
       } catch (error) {
-        console.error("Error al cargar los datos globales", error);
         showToast("No se pudieron cargar los datos generales.", "error");
         if (pushError) {
           pushError("Error al cargar datos globales.", {
@@ -152,8 +154,7 @@ export const DashboardSuperadmin = () => {
           await approveUsuarioRemoto(usuario.id);
           showToast("Usuario aprobado.");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo aprobar al usuario.";
+          const message = error?.message || "No se pudo aprobar al usuario.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al aprobar usuario.", {
@@ -181,8 +182,7 @@ export const DashboardSuperadmin = () => {
           await updateUsuarioEstadoRemoto(usuario.id, "Rechazado");
           showToast("Usuario rechazado.");
         } catch (error) {
-          const message =
-            error?.message || "No se pudo rechazar al usuario.";
+          const message = error?.message || "No se pudo rechazar al usuario.";
           showToast(message, "error");
           if (pushError) {
             pushError("Error al rechazar usuario.", {
@@ -303,12 +303,14 @@ export const DashboardSuperadmin = () => {
     pageUsuariosPendientes,
     ITEMS_PER_PAGE,
   ]);
-  const isTurnosSectionLoading = turnosLoading || isLoading("turnos");
+  const isTurnosSectionLoading = turnosLoading;
   const hasTurnosSolicitados =
-    paginatedTurnosSolicitados.totalItems > 0 && paginatedTurnosSolicitados.items.length > 0;
+    paginatedTurnosSolicitados.totalItems > 0 &&
+    paginatedTurnosSolicitados.items.length > 0;
   const isUsuariosSectionLoading = isLoading("usuarios");
   const hasUsuariosPendientes =
-    paginatedUsuariosPendientes.totalItems > 0 && paginatedUsuariosPendientes.items.length > 0;
+    paginatedUsuariosPendientes.totalItems > 0 &&
+    paginatedUsuariosPendientes.items.length > 0;
 
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
@@ -335,14 +337,19 @@ export const DashboardSuperadmin = () => {
             icon: "/icons/calendar-1.png",
           },
           {
+            id: "evaluar-entregas",
+            label: "Evaluar Entregables",
+            icon: "/icons/briefcase-4.png",
+          },
+          {
             id: "crear-turnos",
             label: "Crear Turnos",
             icon: "/icons/directory_explorer-5.png",
           },
           {
-            id: "evaluar-entregas",
-            label: "Evaluar Entregables",
-            icon: "/icons/briefcase-4.png",
+            id: "cargar-usuarios",
+            label: "Cargar Usuarios",
+            icon: "/icons/address_book_pad_users.png",
           },
         ]}
         active={active}
@@ -351,7 +358,7 @@ export const DashboardSuperadmin = () => {
 
       <div className="flex-1 p-6">
         {/* =========================
-            SECCIÓN: SOLICITUDES
+          SECCIÓN: SOLICITUDES
         ========================== */}
         {active === "turnos" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -404,7 +411,11 @@ export const DashboardSuperadmin = () => {
                         </td>
                         <td className="border p-2 text-center dark:border-[#333]">
                           {t.zoomLink && (
-                            <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                            <a
+                              href={t.zoomLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               <img
                                 src="/icons/video_-2.png"
                                 alt="Zoom"
@@ -472,7 +483,9 @@ export const DashboardSuperadmin = () => {
                   ))
                 ) : (
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                      No hay registros.
+                    </p>
                   </div>
                 )}
               </div>
@@ -490,7 +503,7 @@ export const DashboardSuperadmin = () => {
           </div>
         )}
         {/* =========================
-            SECCIÓN: GESTIÓN USUARIOS
+          SECCIÓN: GESTIÓN USUARIOS
         ========================== */}
         {active === "usuarios" && (
           <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -621,7 +634,9 @@ export const DashboardSuperadmin = () => {
                   ))
                 ) : (
                   <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">No hay registros.</p>
+                    <p className="text-sm font-mono text-gray-100 dark:text-gray-300">
+                      No hay registros.
+                    </p>
                   </div>
                 )}
               </div>
@@ -640,23 +655,26 @@ export const DashboardSuperadmin = () => {
         )}
 
         {/* =========================
-            SECCIÓN: CREAR TURNOS
+          SECCIÓN: CREAR TURNOS
         ========================== */}
         {active === "crear-turnos" && <CreateTurnos />}
 
         {/* =========================
-            SECCIÓN: EVALUAR ENTREGAS
+          SECCIÓN: EVALUAR ENTREGAS
         ========================== */}
         {active === "evaluar-entregas" && <EvaluarEntregas />}
 
         {/* =========================
-            SECCIÓN: CONFIGURACIÓN
+          SECCION: CARGAR USUARIOS
+        ========================== */}
+        {active === "cargar-usuarios" && <CreateUsers />}
+
+        {/* =========================
+          SECCIÓN: CONFIGURACIÓN
         ========================== */}
         {active === "config" && <Configuracion />}
       </div>
     </div>
   );
 };
-
-
 

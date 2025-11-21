@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ItemForm } from "../turnos/ItemForm";
 import { useAppData } from "../../context/AppContext";
+import { useLoading } from "../../context/LoadingContext";
 import { useModal } from "../../context/ModalContext";
 import {
   buildTurnoPayloadFromForm,
@@ -13,7 +14,9 @@ import { showToast } from "../../utils/feedback/toasts";
 import { Button } from "../ui/Button";
 
 export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
-  const { findTurnoById, updateTurno, turnosLoading } = useAppData();
+  const { findTurnoById, updateTurno } = useAppData();
+  const { isLoading } = useLoading();
+  const turnosLoading = isLoading("turnos");
   const { showModal } = useModal();
   const [turnoActual, establecerTurnoActual] = useState(turno ?? null);
   const [valoresFormulario, establecerValoresFormulario] = useState(() =>

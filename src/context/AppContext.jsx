@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useAuth } from "./AuthContext";
 import { useLoading } from "./LoadingContext";
 import { useError } from "./ErrorContext";
@@ -21,17 +20,32 @@ import {
   deleteTurno as apiDeleteTurno,
 } from "../services/turnosService";
 import {
+  getSlots,
+  solicitarSlot,
+  cancelarSlot,
+} from "../services/slotsService";
+import {
   getEntregas,
   createEntrega as apiCreateEntrega,
   updateEntrega as apiUpdateEntrega,
   deleteEntrega as apiDeleteEntrega,
-} from "../services/entregasService";
+} from "../services/entregasService"; // Panel admin (profesor/superadmin)
+import {
+  getSubmissionsByUser,
+  createSubmission,
+  updateSubmission,
+  deleteSubmission,
+} from "../services/submissionsService"; // Flujo alumno
 import {
   getUsuarios,
   approveUsuario as apiApproveUsuario,
   updateUsuarioEstado as apiUpdateUsuarioEstado,
+  createUsuario as apiCreateUsuario,
+  updateUsuario as apiUpdateUsuario,
+  deleteUsuario as apiDeleteUsuario,
 } from "../services/usuariosService";
 import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
+import { normalizeUsuario, normalizeUsuariosCollection } from "../utils/usuarios/normalizeUsuario";
 
 // --- Utilidades internas para normalizar ids y colecciones ---
 
@@ -48,8 +62,19 @@ const extractId = (value) => {
   return null;
 };
 
-const normalizeItem = (item) => {
+import {
+  normalizeTurno,
+  normalizeTurnosCollection,
+} from "../utils/turnos/normalizeTurno";
+import {
+  normalizeEntrega,
+  normalizeEntregasCollection,
+} from "../utils/entregas/normalizeEntrega";
+
+const normalizeItem = (item, type = "generic") => {
   if (!item || typeof item !== "object") return item;
+  if (type === "turno") return normalizeTurno(item);
+  if (type === "entrega") return normalizeEntrega(item);
   const resolvedId =
     item.id ?? extractId(item._id) ?? extractId(item.id) ?? null;
   return {
@@ -58,49 +83,8 @@ const normalizeItem = (item) => {
   };
 };
 
-const normalizeCollection = (collection) =>
-  Array.isArray(collection) ? collection.map(normalizeItem) : [];
-
-const TURNOS_STORAGE_KEY = "App-turnos";
-
-const DEFAULT_TURNOS_SEED = normalizeCollection([
-  {
-    id: "seed-turno-1",
-    review: 1,
-    fecha: "2025-10-25",
-    horario: "09:00 - 09:30",
-    sala: "Sala Remota 1",
-    zoomLink: "https://zoom.us/j/111111111",
-    estado: "Disponible",
-    start: "2025-10-25T12:00:00.000Z",
-    end: "2025-10-25T12:30:00.000Z",
-    comentarios: "Turno de muestra para onboarding.",
-  },
-  {
-    id: "seed-turno-2",
-    review: 2,
-    fecha: "2025-10-26",
-    horario: "10:00 - 10:45",
-    sala: "Sala Remota 2",
-    zoomLink: "https://zoom.us/j/222222222",
-    estado: "Disponible",
-    start: "2025-10-26T13:00:00.000Z",
-    end: "2025-10-26T13:45:00.000Z",
-    comentarios: "Revisión funcional con el equipo profesor.",
-  },
-  {
-    id: "seed-turno-3",
-    review: 3,
-    fecha: "2025-10-27",
-    horario: "11:30 - 12:00",
-    sala: "Cowork Presencial 1",
-    zoomLink: "https://zoom.us/j/333333333",
-    estado: "Disponible",
-    start: "2025-10-27T14:30:00.000Z",
-    end: "2025-10-27T15:00:00.000Z",
-    comentarios: "Espacio presencial para consultas de integración.",
-  },
-]);
+const normalizeCollection = (collection, type = "generic") =>
+  Array.isArray(collection) ? collection.map((item) => normalizeItem(item, type)) : [];
 
 const AppContext = createContext();
 
@@ -108,17 +92,11 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   // --- Estado persistido en localStorage + banderas de carga/errores ---
-  const [turnosState, setTurnosState] = useLocalStorage(
-    TURNOS_STORAGE_KEY,
-    DEFAULT_TURNOS_SEED
-  );
-  const [entregas, setEntregas] = useLocalStorage("entregas", []);
-  const [usuarios, setUsuarios] = useLocalStorage("usuarios", []);
-  const [turnosError, setTurnosError] = useState(null);
-  const [entregasError, setEntregasError] = useState(null);
-  const [usuariosError, setUsuariosError] = useState(null);
+  const [turnosState, setTurnosState] = useState([]);
+  const [entregas, setEntregas] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const { usuario, token } = useAuth();
-  const { start, stop, isLoading } = useLoading();
+  const { start, stop } = useLoading();
   const { pushError } = useError();
 
   const turnosRef = useRef(normalizeCollection(turnosState));
@@ -161,41 +139,6 @@ export const AppProvider = ({ children }) => {
     turnosRef.current = normalizeCollection(turnosState);
   }, [turnosState]);
 
-  const seededTurnosRef = useRef(false);
-
-  useEffect(() => {
-    if (seededTurnosRef.current) return;
-    if (typeof window === "undefined") return;
-    seededTurnosRef.current = true;
-
-    try {
-      const storage = window.localStorage;
-      const legacyRaw = storage.getItem("turnos");
-
-      if (legacyRaw && !storage.getItem(TURNOS_STORAGE_KEY)) {
-        storage.setItem(TURNOS_STORAGE_KEY, legacyRaw);
-        const legacyParsed = JSON.parse(legacyRaw);
-        if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
-          setTurnos(legacyParsed);
-          return;
-        }
-      }
-
-      const currentRaw = storage.getItem(TURNOS_STORAGE_KEY);
-      if (!currentRaw || currentRaw === "[]") {
-        storage.setItem(
-          TURNOS_STORAGE_KEY,
-          JSON.stringify(DEFAULT_TURNOS_SEED)
-        );
-        setTurnos(DEFAULT_TURNOS_SEED);
-      }
-    } catch (error) {
-      console.error("No se pudo inicializar la coleccion App-turnos", error);
-      setTurnos(DEFAULT_TURNOS_SEED);
-      notifyError("No se pudo inicializar la colección de turnos.", error, "Error de inicialización");
-    }
-  }, [setTurnos, notifyError]);
-
   useEffect(() => {
     entregasRef.current = normalizeCollection(entregas);
   }, [entregas]);
@@ -204,154 +147,127 @@ export const AppProvider = ({ children }) => {
     usuariosRef.current = normalizeCollection(usuarios);
   }, [usuarios]);
 
-  // --- Sincroniza cambios de almacenamiento entre pestañas ---
-  // --- Limpia caches cuando la sesión expira ---
-  useEffect(() => {
-    const handleStorageChange = (event) => {
-      try {
-        if (event.key === TURNOS_STORAGE_KEY || event.key === "turnos") {
-          const rawValue = event.newValue;
-          const value = rawValue ? JSON.parse(rawValue) : [];
-
-          if (
-            event.key === "turnos" &&
-            typeof window !== "undefined" &&
-            window.localStorage
-          ) {
-            window.localStorage.setItem(
-              TURNOS_STORAGE_KEY,
-              rawValue || "[]"
-            );
-          }
-
-          setTurnos(value);
-        }
-        if (event.key === "entregas") {
-          const value = event.newValue ? JSON.parse(event.newValue) : [];
-          setEntregas(Array.isArray(value) ? value : []);
-        }
-        if (event.key === "usuarios") {
-          const value = event.newValue ? JSON.parse(event.newValue) : [];
-          setUsuarios(Array.isArray(value) ? value : []);
-        }
-      } catch (error) {
-        console.error("No se pudo sincronizar datos desde storage", error);
-        notifyError("No se pudo sincronizar datos desde storage.", error, "Error de sincronización");
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [setTurnos, setEntregas, setUsuarios, notifyError]);
+  // No hay modo offline persistido: cada vista consulta el backend cuando lo necesita.
 
   // --- Operaciones remotas: turnos, entregas, usuarios ---
   const loadTurnos = useCallback(
     async (params = {}) => {
       if (!token) {
-        const fallback = normalizeCollection(DEFAULT_TURNOS_SEED);
-        turnosRef.current = fallback;
-        setTurnos(fallback);
-        setTurnosError(null);
-        return fallback;
+        turnosRef.current = [];
+        setTurnos([]);
+        return [];
       }
       start("turnos");
       try {
-        const remoteTurnos = await getTurnos(params);
-        const normalized = normalizeCollection(remoteTurnos);
+        // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
+        const esAlumno = usuario?.role === "alumno";
+        const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
+        const normalized = normalizeCollection(remoteTurnos, "turno");
         setTurnos(normalized);
-        setTurnosError(null);
         return normalized;
       } catch (error) {
-        console.error("Error al cargar turnos", error);
-        setTurnosError(error.message);
         notifyError("No se pudieron cargar los turnos.", error, "Error al cargar turnos");
         return turnosRef.current;
       } finally {
         stop("turnos");
       }
     },
-    [setTurnos, token, start, stop, notifyError]
+    [setTurnos, token, usuario, start, stop, notifyError]
   );
 
   const loadEntregas = useCallback(
     async (params = {}) => {
       if (!token) {
         setEntregas([]);
-        setEntregasError(null);
         entregasRef.current = [];
         return [];
       }
       start("entregas");
       try {
-        const data = await getEntregas(params);
-        const normalized = normalizeCollection(data);
+        const esAlumno = usuario?.role === "alumno";
+        let data;
+        if (esAlumno) {
+          // Para alumno, listar propias entregas vía /submissions/:userId
+          const userId = usuario?.id || usuario?._id;
+          if (!userId) {
+            data = [];
+          } else {
+            data = await getSubmissionsByUser(userId);
+          }
+        } else {
+          // Profesor / superadmin usan panel /entregas
+            data = await getEntregas(params);
+        }
+        const normalized = normalizeCollection(data, "entrega");
         setEntregas(normalized);
-        setEntregasError(null);
         return normalized;
       } catch (error) {
-        console.error("Error al cargar entregas", error);
-        setEntregasError(error.message);
         notifyError("No se pudieron cargar las entregas.", error, "Error al cargar entregas");
         return entregasRef.current;
       } finally {
         stop("entregas");
       }
     },
-    [token, setEntregas, start, stop, notifyError]
+    [token, usuario, setEntregas, start, stop, notifyError]
   );
 
   const loadUsuarios = useCallback(
     async (params = {}) => {
       if (!token) {
         setUsuarios([]);
-        setUsuariosError(null);
         usuariosRef.current = [];
         return [];
+      }
+      if (usuario?.role !== "superadmin" && usuario?.role !== "profesor") {
+        return usuariosRef.current;
       }
       start("usuarios");
       try {
         const data = await getUsuarios(params);
-        const normalized = normalizeCollection(data);
+        const normalized = normalizeUsuariosCollection(data);
         setUsuarios(normalized);
-        setUsuariosError(null);
         return normalized;
       } catch (error) {
-        console.error("Error al cargar usuarios", error);
-        setUsuariosError(error.message);
         notifyError("No se pudieron cargar los usuarios.", error, "Error al cargar usuarios");
         return usuariosRef.current;
       } finally {
         stop("usuarios");
       }
     },
-    [token, setUsuarios, start, stop, notifyError]
+    [token, usuario, setUsuarios, start, stop, notifyError]
   );
 
   const createEntrega = useCallback(
     async (payload) => {
       start("entregas");
       try {
-        const created = await apiCreateEntrega(payload);
-        const normalized = normalizeItem(created);
+        const esAlumno = usuario?.role === "alumno";
+        let created;
+        if (esAlumno) {
+          const slotId = payload.slotId || payload.turnoId || payload.slot || null;
+          if (!slotId) throw new Error("Falta slotId para crear la entrega del alumno.");
+          created = await createSubmission(slotId, payload);
+        } else {
+          created = await apiCreateEntrega(payload);
+        }
+        const normalized = normalizeItem(created, "entrega");
         if (normalized) {
           setEntregas((prev) => {
             const base = normalizeCollection(prev);
             return [...base, normalized];
           });
         }
-        setEntregasError(null);
         showToast("Entrega creada correctamente", "success");
         return normalized;
       } catch (error) {
         console.error("Error al crear entrega", error);
-        setEntregasError(error.message);
         showToast("Error al crear la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
       }
     },
-    [setEntregas, start, stop]
+    [setEntregas, usuario, start, stop]
   );
 
   const updateEntrega = useCallback(
@@ -359,71 +275,63 @@ export const AppProvider = ({ children }) => {
       start("entregas");
       try {
         const currentList = entregasRef.current;
-        const current = currentList.find(
-          (item) => String(item.id) === String(id)
-        );
+        const current = currentList.find((item) => String(item.id) === String(id));
         const requestPayload = current ? { ...current, ...payload } : payload;
-        const updated = await apiUpdateEntrega(id, requestPayload);
-        const normalized = normalizeItem(updated);
+        const esAlumno = usuario?.role === "alumno";
+        const updated = esAlumno
+          ? await updateSubmission(id, requestPayload)
+          : await apiUpdateEntrega(id, requestPayload);
+        const normalized = normalizeItem(updated, "entrega");
         const targetId = normalized?.id ?? id;
-        const fallback =
-          current && targetId != null
-            ? { ...current, ...payload, id: targetId }
-            : { ...payload, id: targetId };
+        const fallback = current && targetId != null
+          ? { ...current, ...payload, id: targetId }
+          : { ...payload, id: targetId };
         const nextEntrega = normalized ?? fallback;
-
         setEntregas((prev) => {
           const base = normalizeCollection(prev);
           if (!nextEntrega) return base;
-          const exists = base.some(
-            (item) => String(item.id) === String(targetId)
-          );
+          const exists = base.some((item) => String(item.id) === String(targetId));
           if (exists) {
-            return base.map((item) =>
-              String(item.id) === String(targetId)
-                ? { ...item, ...nextEntrega }
-                : item
-            );
+            return base.map((item) => String(item.id) === String(targetId) ? { ...item, ...nextEntrega } : item);
           }
           return [...base, nextEntrega];
         });
-        setEntregasError(null);
         showToast("Entrega actualizada", "success");
         return nextEntrega;
       } catch (error) {
         console.error("Error al actualizar entrega", error);
-        setEntregasError(error.message);
         showToast("Error al actualizar la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
       }
     },
-    [setEntregas, start, stop]
+    [setEntregas, usuario, start, stop]
   );
 
   const removeEntrega = useCallback(
     async (id) => {
       start("entregas");
       try {
-        await apiDeleteEntrega(id);
+        const esAlumno = usuario?.role === "alumno";
+        if (esAlumno) {
+          await deleteSubmission(id);
+        } else {
+          await apiDeleteEntrega(id);
+        }
         setEntregas((prev) =>
-          normalizeCollection(prev).filter(
-            (entregaItem) => String(entregaItem.id) !== String(id)
-          )
+          normalizeCollection(prev).filter((entregaItem) => String(entregaItem.id) !== String(id))
         );
-        setEntregasError(null);
         showToast("Entrega eliminada", "success");
       } catch (error) {
         console.error("Error al eliminar entrega", error);
-        setEntregasError(error.message);
         showToast("Error al eliminar la entrega", "error");
         throw error;
       } finally {
         stop("entregas");
       }
     },
-    [setEntregas, start, stop]
+    [setEntregas, usuario, start, stop]
   );
 
   const approveUsuarioRemoto = useCallback(
@@ -435,7 +343,7 @@ export const AppProvider = ({ children }) => {
           (usuario) => String(usuario.id) === String(id)
         );
         const aprobado = await apiApproveUsuario(id);
-        const normalizado = normalizeItem(aprobado);
+        const normalizado = normalizeUsuario(aprobado);
         const targetId = normalizado?.id ?? id;
 
         const merged = {
@@ -466,13 +374,10 @@ export const AppProvider = ({ children }) => {
           }
           return [...base, merged];
         });
-
-        setUsuariosError(null);
         showToast("Usuario aprobado", "success");
         return merged;
       } catch (error) {
         console.error("Error al aprobar usuario", error);
-        setUsuariosError(error.message);
         showToast("Error al aprobar usuario", "error");
         throw error;
       } finally {
@@ -491,7 +396,7 @@ export const AppProvider = ({ children }) => {
           (usuario) => String(usuario.id) === String(id)
         );
         const actualizado = await apiUpdateUsuarioEstado(id, estado);
-        const normalizado = normalizeItem(actualizado);
+        const normalizado = normalizeUsuario(actualizado);
         const targetId = normalizado?.id ?? id;
 
         const merged = {
@@ -532,8 +437,6 @@ export const AppProvider = ({ children }) => {
           }
           return [...base, merged];
         });
-
-        setUsuariosError(null);
         showToast(
           `Estado de usuario actualizado${estado ? ` a "${estado}"` : ""}`,
           "success"
@@ -541,7 +444,6 @@ export const AppProvider = ({ children }) => {
         return merged;
       } catch (error) {
         console.error("Error al actualizar estado del usuario", error);
-        setUsuariosError(error.message);
         showToast("Error al actualizar estado del usuario", "error");
         throw error;
       } finally {
@@ -565,12 +467,10 @@ export const AppProvider = ({ children }) => {
           const base = Array.isArray(prev) ? prev : [];
           return [...base, normalized];
         });
-        setTurnosError(null);
         showToast("Turno creado", "success");
         return normalized;
       } catch (error) {
         console.error("Error al crear turno", error);
-        setTurnosError(error.message);
         showToast("Error al crear el turno", "error");
         throw error;
       } finally {
@@ -581,31 +481,44 @@ export const AppProvider = ({ children }) => {
   );
 
   const updateTurno = useCallback(
-    async (id, payload) => {
+    async (id, payload = {}) => {
       start("turnos");
       try {
-        const actualizado = await apiUpdateTurno(id, payload);
-        const normalized = normalizeItem(actualizado);
+        const currentList = turnosRef.current;
+        const existente = currentList.find(
+          (turno) => String(turno.id) === String(id)
+        );
+        const requestPayload = existente ? { ...existente, ...payload } : payload;
+        const actualizado = await apiUpdateTurno(id, requestPayload);
+        const normalized = normalizeItem(actualizado, "turno");
         const targetId = normalized?.id ?? id;
-        const nextTurno =
-          normalized ??
-          (targetId != null ? { ...payload, id: targetId } : null);
-        if (!nextTurno || targetId == null) {
+        const nextTurno = targetId != null
+          ? {
+              ...(existente || {}),
+              ...requestPayload,
+              ...normalized,
+              id: targetId,
+            }
+          : null;
+
+        if (!nextTurno) {
           throw new Error("No se pudo resolver el turno actualizado.");
         }
-        setTurnos((prev) =>
-          Array.isArray(prev)
-            ? prev.map((turno) =>
-                String(turno.id) === String(targetId) ? nextTurno : turno
-              )
-            : [nextTurno]
-        );
-        setTurnosError(null);
+
+        setTurnos((prev) => {
+          const base = Array.isArray(prev) ? prev : [];
+          const exists = base.some((turno) => String(turno.id) === String(targetId));
+          if (exists) {
+            return base.map((turno) =>
+              String(turno.id) === String(targetId) ? { ...turno, ...nextTurno } : turno
+            );
+          }
+          return [...base, nextTurno];
+        });
         showToast("Turno actualizado", "success");
         return nextTurno;
       } catch (error) {
         console.error("Error al actualizar turno", error);
-        setTurnosError(error.message);
         showToast("Error al actualizar el turno", "error");
         throw error;
       } finally {
@@ -625,11 +538,9 @@ export const AppProvider = ({ children }) => {
             ? prev.filter((turno) => String(turno.id) !== String(id))
             : []
         );
-        setTurnosError(null);
         showToast("Turno eliminado", "success");
       } catch (error) {
         console.error("Error al eliminar turno", error);
-        setTurnosError(error.message);
         showToast("Error al eliminar el turno", "error");
         throw error;
       } finally {
@@ -665,11 +576,9 @@ export const AppProvider = ({ children }) => {
             return [...base, normalized];
           });
         }
-        setTurnosError(null);
         return normalized;
       } catch (error) {
         console.error("Error al obtener turno", error);
-        setTurnosError(error.message);
         notifyError("No se pudo obtener el turno solicitado.", error, "Error al obtener turno");
         throw error;
       } finally {
@@ -681,25 +590,12 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (!token || !usuario) {
-      const fallback = normalizeCollection(DEFAULT_TURNOS_SEED);
-      turnosRef.current = fallback;
-      setTurnos(fallback);
+      turnosRef.current = [];
+      setTurnos([]);
       setEntregas([]);
       setUsuarios([]);
-      setTurnosError(null);
-      setEntregasError(null);
-      setUsuariosError(null);
     }
-  }, [
-    token,
-    usuario,
-    setTurnos,
-    setEntregas,
-    setUsuarios,
-    setTurnosError,
-    setEntregasError,
-    setUsuariosError,
-  ]);
+  }, [token, usuario, setTurnos, setEntregas, setUsuarios]);
 
   // --- Métricas agregadas para paneles y badges ---
   const { totalTurnosSolicitados, totalEntregas, totalUsuarios } = useMemo(
@@ -712,8 +608,6 @@ export const AppProvider = ({ children }) => {
     }),
     [turnosState, entregas, usuarios]
   );
-
-  const turnosLoading = isLoading("turnos");
 
   return (
     <AppContext.Provider
@@ -737,10 +631,127 @@ export const AppProvider = ({ children }) => {
         updateTurno,
         removeTurno,
         findTurnoById,
-        turnosLoading,
-        turnosError,
-        entregasError,
-        usuariosError,
+        // --- Operaciones específicas alumno sobre /slots ---
+        solicitarTurno: async (id) => {
+          start("turnos");
+          try {
+            const actualizado = await solicitarSlot(id);
+            const normalizado = normalizeItem(actualizado, "turno");
+            const targetId = normalizado?.id ?? id;
+            setTurnos((prev) => {
+              const base = normalizeCollection(prev);
+              const exists = base.some((t) => String(t.id) === String(targetId));
+              if (exists) {
+                return base.map((t) =>
+                  String(t.id) === String(targetId)
+                    ? { ...t, ...normalizado, estado: normalizado.estado || "Solicitado" }
+                    : t
+                );
+              }
+              return [...base, { ...normalizado, estado: normalizado.estado || "Solicitado" }];
+            });
+            showToast("Turno solicitado", "success");
+            return normalizado;
+          } catch (error) {
+            console.error("Error al solicitar turno (slot)", error);
+            showToast("Error al solicitar el turno", "error");
+            throw error;
+          } finally {
+            stop("turnos");
+          }
+        },
+        cancelarTurno: async (id) => {
+          start("turnos");
+          try {
+            const actualizado = await cancelarSlot(id);
+            const normalizado = normalizeItem(actualizado, "turno");
+            const targetId = normalizado?.id ?? id;
+            setTurnos((prev) => {
+              const base = normalizeCollection(prev);
+              const exists = base.some((t) => String(t.id) === String(targetId));
+              if (exists) {
+                return base.map((t) =>
+                  String(t.id) === String(targetId)
+                    ? { ...t, ...normalizado, estado: normalizado.estado || "Disponible" }
+                    : t
+                );
+              }
+              return [...base, { ...normalizado, estado: normalizado.estado || "Disponible" }];
+            });
+            showToast("Solicitud cancelada", "info");
+            return normalizado;
+          } catch (error) {
+            console.error("Error al cancelar turno (slot)", error);
+            showToast("Error al cancelar el turno", "error");
+            throw error;
+          } finally {
+            stop("turnos");
+          }
+        },
+        // === Operaciones remotas (API) ===
+        createUsuarioRemoto: async (payload = {}) => {
+          start("usuarios-create");
+          try {
+            const creado = await apiCreateUsuario(payload);
+            const normalizado = normalizeUsuario(creado);
+            setUsuarios((prev) => {
+              const base = normalizeUsuariosCollection(prev);
+              return [...base, normalizado];
+            });
+            showToast("Usuario creado en servidor", "success");
+            // Reconciliar para obtener datos finales
+            await loadUsuarios();
+            return normalizado;
+          } catch (error) {
+            console.error("Error al crear usuario remoto", error);
+            notifyError("No se pudo crear el usuario.", error, "Error creación usuario");
+            throw error;
+          } finally {
+            stop("usuarios-create");
+          }
+        },
+        updateUsuarioRemoto: async (id, payload = {}) => {
+          start("usuarios-update");
+          try {
+            const actualizado = await apiUpdateUsuario(id, payload);
+            const normalizado = normalizeUsuario(actualizado);
+            setUsuarios((prev) => {
+              const base = normalizeUsuariosCollection(prev);
+              return base.map((usuario) =>
+                String(usuario.id) === String(normalizado.id)
+                  ? normalizado
+                  : usuario
+              );
+            });
+            showToast("Usuario actualizado", "success");
+            await loadUsuarios();
+            return normalizado;
+          } catch (error) {
+            console.error("Error al actualizar usuario remoto", error);
+            notifyError("No se pudo actualizar el usuario.", error, "Error actualización usuario");
+            throw error;
+          } finally {
+            stop("usuarios-update");
+          }
+        },
+        deleteUsuarioRemoto: async (id) => {
+          start("usuarios-delete");
+          try {
+            await apiDeleteUsuario(id);
+            setUsuarios((prev) => {
+              const base = normalizeUsuariosCollection(prev);
+              return base.filter((u) => String(u.id) !== String(id));
+            });
+            showToast("Usuario eliminado en servidor", "success");
+            await loadUsuarios();
+          } catch (error) {
+            console.error("Error al eliminar usuario remoto", error);
+            notifyError("No se pudo eliminar el usuario.", error, "Error eliminación usuario");
+            throw error;
+          } finally {
+            stop("usuarios-delete");
+          }
+        },
       }}
     >
       {children}

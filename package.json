@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "test:full": "node ./test/run-tests.js",
     "test:e2e": "vitest run test/e2e --reporter=basic",
-    "test:api": "node ./scripts/apiSmokeTest.mjs",
+    "test:api": "node ./scripts/apiHealthTest.mjs",
     "build": "vite build"
   },
   "dependencies": {

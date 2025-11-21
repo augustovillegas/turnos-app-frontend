@@ -4,62 +4,150 @@ import { apiClient } from "./apiClient";
 
 const RESOURCE = "/turnos";
 
-const mapTurnoPayload = (payload) => {
-  const base = {
-    review: Number(payload.review) || 0,
-    fecha: payload.fecha,
-    horario: payload.horario,
-    sala: payload.sala,
-    zoomLink: payload.zoomLink || "",
-    estado: payload.estado || "Disponible",
-    start: payload.start || "",
-    end: payload.end || "",
-    comentarios: payload.comentarios || "",
+const toNumberIfPossible = (value) => {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? value : parsed;
+};
+
+const mapTurnoPayload = (payload = {}, options = {}) => {
+  const { includeDefaults = false } = options;
+  const result = {};
+
+  const resolvedReview = payload.review ?? payload.reviewNumber;
+  const reviewValue = toNumberIfPossible(resolvedReview);
+  if (reviewValue !== undefined) {
+    result.review = reviewValue;
+    // Alias comun en algunos despliegues
+    result.reviewNumber = reviewValue;
+  } else if (includeDefaults) {
+    result.review = 0;
+  }
+
+  const maybeAssign = (key, value, allowDefault = false) => {
+    if (value !== undefined) {
+      result[key] = value;
+    } else if (includeDefaults && allowDefault) {
+      result[key] = "";
+    }
   };
 
-  if (payload.titulo !== undefined) {
-    base.titulo = payload.titulo ?? "";
+  // Backend almacena 'fecha' como DD/MM/YYYY; acepta 'date' en payload.
+  if (payload.date && !payload.fecha) {
+    result.fecha = payload.date;
+  } else {
+    maybeAssign("fecha", payload.fecha);
   }
-  if (payload.descripcion !== undefined) {
-    base.descripcion = payload.descripcion ?? "";
+  maybeAssign("horario", payload.horario);
+  maybeAssign("sala", payload.sala);
+  // Mapear 'room' numerico requerido por backend (ReviewSlot)
+  if (payload.room !== undefined) {
+    const roomNum = Number(payload.room);
+    result.room = Number.isNaN(roomNum) ? payload.room : roomNum;
+  } else if (payload.sala !== undefined) {
+    const salaNum = Number(payload.sala);
+    if (!Number.isNaN(salaNum)) {
+      result.room = salaNum;
+    }
   }
-  if (payload.modulo !== undefined) {
-    base.modulo = payload.modulo ?? "";
+  maybeAssign("zoomLink", payload.zoomLink?.trim?.() ?? payload.zoomLink, true);
+  maybeAssign("start", payload.start);
+  maybeAssign("end", payload.end);
+  // Mapear 'date' ISO segment si no viene explícito (para validación Path `date` is required)
+  if (!result.date && (payload.start || payload.end)) {
+    try {
+      const iso = payload.start || payload.end;
+      if (iso) {
+        const isoPart = new Date(iso).toISOString().slice(0, 10);
+        result.date = isoPart;
+        // También mapear a formato DD/MM/YYYY si backend lo transforma a fecha interna 'fecha'
+        const [yyyy, mm, dd] = isoPart.split("-");
+        if (yyyy && mm && dd && !result.fecha) {
+          result.fecha = `${dd}/${mm}/${yyyy}`;
+        }
+      }
+    } catch {}
   }
-  if (payload.duracion !== undefined) {
-    const durationValue = Number(payload.duracion);
-    base.duracion = Number.isNaN(durationValue) ? payload.duracion : durationValue;
+  // Derivar HH:mm cuando sea posible (algunos backends lo esperan)
+  try {
+    const deriveHM = (iso) =>
+      new Date(iso).toISOString().slice(11, 16);
+    if (payload.start && !payload.startTime) {
+      result.startTime = deriveHM(payload.start);
+    }
+    if (payload.end && !payload.endTime) {
+      result.endTime = deriveHM(payload.end);
+    }
+  } catch {}
+  maybeAssign("comentarios", payload.comentarios ?? payload.comment, true);
+
+  const resolvedEstado =
+    payload.estado ?? payload.reviewStatus ?? (includeDefaults ? "Disponible" : undefined);
+  if (resolvedEstado !== undefined) {
+    result.estado = resolvedEstado;
+    result.reviewStatus = payload.reviewStatus ?? resolvedEstado;
   }
-  if (payload.solicitanteId !== undefined) {
-    base.solicitanteId = payload.solicitanteId;
+
+  if (payload.titulo !== undefined || payload.title !== undefined) {
+    result.titulo = payload.titulo ?? payload.title ?? "";
   }
-  if (payload.profesorId !== undefined) {
-    base.profesorId = payload.profesorId;
+  if (payload.descripcion !== undefined || payload.description !== undefined) {
+    result.descripcion = payload.descripcion ?? payload.description ?? "";
   }
-  return base;
+
+  const duracionValue = toNumberIfPossible(payload.duracion ?? payload.duration);
+  if (duracionValue !== undefined) {
+    result.duracion = duracionValue;
+  }
+
+  if (payload.modulo !== undefined || payload.module !== undefined) {
+    result.modulo = payload.modulo ?? payload.module ?? "";
+  }
+
+  if (
+    payload.solicitanteId !== undefined ||
+    payload.student !== undefined ||
+    payload.alumnoId !== undefined
+  ) {
+    result.solicitanteId = payload.solicitanteId ?? payload.student ?? payload.alumnoId;
+  }
+
+  if (
+    payload.profesorId !== undefined ||
+    payload.profesor !== undefined ||
+    payload.createdBy !== undefined
+  ) {
+    result.profesorId = payload.profesorId ?? payload.profesor ?? payload.createdBy;
+  }
+
+  // Calcular duracion si no viene provista
+  if ((result.start || payload.start) && (result.end || payload.end)) {
+    try {
+      const startDate = new Date(result.start || payload.start);
+      const endDate = new Date(result.end || payload.end);
+      const minutes = Math.max(0, Math.round((endDate - startDate) / 60000));
+      if (minutes && result.duracion === undefined) {
+        result.duracion = minutes;
+      }
+    } catch {}
+  }
+
+  return result;
 };
 
 export const getTurnos = (params = {}) =>
-  apiClient
-    .get(RESOURCE, { params })
-    .then((response) => response.data ?? []);
+  apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
 
 export const getTurnoById = (id) =>
-  apiClient
-    .get(`${RESOURCE}/${id}`)
-    .then((response) => response.data);
+  apiClient.get(`${RESOURCE}/${id}`).then((response) => response.data);
 
 export const createTurno = (payload) =>
   apiClient
-    .post(RESOURCE, mapTurnoPayload(payload))
+    .post(RESOURCE, mapTurnoPayload(payload, { includeDefaults: true }))
     .then((response) => response.data);
 
 export const updateTurno = (id, payload) =>
-  apiClient
-    .put(`${RESOURCE}/${id}`, mapTurnoPayload(payload))
-    .then((response) => response.data);
+  apiClient.put(`${RESOURCE}/${id}`, mapTurnoPayload(payload)).then((response) => response.data);
 
 export const deleteTurno = (id) =>
-  apiClient
-    .delete(`${RESOURCE}/${id}`)
-    .then((response) => response.data);
+  apiClient.delete(`${RESOURCE}/${id}`).then((response) => response.data);

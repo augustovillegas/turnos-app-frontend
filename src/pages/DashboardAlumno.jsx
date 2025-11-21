@@ -5,17 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { useAppData } from "../context/AppContext";
 import { showToast } from "../utils/feedback/toasts";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../utils/turnos/form";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import {
   ensureModuleLabel,
-  matchesModule,
+  coincideModulo,
   labelToModule,
   moduleToLabel,
 } from "../utils/moduleMap";
@@ -30,8 +26,8 @@ export const DashboardAlumno = () => {
   // --- Contextos globales ---
   const {
     turnos,
-    updateTurno,
-    turnosLoading,
+    solicitarTurno,
+    cancelarTurno,
     entregas,
     loadTurnos,
     loadEntregas,
@@ -42,6 +38,7 @@ export const DashboardAlumno = () => {
   const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { showModal } = useModal();
   const { isLoading } = useLoading();
+  const turnosLoading = isLoading("turnos");
   const { pushError } = useError();
   const navigate = useNavigate();
 
@@ -151,43 +148,6 @@ export const DashboardAlumno = () => {
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingTurno, setProcessingTurno] = useState(null);
 
-  const coincideModuloAlumno = useCallback(
-    (turno) => {
-      if (!turno || typeof turno !== "object") return false;
-      const campos = [
-        turno?.modulo,
-        turno?.module,
-        turno?.moduloSlug,
-        turno?.cohort,
-        turno?.cohorte,
-        turno?.cohortId,
-        turno?.moduloId,
-        turno?.datos?.modulo,
-        turno?.datos?.module,
-        turno?.datos?.moduloSlug,
-        turno?.datos?.cohort,
-      ];
-      if (
-        moduloAlumno &&
-        campos.some((valor) => matchesModule(valor, moduloAlumno))
-      ) {
-        return true;
-      }
-      if (cohortAlumno != null) {
-        return campos.some((valor) => {
-          if (valor == null) return false;
-          const numero = Number(String(valor).trim());
-          if (Number.isFinite(numero)) {
-            return Math.trunc(numero) === cohortAlumno;
-          }
-          const normalizado = labelToModule(valor);
-          return normalizado != null && normalizado === cohortAlumno;
-        });
-      }
-      return !moduloAlumno && cohortAlumno == null;
-    },
-    [moduloAlumno, cohortAlumno]
-  );
   // --- Configuración de paginación ---
   const ITEMS_PER_PAGE = 5;
   const [pageTurnosDisponibles, setPageTurnosDisponibles] = useState(1);
@@ -224,15 +184,7 @@ export const DashboardAlumno = () => {
     if (!turno || turno.estado !== "Disponible" || !alumnoIdStr) return;
     setProcessingTurno(turno.id);
     try {
-      const payload = {
-        ...buildTurnoPayloadFromForm({
-          ...formValuesFromTurno(turno),
-          review: turno.review,
-          estado: "Solicitado",
-        }),
-        solicitanteId: alumnoIdStr,
-      };
-      await updateTurno(turno.id, payload);
+      await solicitarTurno(turno.id);
       showToast("Turno solicitado correctamente", "success");
     } catch (error) {
       pushError?.("Error al solicitar turno", { description: error.message });
@@ -250,14 +202,7 @@ export const DashboardAlumno = () => {
       onConfirm: async () => {
         setProcessingTurno(turno.id);
         try {
-          const payload = {
-            ...buildTurnoPayloadFromForm({
-              ...formValuesFromTurno(turno),
-              estado: "Disponible",
-            }),
-            solicitanteId: null,
-          };
-          await updateTurno(turno.id, payload);
+          await cancelarTurno(turno.id);
           showToast("Solicitud cancelada", "info");
         } catch (error) {
           pushError?.("Error al cancelar turno", {
@@ -296,8 +241,21 @@ export const DashboardAlumno = () => {
       return;
     }
 
+    // Seleccionar un slot reservado (turno 'Solicitado') del alumno para asociar la entrega.
+    const slotElegido = (Array.isArray(turnos) ? turnos : []).find(
+      (t) => t && t.estado === "Solicitado" && isTurnoDelAlumno(t)
+    );
+    if (!slotElegido) {
+      showToast(
+        "Necesitas tener un turno reservado (Solicitado) para registrar la entrega.",
+        "warning"
+      );
+      return;
+    }
+
     try {
       await createEntregaRemoto({
+        slotId: slotElegido.id,
         sprint: Number(sprint),
         githubLink: githubLink.trim(),
         renderLink: renderLink.trim(),
@@ -343,13 +301,12 @@ export const DashboardAlumno = () => {
   const turnosFiltradosPorModulo = useMemo(() => {
     if (!moduloAlumno && cohortAlumno == null) return turnos || [];
     return (turnos || []).filter(
-      (turno) => coincideModuloAlumno(turno) || isTurnoDelAlumno(turno)
+      (turno) => coincideModulo(turno, moduloAlumno, cohortAlumno) || isTurnoDelAlumno(turno)
     );
   }, [
     turnos,
     moduloAlumno,
     cohortAlumno,
-    coincideModuloAlumno,
     isTurnoDelAlumno,
   ]);
 
@@ -425,7 +382,7 @@ export const DashboardAlumno = () => {
             turnos={turnosDisponibles}
             onSolicitar={handleSolicitarTurno}
             processingTurno={processingTurno}
-            isTurnosSectionLoading={turnosLoading || isLoading("turnos")}
+            isTurnosSectionLoading={turnosLoading}
             setPageTurnosDisponibles={setPageTurnosDisponibles}
             pageTurnosDisponibles={pageTurnosDisponibles}
             ITEMS_PER_PAGE={ITEMS_PER_PAGE}
@@ -443,7 +400,7 @@ export const DashboardAlumno = () => {
             turnos={turnosHistorial}
             handleCancelarTurno={handleCancelarTurno}
             processingTurno={processingTurno}
-            isTurnosSectionLoading={turnosLoading || isLoading("turnos")}
+            isTurnosSectionLoading={turnosLoading}
             filtroReview={filtroReview}
             setFiltroReview={setFiltroReview}
             pageMisTurnos={pageMisTurnos}
@@ -472,3 +429,4 @@ export const DashboardAlumno = () => {
     </div>
   );
 };
+

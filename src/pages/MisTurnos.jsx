@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from "react";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
@@ -19,12 +20,32 @@ export const MisTurnos = ({
   setPageMisTurnos,
   ITEMS_PER_PAGE,
 }) => {
-  const totalItems = turnos.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-  const currentPage = Math.min(pageMisTurnos, totalPages);
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginated = turnos.slice(start, start + ITEMS_PER_PAGE);
-  const hasTurnos = paginated.length > 0;
+  const [turnosBuscados, setTurnosBuscados] = useState(turnos);
+
+  // Actualizar resultados cuando cambien los turnos
+  useEffect(() => {
+    setTurnosBuscados(turnos);
+  }, [turnos]);
+
+  // Resetear página cuando cambia el filtro de review
+  useEffect(() => {
+    setPageMisTurnos(1);
+  }, [filtroReview, setPageMisTurnos]);
+
+  const paginationData = useMemo(() => {
+    const totalItems = turnosBuscados.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(pageMisTurnos, totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return {
+      items: turnosBuscados.slice(start, start + ITEMS_PER_PAGE),
+      totalItems,
+      totalPages,
+      currentPage,
+    };
+  }, [turnosBuscados, pageMisTurnos, ITEMS_PER_PAGE]);
+
+  const hasTurnos = paginationData.items.length > 0;
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -42,6 +63,7 @@ export const MisTurnos = ({
           fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
           placeholder="Buscar en mis turnos"
           onSearch={(results) => {
+            setTurnosBuscados(results);
             setPageMisTurnos(1);
           }}
         />
@@ -57,7 +79,7 @@ export const MisTurnos = ({
           ) : (
             <Table
               columns={["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acción"]}
-              data={paginated}
+              data={paginationData.items}
               minWidth="min-w-[680px]"
               containerClass="px-4"
               renderRow={(t) => (
@@ -122,7 +144,7 @@ export const MisTurnos = ({
               ))}
             </div>
           ) : hasTurnos ? (
-            paginated.map((t) => (
+            paginationData.items.map((t) => (
               <CardTurno
                 key={t.id}
                 turno={t}
@@ -137,9 +159,9 @@ export const MisTurnos = ({
 
         {!isTurnosSectionLoading && (
           <Pagination
-            totalItems={totalItems}
+            totalItems={paginationData.totalItems}
             itemsPerPage={ITEMS_PER_PAGE}
-            currentPage={currentPage}
+            currentPage={paginationData.currentPage}
             onPageChange={setPageMisTurnos}
           />
         )}

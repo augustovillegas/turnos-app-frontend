@@ -145,7 +145,7 @@ export const EvaluarEntregas = () => {
     };
   }, [entregasBuscadas, totalPendientes, page, ITEMS_PER_PAGE]);
 
-  const getEstadoUI = (e) => e?.estado || e?.reviewStatus || "Pendiente";
+  const getEstadoUI = (e) => e?.estado || e?.reviewStatus || "A revisar";
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">

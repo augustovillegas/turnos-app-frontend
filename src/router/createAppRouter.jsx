@@ -33,6 +33,10 @@ export const RUTAS_APLICACION = [
         path: "contacto",
         lazy: () => import("../routes/contacto"),
       },
+       {
+        path: "cargar",
+        lazy: () => import("../routes/createUsers"),
+      },
     ],
   },
   {

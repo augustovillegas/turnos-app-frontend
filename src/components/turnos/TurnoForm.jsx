@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ItemForm } from "../turnos/ItemForm";
 import { useAppData } from "../../context/AppContext";
+import { useLoading } from "../../context/LoadingContext";
 import {
   buildTurnoPayloadFromForm,
   formValuesFromTurno,
@@ -13,7 +14,9 @@ import { Button } from "../ui/Button";
 
 export const TurnoForm = ({ onVolver }) => {
   // --- Estado local y helpers del formulario ---
-  const { createTurno, turnosLoading } = useAppData();
+  const { createTurno } = useAppData();
+  const { isLoading } = useLoading();
+  const turnosLoading = isLoading("turnos");
   const [valoresFormulario, establecerValoresFormulario] = useState(() =>
     formValuesFromTurno(null)
   );

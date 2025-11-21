@@ -9,19 +9,15 @@ import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { TurnoDetail } from "../components/turnos/TurnoDetail";
 import { useAppData } from "../context/AppContext";
-import { useModal } from "../context/ModalContext";
-import { useError } from "../context/ErrorContext";
+import { usePagination } from "../hooks/usePagination";
+import { useApproval } from "../hooks/useApproval";
 import { showToast } from "../utils/feedback/toasts";
 
 export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   const { updateTurno } = useAppData();
-  const { showModal } = useModal();
-  const { pushError } = useError();
 
-  // ---- Estado de filtros y paginado ----
+  // ---- Estado de filtros ----
   const [filtroReview, setFiltroReview] = useState("todos");
-  const [page, setPage] = useState(1);
-  const [processingTurno, setProcessingTurno] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
   const [modo, setModo] = useState("listar");
@@ -48,65 +44,38 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
 
   const filtrados = aplicarFiltro(turnosSolicitados);
 
-  const paginated = useMemo(() => {
-    const totalPages = Math.ceil(filtrados.length / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return {
-      items: filtrados.slice(start, start + ITEMS_PER_PAGE),
-      totalItems: filtrados.length,
-      totalPages,
-      currentPage,
-    };
-  }, [filtrados, page]);
+  // Hook de paginación
+  const paginated = usePagination(filtrados, ITEMS_PER_PAGE);
 
-  useEffect(() => setPage(1), [filtroReview]);
+  // Resetear página cuando cambia el filtro
+  useEffect(() => {
+    paginated.resetPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroReview]);
 
-  const handleAprobar = async (t) => {
-    try {
-      setProcessingTurno(t.id);
+  // Hook de aprobación/rechazo
+  const { handleApprove, handleReject, processingId } = useApproval({
+    onApprove: async (t) => {
       await updateTurno?.(t.id, { estado: "Aprobado" });
-      showToast("Turno aprobado");
-    } catch (e) {
-      pushError?.(e);
-      showToast("No se pudo aprobar el turno", "error");
-    } finally {
-      setProcessingTurno(null);
-    }
-  };
-
-  // === Confirmación de rechazo ===
-  const confirmRechazo = (t) =>
-    new Promise((resolve) => {
-      showModal({
-        title: "Rechazar turno",
-        message:
-          t?.fecha && t?.horario
-            ? `¿Deseás rechazar el turno del ${t.fecha} a las ${t.horario}? Esta acción no se puede deshacer.`
-            : "¿Deseás rechazar este turno? Esta acción no se puede deshacer.",
-        type: "warning",
-        onClose: () => resolve(false),
-        onConfirm: () => resolve(true),
-      });
-    });
-
-  const handleRechazar = async (t) => {
-    // Paso 1: pedir confirmación
-    const confirmado = await confirmRechazo(t);
-    if (!confirmado) return;
-
-    // Paso 2: ejecutar el rechazo
-    try {
-      setProcessingTurno(t.id);
+    },
+    onReject: async (t) => {
       await updateTurno?.(t.id, { estado: "Rechazado" });
-      showToast("Turno rechazado", "success");
-    } catch (e) {
-      pushError?.(e);
-      showToast("No se pudo rechazar el turno", "error");
-    } finally {
-      setProcessingTurno(null);
-    }
-  };
+    },
+    messages: {
+      approveTitle: "Aprobar turno",
+      approveMessage: "¿Confirmar aprobación del turno?",
+      approveSuccess: "Turno aprobado",
+      approveError: "No se pudo aprobar el turno",
+      rejectTitle: "Rechazar turno",
+      rejectMessage: "¿Deseás rechazar este turno? Esta acción no se puede deshacer.",
+      rejectSuccess: "Turno rechazado",
+      rejectError: "No se pudo rechazar el turno",
+    },
+  });
+
+  const handleAprobar = handleApprove;
+  const handleRechazar = handleReject;
+  const processingTurno = processingId;
 
   const handleCopiarZoom = async (t) => {
     try {
@@ -252,7 +221,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
             totalItems={paginated.totalItems}
             itemsPerPage={ITEMS_PER_PAGE}
             currentPage={paginated.currentPage}
-            onPageChange={setPage}
+            onPageChange={paginated.goToPage}
           />
         )}
       </div>

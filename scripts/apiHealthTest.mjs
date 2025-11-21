@@ -1,4 +1,7 @@
 import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const baseURL =
   process.env.API_BASE_URL ||
@@ -11,6 +14,36 @@ const client = axios.create({
   validateStatus: () => true,
   headers: { "Content-Type": "application/json" },
 });
+
+const ensureCredentials = () => {
+  const email = process.env.TEST_E2E_SUPERADMIN_EMAIL;
+  const password = process.env.TEST_E2E_SUPERADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      "Define TEST_E2E_SUPERADMIN_EMAIL y TEST_E2E_SUPERADMIN_PASSWORD para usar test:api."
+    );
+  }
+  return { email, password };
+};
+
+const authenticate = async () => {
+  const credentials = ensureCredentials();
+  const response = await client.post("/auth/login", {
+    email: credentials.email,
+    password: credentials.password,
+  });
+
+  if (![200, 201].includes(response.status) || !response.data?.token) {
+    throw new Error(
+      `No se pudo autenticar: status ${response.status} | ${JSON.stringify(
+        response.data
+      )}`
+    );
+  }
+
+  client.defaults.headers.Authorization = `Bearer ${response.data.token}`;
+  return response.data;
+};
 
 const state = {
   turnoId: null,
@@ -61,19 +94,21 @@ const buildTurnoPayload = () => {
   const end = new Date(now + 90 * 60 * 1000);
   const formatHour = (date) => date.toISOString().slice(11, 16);
 
+  const roomNumber = Math.floor(Math.random() * 100) + 1;
   return {
     review: 77,
     fecha: start.toISOString().slice(0, 10),
     horario: `${formatHour(start)} - ${formatHour(end)}`,
-    sala: `Sala QA ${now}`,
+    sala: roomNumber,
     zoomLink: `https://example.com/review-${now}`,
     estado: "Disponible",
     start: start.toISOString(),
     end: end.toISOString(),
-    comentarios: "Generado por apiSmokeTest",
+    comentarios: "Generado por apiHealthTest",
     modulo: "NODE",
     cohort: "QA",
     solicitanteId: null,
+    room: roomNumber,
   };
 };
 
@@ -121,6 +156,13 @@ const testListTurnos = async () => {
 const testCreateTurno = async () => {
   const payload = buildTurnoPayload();
   const response = await client.post("/turnos", payload);
+  if (![200, 201].includes(response.status)) {
+    console.error("[apiHealthTest] createTurno payload", payload);
+    console.error(
+      `[apiHealthTest] createTurno status ${response.status}`,
+      response.data
+    );
+  }
   expectCondition(
     [200, 201].includes(response.status),
     `status inesperado: ${response.status}`
@@ -133,7 +175,7 @@ const testUpdateTurno = async () => {
   requireTurnoDisponible();
   const response = await client.put(`/turnos/${state.turnoId}`, {
     estado: "Solicitado",
-    comentarios: "Actualizado por smoke test",
+    comentarios: "Actualizado por apiHealthTest",
   });
   expectCondition(
     response.status === 200,
@@ -236,6 +278,7 @@ const scenarios = [
 ];
 
 const run = async () => {
+  await authenticate();
   for (const scenario of scenarios) {
     try {
       await scenario.fn();

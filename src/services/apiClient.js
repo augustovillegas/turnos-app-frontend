@@ -4,19 +4,66 @@ import axios from "axios";
 // Configuración base de la API
 // =========================================
 
-// Usa la variable de entorno definida en `.env`
+// Utilidades de URL base (robusto en Vite, Node y navegador)
 const sanitizarUrlBase = (valor) =>
   typeof valor === "string" ? valor.replace(/\/+$/, "") : "";
 
-// Lee la URL desde las variables de entorno de Vite
-const urlBase = sanitizarUrlBase(import.meta.env.VITE_API_BASE_URL);
+const leerVarEntorno = (key) => {
+  try {
+    // Preferir Vite env cuando esté disponible
+    // NOTA: en bundlers, Vite reemplaza import.meta.env en build time
+    const viteEnv = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+    if (viteEnv && typeof viteEnv[key] === "string") return viteEnv[key];
+  } catch {}
+  try {
+    // Compatibilidad con Node (tests/scripts)
+    if (typeof process !== "undefined" && process.env && process.env[key]) {
+      return process.env[key];
+    }
+  } catch {}
+  try {
+    // Permitir override en runtime (útil en integraciones E2E)
+    if (typeof globalThis !== "undefined" && globalThis[key]) return globalThis[key];
+  } catch {}
+  return undefined;
+};
 
-// Si no existe la variable, lanza un aviso
-if (!urlBase) {
-  console.warn(
-    "[apiClient] ⚠️ No se encontró VITE_API_BASE_URL en las variables de entorno."
-  );
-}
+const resolverBaseUrl = () => {
+  const candidates = [
+    leerVarEntorno("VITE_API_BASE_URL"),
+    leerVarEntorno("VITE_BACKEND_URL"),
+    leerVarEntorno("VITE_API_URL"),
+    // Overrides explícitos
+    leerVarEntorno("__API_BASE_URL__"),
+  ].map(sanitizarUrlBase);
+
+  let elegido = candidates.find((v) => v);
+
+  if (!elegido) {
+    // Fallback razonable: mismo origen (útil en dev proxies)
+    if (typeof window !== "undefined" && window.location?.origin) {
+      elegido = sanitizarUrlBase(window.location.origin);
+      console.warn(
+        "[apiClient] ⚠️ Usando origin del navegador como baseURL:", elegido
+      );
+    } else {
+      console.warn(
+        "[apiClient] ⚠️ No se encontró VITE_API_BASE_URL ni origin del navegador. Usando baseURL relativa."
+      );
+      elegido = ""; // relativa
+    }
+  }
+
+  return elegido;
+};
+
+let urlBase = resolverBaseUrl();
+
+// Permitir override programático en tiempo de ejecución (tests/e2e)
+export const setApiBaseUrl = (nuevoBaseUrl) => {
+  urlBase = sanitizarUrlBase(nuevoBaseUrl);
+  apiClient.defaults.baseURL = urlBase;
+};
 
 // Crea el cliente Axios configurado
 export const apiClient = axios.create({

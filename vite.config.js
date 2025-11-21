@@ -14,7 +14,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
-    reporters: isCI ? ['default', 'junit'] : ['default'],
+    reporters: [['default', { summary: false }]],
     clearMocks: true,
     restoreMocks: true,
     unstubGlobals: true,

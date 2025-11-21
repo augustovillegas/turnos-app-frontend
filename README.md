@@ -45,3 +45,12 @@
 3. Restringir el `RequestsPanel` a roles administrativos y validar ownership en backend.
 4. Sanitizar el flujo de entregas del alumno (filtrado, permisos, validaciones y mensajes de error).
 5. Completar las funcionalidades "pendientes" (búsquedas, botones de aprobación, menú de detalle) y agregar las pruebas descritas.
+
+## Configuración para pruebas con API real
+
+- `VITE_API_BASE_URL` siempre debe apuntar a un backend real (localhost, staging o producción). Si necesitás sobrescribir la URL usada en los tests, podés definir `TEST_E2E_API_BASE_URL`.
+- Cada flujo E2E usa credenciales reales y obtiene el token llamando a `/auth/login`. Configurá las siguientes variables de entorno con cuentas válidas y aprobadas:
+  - `TEST_E2E_ALUMNO_EMAIL` / `TEST_E2E_ALUMNO_PASSWORD`
+  - `TEST_E2E_PROFESOR_EMAIL` / `TEST_E2E_PROFESOR_PASSWORD`
+  - `TEST_E2E_SUPERADMIN_EMAIL` / `TEST_E2E_SUPERADMIN_PASSWORD`
+- Los tests crean y limpian datos reales (turnos, usuarios y entregas) usando la API. Para evitar interferencias, ejecutalos contra un entorno dedicado de QA o credenciales específicas para automatización.

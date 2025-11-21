@@ -63,7 +63,7 @@ export const Table = ({
           {hasData ? (
             rows.map((item, i) => (
               <tr
-                key={i}
+                key={item?.id ?? item?._id ?? `row-${i}`}
                 role="row"
                 className="transition-colors duration-200 hover:bg-[#C0C0C0]/30 dark:hover:bg-[#2A2A2A]/40"
               >
