@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
+import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
@@ -138,7 +139,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
                     {t.review}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                    {t.fecha}
+                    {formatDateForTable(t.fecha)}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.horario}

@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { Status } from "./Status";
+import { isEstado } from "../../utils/turnos/normalizeEstado";
 
 export const CardTurno = ({
   turno,
@@ -44,7 +45,7 @@ export const CardTurno = ({
 
       {(onSolicitar || onCancelar || onAprobar || onRechazar || onVer) && (
         <div className="flex justify-end gap-2">
-          {onSolicitar && turno.estado === "Disponible" && (
+          {onSolicitar && isEstado(turno.estado, "Disponible") && (
             <Button
               variant="primary"
               className="w-full"
@@ -54,7 +55,7 @@ export const CardTurno = ({
               Solicitar turno
             </Button>
           )}
-          {onCancelar && turno.estado === "Solicitado" && (
+          {onCancelar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="secondary"
               className="w-full"
@@ -64,7 +65,7 @@ export const CardTurno = ({
               Cancelar solicitud
             </Button>
           )}
-          {onAprobar && turno.estado === "Solicitado" && (
+          {onAprobar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="success"
               className="w-full"
@@ -74,7 +75,7 @@ export const CardTurno = ({
               Aprobar
             </Button>
           )}
-          {onRechazar && turno.estado === "Solicitado" && (
+          {onRechazar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="danger"
               className="w-full"

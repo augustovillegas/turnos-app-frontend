@@ -10,6 +10,7 @@ import { EmptyRow } from "../components/ui/EmptyRow";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { Table } from "../components/ui/Table";
 import { EntregaEdit } from "../components/ui/EntregaEdit";
+import { extractFormErrors } from "../utils/feedback/errorExtractor";
 
 export const Entregables = ({
   entregas = [],
@@ -30,7 +31,10 @@ export const Entregables = ({
   const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
 
   // 🔄 Actualizar resultados cuando cambien las entregas
-  useEffect(() => setEntregasBuscadas(entregas), [entregas]);
+  useEffect(() => {
+    console.log("[Entregables] Mounted. Entregas count:", entregas.length);
+    setEntregasBuscadas(entregas);
+  }, [entregas]);
 
   // 🔢 Paginación
   const totalEntregas = entregasBuscadas.length;
@@ -232,13 +236,20 @@ export const Entregables = ({
             setComentarios={setComentarios}
             errors={entregaErrors}
             onAgregar={async () => {
-              await onAgregarEntrega({
-                sprint,
-                githubLink,
-                renderLink,
-                comentarios,
-              });
-              setModoEntrega("listar");
+              try {
+                setEntregaErrors({}); // Limpiar errores previos
+                await onAgregarEntrega({
+                  sprint,
+                  githubLink,
+                  renderLink,
+                  comentarios,
+                });
+                setModoEntrega("listar");
+              } catch (error) {
+                // Extraer errores de validación del backend según contrato {message, errores?}
+                const formErrors = extractFormErrors(error);
+                setEntregaErrors(formErrors);
+              }
             }}
             onVolver={() => setModoEntrega("listar")}
           />

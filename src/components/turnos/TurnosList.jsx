@@ -12,13 +12,16 @@ import { Pagination } from "../ui/Pagination";
 import { SearchBar } from "../ui/SearchBar";
 import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
-import { Skeleton } from "../ui/Skeleton";
-import { EmptyRow } from "../ui/EmptyRow";
 import { SuperadminActions } from "../ui/SuperadminActions";
 import { ProfesorActions } from "../ui/ProfesorActions";
+import { normalizeEstado } from "../../utils/turnos/normalizeEstado";
+import { formatDateForTable } from "../../utils/formatDateForTable";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
+  // ARQUITECTURA: Recibe `role` como prop para renderizado condicional de acciones
+  // (SuperadminActions vs ProfesorActions). El backend valida ownership/permisos.
+  // `normalizeEstado` asegura comparaciones case-insensitive para filtros de UI.
   const { turnos, loadTurnos, removeTurno } = useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
@@ -108,18 +111,9 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
     }
   };
 
-  const handleAprobar = (turno) => {
-    showToast(
-      `Aprobar turno #${turno.id} — pendiente de implementar`,
-      "success"
-    );
-  };
-  const handleRechazar = (turno) => {
-    showToast(
-      `Rechazar turno #${turno.id} — pendiente de implementar`,
-      "success"
-    );
-  };
+  // Acciones de aprobar/rechazar removidas: se gestionan exclusivamente
+  // desde el panel de solicitudes (RequestsPanel). Se ocultan aquí para
+  // evitar UX inconsistente.
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -168,122 +162,83 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
           </div>
         </div>
-        <div className="hidden sm:block">
-          {showLoader ? (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} height="2.75rem" />
-              ))}
-            </div>
-          ) : (
-            <Table
-              columns={[
-                "Review",
-                "Fecha",
-                "Horario",
-                "Sala",
-                "Zoom",
-                "Estado",
-                "Acción",
-              ]}
-              data={paginatedTurnos || []}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(turno) => (
-                <>
-                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                    {turno.review}
-                  </td>
-                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                    {turno.fecha}
-                  </td>
-                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                    {turno.horario}
-                  </td>
-                  <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
-                    {turno.sala}
-                  </td>
-                  <td className="border p-2 text-center dark:border-[#333]">
-                    {turno.zoomLink && (
-                      <a href={turno.zoomLink} target="_blank" rel="noreferrer">
-                        <img
-                          src="/icons/video_-2.png"
-                          alt="Zoom"
-                          className="w-5 h-5 mx-auto hover:opacity-80"
-                        />
-                      </a>
-                    )}
-                  </td>
-                  <td className="border border-[#111827] p-2 dark:border-[#333]">
-                    <Status status={turno.estado || "Disponible"} />
-                  </td>
-                  <td className="border border-[#111827] p-2 dark:border-[#333]">
-                    <div className="flex items-center justify-center">
-                      {role === "superadmin" ? (
-                        <SuperadminActions
-                          item={turno}
-                          onVer={onVer ? (t) => onVer(t) : undefined}
-                          onEditar={onEditar ? (t) => onEditar(t) : undefined}
-                          onEliminar={() => handleConfirmarEliminacion(turno)}
-                          onAprobar={handleAprobar}
-                          onRechazar={handleRechazar}
-                          onCopiarZoom={handleCopiarZoom}
-                          disabled={showLoader || processingId === turno.id}
-                        />
-                      ) : (
-                        <ProfesorActions
-                          item={turno}
-                          onVer={onVer ? (t) => onVer(t) : undefined}
-                          onEditar={onEditar ? (t) => onEditar(t) : undefined}
-                          onEliminar={() => handleConfirmarEliminacion(turno)}
-                          onAprobar={handleAprobar}
-                          onRechazar={handleRechazar}
-                          onCopiarZoom={handleCopiarZoom}
-                          disabled={showLoader || processingId === turno.id}
-                        />
-                      )}
-                    </div>
-                  </td>
-                </>
-              )}
+
+        <Table
+          responsive
+          testId="turnos-list"
+          columns={["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acción"]}
+          data={paginatedTurnos || []}
+          minWidth="min-w-[680px]"
+          containerClass="px-4"
+          isLoading={showLoader}
+          emptyMessage="No hay turnos disponibles."
+          renderRow={(turno) => (
+            <>
+              <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                {turno.review}
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                {formatDateForTable(turno.fecha)}
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                {turno.horario}
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                {turno.sala}
+              </td>
+              <td className="border p-2 text-center dark:border-[#333]">
+                {turno.zoomLink && (
+                  <a href={turno.zoomLink} target="_blank" rel="noreferrer">
+                    <img
+                      src="/icons/video_-2.png"
+                      alt="Zoom"
+                      className="w-5 h-5 mx-auto hover:opacity-80"
+                    />
+                  </a>
+                )}
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333]">
+                <Status status={turno.estado || "Disponible"} />
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333]">
+                <div className="flex items-center justify-center">
+                  {role === "superadmin" ? (
+                    <SuperadminActions
+                      item={turno}
+                      onVer={onVer ? (t) => onVer(t) : undefined}
+                      onEditar={onEditar ? (t) => onEditar(t) : undefined}
+                      onEliminar={() => handleConfirmarEliminacion(turno)}
+                      onAprobar={undefined}
+                      onRechazar={undefined}
+                      onCopiarZoom={handleCopiarZoom}
+                      disabled={showLoader || processingId === turno.id}
+                    />
+                  ) : (
+                    <ProfesorActions
+                      item={turno}
+                      onVer={onVer ? (t) => onVer(t) : undefined}
+                      onEditar={onEditar ? (t) => onEditar(t) : undefined}
+                      onEliminar={() => handleConfirmarEliminacion(turno)}
+                      onAprobar={undefined}
+                      onRechazar={undefined}
+                      onCopiarZoom={handleCopiarZoom}
+                      disabled={showLoader || processingId === turno.id}
+                    />
+                  )}
+                </div>
+              </td>
+            </>
+          )}
+          renderMobileCard={(turno) => (
+            <CardTurnosCreados
+              turno={turno}
+              onVer={onVer ? () => onVer(turno) : undefined}
+              onEditar={() => onEditar?.(turno)}
+              onEliminar={() => handleConfirmarEliminacion(turno)}
+              disabled={showLoader || processingId === turno.id}
             />
           )}
-        </div>
-
-        <div className="mt-4 space-y-4 px-2 sm:hidden">
-          {showLoader ? (
-            <div className="space-y-3 py-4">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} height="4rem" />
-              ))}
-            </div>
-          ) : hasTurnos ? (
-            paginatedTurnos.map((turno) => (
-              <CardTurnosCreados
-                key={turno.id}
-                turno={turno}
-                onVer={onVer ? () => onVer(turno) : undefined}
-                onEditar={() => onEditar?.(turno)}
-                onEliminar={() => handleConfirmarEliminacion(turno)}
-                disabled={showLoader || processingId === turno.id}
-              />
-            ))
-          ) : (
-            <div className="rounded-md border-2 border-[#111827]/40 bg-white p-6 text-center shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
-              <EmptyRow
-                columns={[
-                  "Review",
-                  "Fecha",
-                  "Horario",
-                  "Sala",
-                  "Zoom",
-                  "Estado",
-                  "Acción",
-                ]}
-              />
-            </div>
-          )}
-        </div>
+        />
 
         {!showLoader && (
           <Pagination

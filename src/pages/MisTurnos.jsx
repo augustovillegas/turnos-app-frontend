@@ -3,6 +3,7 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
+import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
 import { CardTurno } from "../components/ui/CardTurno";
@@ -85,7 +86,7 @@ export const MisTurnos = ({
               renderRow={(t) => (
                 <>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.review}</td>
-                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.fecha}</td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{formatDateForTable(t.fecha)}</td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.horario}</td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.sala}</td>
                   <td className="border p-2 text-center dark:border-[#333]">

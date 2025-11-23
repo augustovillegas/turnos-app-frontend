@@ -31,10 +31,6 @@ const leerVarEntorno = (key) => {
 const resolverBaseUrl = () => {
   const candidates = [
     leerVarEntorno("VITE_API_BASE_URL"),
-    leerVarEntorno("VITE_BACKEND_URL"),
-    leerVarEntorno("VITE_API_URL"),
-    // Overrides explícitos
-    leerVarEntorno("__API_BASE_URL__"),
   ].map(sanitizarUrlBase);
 
   let elegido = candidates.find((v) => v);

@@ -1,14 +1,26 @@
 import axios from "axios";
+import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+// Ensure .env is loaded for ESM context
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, "../../.env") });
 
 const sanitizeBaseUrl = (value) =>
   typeof value === "string" ? value.replace(/\/+$/, "") : "";
 
-const API_BASE_URL = sanitizeBaseUrl(
-  process.env.TEST_E2E_API_BASE_URL ||
-    process.env.API_BASE_URL ||
-    process.env.VITE_API_BASE_URL ||
-    "http://localhost:3000"
-);
+const getActiveBaseUrl = () => {
+  const fromEnv = process.env.VITE_API_BASE_URL || "";
+  const candidate = sanitizeBaseUrl(fromEnv);
+  if (!candidate) {
+    throw new Error(
+      "[realBackendSession] Define VITE_API_BASE_URL para las pruebas E2E (sin fallback)."
+    );
+  }
+  return candidate;
+};
 
 const ROLE_ENV_VARS = {
   alumno: {
@@ -25,16 +37,21 @@ const ROLE_ENV_VARS = {
   },
 };
 
+const resolveTimeout = () => {
+  const raw = process.env.TEST_E2E_HTTP_TIMEOUT || process.env.VITEST_HTTP_TIMEOUT;
+  if (!raw) return 15_000; // reducir default para acelerar fallos en E2E
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 15_000;
+};
+
 const createHttpClient = (token) =>
   axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 25_000,
+    baseURL: getActiveBaseUrl(),
+    timeout: resolveTimeout(),
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    // Forzar adaptador HTTP de Node para evitar "Network Error" en jsdom
-    adapter: "http",
   });
 
 const persistSession = ({ token, user }) => {
@@ -79,14 +96,15 @@ const resolveRoleCredentials = (auth = {}) => {
   return { role, email, password };
 };
 
-export const getApiBaseUrl = () => API_BASE_URL;
+export const getApiBaseUrl = () => getActiveBaseUrl();
 
 export const getBackendClient = (token) => createHttpClient(token);
 
-export const resolveAuthSession = async (
-  authConfig,
-  { persist = false } = {}
-) => {
+// Cache simple por rol para evitar logins repetidos en cada request de test.
+const sessionCache = new Map();
+const CACHE_TTL_MS = 5 * 60_000; // 5 minutos
+
+export const resolveAuthSession = async (authConfig, { persist = false } = {}) => {
   if (!authConfig) {
     if (persist) {
       clearStoredSession();
@@ -106,23 +124,31 @@ export const resolveAuthSession = async (
   }
 
   const { email, password, role } = resolveRoleCredentials(authConfig);
+  const cacheKey = `${role}:${email}`;
+  const cached = sessionCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    if (persist) persistSession(cached.session);
+    return cached.session;
+  }
   const client = createHttpClient();
-  const response = await client.post("/auth/login", {
-    email,
-    password,
-  });
-  const token = response.data?.token;
-  const user = response.data?.user;
-  if (!token || !user) {
+  try {
+    const response = await client.post("/auth/login", { email, password });
+    const token = response.data?.token;
+    const user = response.data?.user;
+    if (!token || !user) {
+      throw new Error(
+        `[realBackendSession] Respuesta inválida al autenticar ${role || email}. Status: ${response.status}, Data: ${JSON.stringify(response.data)}`
+      );
+    }
+    const session = { token, user };
+    sessionCache.set(cacheKey, { session, expires: Date.now() + CACHE_TTL_MS });
+    if (persist) persistSession(session);
+    return session;
+  } catch (error) {
+    const statusCode = error.response?.status;
+    const errorMsg = error.response?.data?.message || error.message;
     throw new Error(
-      `[realBackendSession] Respuesta inválida al autenticar ${
-        role || email
-      }.`
+      `[realBackendSession] Auth failed for ${role}/${email}. Status: ${statusCode}, Message: ${errorMsg}`
     );
   }
-  const session = { token, user };
-  if (persist) {
-    persistSession(session);
-  }
-  return session;
 };

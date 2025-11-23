@@ -1,21 +1,22 @@
 // === Floating Requests Panel ===
 // Panel lateral para revisar y liberar turnos solicitados sin dejar el dashboard.
+// RESTRINGIDO: Solo visible para profesor/superadmin (backend valida ownership)
 import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import { useModal } from "../../context/ModalContext";
 import { useLoading } from "../../context/LoadingContext";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
 import { showToast } from "../../utils/feedback/toasts";
-import {
-  buildTurnoPayloadFromForm,
-  formValuesFromTurno,
-} from "../../utils/turnos/form";
+import { buildTurnoPayloadFromForm, formValuesFromTurno } from "../../utils/turnos/form";
+import { isEstado } from "../../utils/turnos/normalizeEstado";
 import { Pagination } from "../ui/Pagination";
 
 const TURNOS_POR_PAGINA = 5;
 
 export const RequestsPanel = () => {
+  const { user } = useAuth();
   const { turnos, updateTurno, totalTurnosSolicitados } = useAppData();
   const { isLoading } = useLoading();
   const turnosLoading = isLoading("turnos");
@@ -24,8 +25,15 @@ export const RequestsPanel = () => {
   const [turnoProcesandoId, establecerTurnoProcesandoId] = useState(null);
   const [pagina, establecerPagina] = useState(1);
 
+  // Ocultar panel si el usuario no es profesor/superadmin
+  const puedeVerPanel = user?.role === "profesor" || user?.role === "superadmin";
+  
+  if (!puedeVerPanel) {
+    return null;
+  }
+
   const solicitudesPendientes = useMemo(
-    () => turnos.filter((turno) => turno.estado === "Solicitado"),
+    () => turnos.filter((turno) => isEstado(turno.estado, "solicitado")),
     [turnos]
   );
   const totalSolicitudes = solicitudesPendientes.length;

@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { Status } from "./Status";
+import { isEstado } from "../../utils/turnos/normalizeEstado";
 
 export const CardTurnosCreados = ({
   turno,
@@ -90,7 +91,7 @@ export const CardTurnosCreados = ({
         ) : (
           // Comportamiento ORIGINAL se mantiene cuando no estamos en flujo de aprobación
           <>
-            {turno.estado === "Disponible" ? (
+            {isEstado(turno.estado, "Disponible") ? (
               <div className="grid grid-cols-2 gap-2">
                 {onEditar && (
                   <Button

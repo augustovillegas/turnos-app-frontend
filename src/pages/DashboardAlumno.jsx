@@ -9,12 +9,8 @@ import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
-import {
-  ensureModuleLabel,
-  coincideModulo,
-  labelToModule,
-  moduleToLabel,
-} from "../utils/moduleMap";
+import { ensureModuleLabel, coincideModulo, labelToModule, moduleToLabel } from "../utils/moduleMap";
+import { normalizeEstado, isEstado, anyEstado } from "../utils/turnos/normalizeEstado";
 
 // Secciones modulares
 import { TurnosDisponibles } from "./TurnosDisponibles";
@@ -181,7 +177,7 @@ export const DashboardAlumno = () => {
 
   // --- Manejo de turnos ---
   const handleSolicitarTurno = async (turno) => {
-    if (!turno || turno.estado !== "Disponible" || !alumnoIdStr) return;
+    if (!turno || !isEstado(turno.estado, "disponible") || !alumnoIdStr) return;
     setProcessingTurno(turno.id);
     try {
       await solicitarTurno(turno.id);
@@ -194,7 +190,7 @@ export const DashboardAlumno = () => {
   };
 
   const handleCancelarTurno = (turno) => {
-    if (!turno || turno.estado !== "Solicitado") return;
+    if (!turno || !isEstado(turno.estado, "solicitado")) return;
     showModal({
       type: "warning",
       title: "Cancelar solicitud",
@@ -243,7 +239,7 @@ export const DashboardAlumno = () => {
 
     // Seleccionar un slot reservado (turno 'Solicitado') del alumno para asociar la entrega.
     const slotElegido = (Array.isArray(turnos) ? turnos : []).find(
-      (t) => t && t.estado === "Solicitado" && isTurnoDelAlumno(t)
+      (t) => t && isEstado(t.estado, "solicitado") && isTurnoDelAlumno(t)
     );
     if (!slotElegido) {
       showToast(
@@ -253,24 +249,19 @@ export const DashboardAlumno = () => {
       return;
     }
 
-    try {
-      await createEntregaRemoto({
-        slotId: slotElegido.id,
-        sprint: Number(sprint),
-        githubLink: githubLink.trim(),
-        renderLink: renderLink.trim(),
-        comentarios: comentarios.trim(),
-        reviewStatus: "A revisar",
-        estado: "A revisar",
-        alumnoId: alumnoIdStr,
-        modulo: usuarioActual?.modulo ?? usuarioActual?.cohort ?? "",
-      });
-      showToast("Entrega registrada correctamente", "success");
-    } catch (error) {
-      pushError?.("Error al registrar la entrega", {
-        description: error.message,
-      });
-    }
+    // No usar try/catch; lanzar error para que Entregables.jsx lo capture y extraiga errores de campo
+    await createEntregaRemoto({
+      slotId: slotElegido.id,
+      sprint: Number(sprint),
+      githubLink: githubLink.trim(),
+      renderLink: renderLink.trim(),
+      comentarios: comentarios.trim(),
+      reviewStatus: "A revisar",
+      estado: "A revisar",
+      alumnoId: alumnoIdStr,
+      modulo: usuarioActual?.modulo ?? usuarioActual?.cohort ?? "",
+    });
+    showToast("Entrega registrada correctamente", "success");
   };
 
   const handleCancelarEntrega = (entrega) => {
@@ -312,19 +303,13 @@ export const DashboardAlumno = () => {
 
   const turnosDisponibles = aplicarFiltro(
     turnosFiltradosPorModulo.filter(
-      (t) =>
-        ["disponible"].includes(String(t.estado || "").toLowerCase()) ||
-        isTurnoDelAlumno(t)
+      (t) => anyEstado(t.estado, ["disponible"]) || isTurnoDelAlumno(t)
     )
   );
 
   const turnosHistorial = aplicarFiltro(
     turnosFiltradosPorModulo.filter(
-      (t) =>
-        isTurnoDelAlumno(t) &&
-        ["solicitado", "aprobado", "rechazado"].includes(
-          String(t.estado || "").toLowerCase()
-        )
+      (t) => isTurnoDelAlumno(t) && anyEstado(t.estado, ["solicitado", "aprobado", "rechazado"])
     )
   );
 
@@ -414,7 +399,7 @@ export const DashboardAlumno = () => {
         ========================== */}
         {active === "Entregables" && (
           <Entregables
-            entregas={entregas}
+            entregas={entregas} // Ya filtradas por backend via /submissions/:userId (solo propias)
             onAgregarEntrega={handleAgregarEntrega}
             onCancelarEntrega={handleCancelarEntrega}
             entregasLoading={isEntregasSectionLoading}

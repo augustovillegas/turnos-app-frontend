@@ -33,7 +33,8 @@ export const Login = () => {
       const datos = respuesta?.data;
       if (!datos) throw new Error("Respuesta inválida del servidor");
 
-      if (!datos?.user?.isApproved) {
+      const estadoUsuario = datos?.user?.status ?? datos?.user?.estado;
+      if (estadoUsuario !== "Aprobado") {
         showToast(
           "Todavía no aprobamos tu cuenta. Revísala con un administrador.",
           "warning"

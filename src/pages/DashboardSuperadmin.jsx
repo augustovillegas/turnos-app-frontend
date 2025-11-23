@@ -7,6 +7,7 @@ import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { CreateTurnos } from "./CreateTurnos";
 import { Status } from "../components/ui/Status";
+import { formatDateForTable } from "../utils/formatDateForTable";
 import { useAppData } from "../context/AppContext";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { CardTurno } from "../components/ui/CardTurno";
@@ -401,7 +402,7 @@ export const DashboardSuperadmin = () => {
                           {t.review}
                         </td>
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
-                          {t.fecha}
+                          {formatDateForTable(t.fecha)}
                         </td>
                         <td className="border border-[#111827] p-2 text-center dark:border-[#333] dark:text-gray-200">
                           {t.horario}

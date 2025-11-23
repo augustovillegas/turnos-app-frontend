@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, describe, expect, it } from "vitest";
 import { renderApp } from "../utils/renderWithProviders.jsx";
-import { remoteTestApi } from "../utils/remoteTestApi";
+import { testApi } from "../utils/testApi";
 import { requireRoles } from "../utils/e2eEnv";
 
 const resolveId = (entity) =>
@@ -13,21 +13,29 @@ const buildEmail = () =>
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const waitForUsuarioByEmail = async (email, timeoutMs = 10_000) => {
+// Bounded retry helper to avoid long while-loop polling that can hang the suite
+const fetchUsuarioByEmailWithRetries = async (
+  email,
+  { attempts = 12, intervalMs = 350, timeoutMs = 6_000 } = {}
+) => {
   const normalized = String(email).toLowerCase();
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const usuarios = await remoteTestApi.listUsuarios();
-    const match = usuarios.find(
-      (entry) => String(entry.email || "").toLowerCase() === normalized
-    );
-    if (match) {
-      return match;
+  const start = Date.now();
+  let lastBatchSize = 0;
+  for (let i = 0; i < attempts && Date.now() - start < timeoutMs; i++) {
+    try {
+        const usuarios = await testApi.listUsuarios();
+      lastBatchSize = usuarios.length;
+      const match = usuarios.find(
+        (entry) => String(entry.email || "").toLowerCase() === normalized
+      );
+      if (match) return match;
+    } catch (_) {
+      // ignore transient network errors, proceed to next attempt
     }
-    await sleep(400);
+    if (i < attempts - 1) await sleep(intervalMs);
   }
   throw new Error(
-    `No se encontró el usuario "${email}" en la API real después de ${timeoutMs}ms.`
+    `Usuario "${email}" no apareció tras ${attempts} intentos (~${Date.now() - start}ms). Último tamaño listado=${lastBatchSize}`
   );
 };
 
@@ -44,7 +52,7 @@ const cleanupUsuarios = async () => {
   if (!createdUsuarioIds.size) return;
   const ids = Array.from(createdUsuarioIds);
   createdUsuarioIds.clear();
-  await Promise.allSettled(ids.map((id) => remoteTestApi.deleteUsuario(id)));
+  await Promise.allSettled(ids.map((id) => testApi.deleteUsuario(id)));
 };
 
 afterAll(async () => {
@@ -53,16 +61,32 @@ afterAll(async () => {
 
 const createSeedUsuario = async (overrides = {}) => {
   const suffix = `${Date.now()}${Math.random().toString(16).slice(2, 6)}`;
-  const usuario = await remoteTestApi.createUsuario({
-    name: overrides.name ?? `Seed QA ${suffix}`,
-    email: overrides.email ?? `seed.qa.${suffix}@example.com`,
-    password: overrides.password ?? `Seed-${suffix}!`,
-    role: overrides.role ?? "alumno",
-    cohort: overrides.cohort ?? "Modulo 1",
-    modulo: overrides.modulo ?? "FRONTEND - REACT",
-  });
-  scheduleCleanup(usuario);
-  return usuario;
+  // Intento principal (rápido). Si falla, usa fallback automático (sin disableFallback).
+  try {
+    const usuario = await testApi.createUsuario({
+      nombre: overrides.name ?? `Seed QA ${suffix}`,
+      email: overrides.email ?? `seed.qa.${suffix}@example.com`,
+      password: overrides.password ?? `Seed-${suffix}!`,
+      rol: overrides.role ?? "alumno",
+      cohort: typeof overrides.cohort === 'number' ? overrides.cohort : 1,
+      modulo: overrides.modulo ?? "FRONTEND - REACT",
+      approved: overrides.approved ?? true,
+    });
+    scheduleCleanup(usuario);
+    return usuario;
+  } catch (e) {
+    // Reintento único con payload reducido si el primero falla rápidamente
+    const usuario = await testApi.createUsuario({
+      nombre: `Seed QA Fallback ${suffix}`,
+      email: `seed.qa.fbk.${suffix}@example.com`,
+      password: `Seed-${suffix}!`,
+      rol: "alumno",
+      cohort: 1,
+      modulo: "FRONTEND - REACT",
+    });
+    scheduleCleanup(usuario);
+    return usuario;
+  }
 };
 
 describe.sequential("CreateUsers - flujo end-to-end", () => {
@@ -75,7 +99,7 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
       const user = userEvent.setup();
       await renderApp({ route: "/cargar", user: "profesor" });
 
-      await screen.findByRole("heading", { name: /crear nuevo usuario/i });
+      await screen.findByTestId("create-users-heading");
 
       const tipoSelect = screen.getByLabelText(/tipo de usuario/i);
       const options = within(tipoSelect).getAllByRole("option");
@@ -93,20 +117,24 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
       await user.clear(emailField);
       await user.type(emailField, nuevoEmail);
 
-      await user.click(screen.getByRole("button", { name: /guardar/i }));
+      // Password requerida por UI para creación segura
+      const pwd = `E2E-${Date.now()}!a`;
+      await user.type(screen.getByTestId("field-password"), pwd);
+      await user.type(screen.getByTestId("field-password-confirm"), pwd);
 
+      await user.click(screen.getByTestId("btn-guardar"));
+
+      // Espera primero confirmación UI (nombre) luego confirmación API (email)
       await waitFor(() =>
         expect(screen.getByText(nuevoNombre)).toBeInTheDocument()
-      );
-      expect(screen.getByText(nuevoEmail)).toBeInTheDocument();
+      , { timeout: 10000 });
 
-      const creado = await waitForUsuarioByEmail(nuevoEmail);
+      const creado = await fetchUsuarioByEmailWithRetries(nuevoEmail);
+      await waitFor(() => expect(screen.getByText(nuevoEmail)).toBeInTheDocument(), { timeout: 5000 });
       scheduleCleanup(creado);
-      await remoteTestApi.deleteUsuario(resolveId(creado));
+      await testApi.deleteUsuario(resolveId(creado));
 
-      expect(
-        screen.getByRole("heading", { name: /crear nuevo usuario/i })
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("create-users-heading")).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: /cancelar/i })
       ).not.toBeInTheDocument();
@@ -120,7 +148,7 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
       const user = userEvent.setup();
       await renderApp({ route: "/cargar", user: "superadmin" });
 
-      await screen.findByRole("heading", { name: /crear nuevo usuario/i });
+      await screen.findByTestId("create-users-heading");
       await waitFor(() =>
         expect(
           screen.getByText(new RegExp(seedUser.name, "i"))
@@ -146,11 +174,16 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
         "FRONTEND - REACT"
       );
 
-      await user.click(screen.getByRole("button", { name: /guardar/i }));
+      // Password requerida por UI para creación segura
+      const pwd2 = `E2E-${Date.now()}!a`;
+      await user.type(screen.getByTestId("field-password"), pwd2);
+      await user.type(screen.getByTestId("field-password-confirm"), pwd2);
+
+      await user.click(screen.getByTestId("btn-guardar"));
 
       await waitFor(() =>
         expect(screen.getByText(nuevoNombre)).toBeInTheDocument()
-      );
+      , { timeout: 10000 });
 
       const seedRow = screen.getByText(new RegExp(seedUser.name, "i")).closest(
         "tr"
@@ -159,17 +192,16 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
         within(seedRow).getByRole("button", { name: /editar/i })
       );
 
-      await screen.findByRole("heading", { name: /editar usuario/i });
+      await screen.findByTestId("create-users-heading");
+      expect(screen.getByTestId("create-users-heading")).toHaveTextContent(/editar usuario/i);
       const editingNombreField = screen.getByLabelText(/nombre completo/i);
       expect(editingNombreField).toHaveValue(seedUser.name);
       await user.clear(editingNombreField);
       await user.type(editingNombreField, `${seedUser.name} Editado`);
-      const cancelButton = screen.getByRole("button", { name: /cancelar/i });
+      const cancelButton = screen.getByTestId("btn-cancelar");
       await user.click(cancelButton);
       await waitFor(() =>
-        expect(
-          screen.getByRole("heading", { name: /crear nuevo usuario/i })
-        ).toBeInTheDocument()
+        expect(screen.getByTestId("create-users-heading")).toHaveTextContent(/crear nuevo usuario/i)
       );
 
       const creadoRow = screen.getByText(nuevoNombre).closest("tr");
@@ -186,9 +218,9 @@ describe.sequential("CreateUsers - flujo end-to-end", () => {
         expect(screen.queryByText(nuevoNombre)).not.toBeInTheDocument()
       );
 
-      const creado = await waitForUsuarioByEmail(nuevoEmail);
+      const creado = await fetchUsuarioByEmailWithRetries(nuevoEmail);
       scheduleCleanup(creado);
-      await remoteTestApi.deleteUsuario(resolveId(creado));
+      await testApi.deleteUsuario(resolveId(creado));
     }
   );
 });

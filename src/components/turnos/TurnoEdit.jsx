@@ -11,6 +11,7 @@ import {
   validateTurnoForm,
 } from "../../utils/turnos/form";
 import { showToast } from "../../utils/feedback/toasts";
+import { extractFormErrors } from "../../utils/feedback/errorExtractor";
 import { Button } from "../ui/Button";
 
 export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
@@ -113,6 +114,11 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
       showToast("Cambios guardados. El turno se actualizó correctamente.");
       onVolver?.();
     } catch (error) {
+      // Extraer errores de validación del backend según contrato {message, errores?}
+      const formErrors = extractFormErrors(error);
+      if (Object.keys(formErrors).length > 0) {
+        establecerErroresFormulario(formErrors);
+      }
       showToast(
         error.message ||
           "No pudimos actualizar el turno. Inténtalo de nuevo en unos instantes.",

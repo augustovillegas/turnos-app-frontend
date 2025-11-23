@@ -3,7 +3,7 @@
 
 import React from "react";
 import { JSDOM } from "jsdom";
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import App from "../../src/App";
 import { AppProviders } from "../../src/context/AppProviders";
 import {
@@ -106,7 +106,9 @@ export const renderApp = async ({ route = "/", user, auth } = {}) => {
     </AppProviders>
   );
   if (typeof routerDeMemoria.initialize === "function") {
-    await routerDeMemoria.initialize();
+    await act(async () => {
+      await routerDeMemoria.initialize();
+    });
   }
 
   return {

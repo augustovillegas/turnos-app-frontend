@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppData } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
+import { anyEstado } from "../utils/turnos/normalizeEstado";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { Status } from "../components/ui/Status";
+import { formatDateForTable } from "../utils/formatDateForTable";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { showToast } from "../utils/feedback/toasts";
-import { EmptyRow } from "../components/ui/EmptyRow";
 
 export const EvaluarEntregas = () => {
   const { entregas, updateEntrega } = useAppData();
@@ -17,6 +18,10 @@ export const EvaluarEntregas = () => {
   const ITEMS_PER_PAGE = 5;
   const [page, setPage] = useState(1);
   const [processingEntregaId, setProcessingEntregaId] = useState(null);
+
+  useEffect(() => {
+    console.log("[EvaluarEntregas] Mounted. Entregas count:", entregas.length, "Usuario:", usuarioActual?.email);
+  }, [entregas, usuarioActual]);
 
   const actualizarEstado = async (entrega, nuevoEstado) => {
     if (!entrega?.id) return;
@@ -44,14 +49,10 @@ export const EvaluarEntregas = () => {
     actualizarEstado(entrega, "Desaprobado");
 
   const esPendiente = (e) => {
-    const estado = (e?.estado || "").toLowerCase();
-    const reviewStatus = (e?.reviewStatus || "").toLowerCase();
-    return (
-      estado === "pendiente" ||
-      reviewStatus === "a revisar" ||
-      reviewStatus === "pendiente" ||
-      (!e.estado && !e.reviewStatus)
-    );
+      // ARQUITECTURA: Usa `anyEstado` para validar estados normalizados (case-insensitive).
+      // Backend envía "A revisar" o "Pendiente"; helper unifica ambas variantes.
+    const estadoActual = e?.estado || e?.reviewStatus || "";
+    return anyEstado(estadoActual, ["Pendiente", "A revisar"]) || !estadoActual;
   };
 
   const moduloActual = useMemo(() => {
@@ -96,6 +97,9 @@ export const EvaluarEntregas = () => {
   const entregasFiltradas = useMemo(() => {
     const listado = Array.isArray(entregas) ? entregas : [];
     if (!usuarioActual) return listado;
+    
+    // NOTA: El backend (Nov 2025) aplica filtrado defensivo por módulo vía permissionUtils.buildModuleFilter
+    // Este filtrado del cliente es redundante pero se mantiene como defensa en profundidad
     if (usuarioActual.role === "superadmin") return listado;
     if (usuarioActual.role === "profesor" && moduloActualNormalized) {
       return listado.filter((entrega) => {
@@ -174,165 +178,73 @@ export const EvaluarEntregas = () => {
           }}
         />
 
-        {/* ---- Versión Desktop ---- */}
-        <div className="hidden sm:block">
-          <Table
-            columns={[
-              "Sprint",
-              "Alumno",
-              "GitHub",
-              "Render",
-              "Comentarios",
-              "Fecha",
-              "Estado",
-              "Acción",
-            ]}
-            data={paginatedEntregasPendientes.items || []}
-            minWidth="min-w-[680px]"
-            containerClass="px-4"
-            renderRow={(e) => (
-              <>
-                <td className="border p-2 text-center">Sprint {e.sprint}</td>
-                <td className="border p-2 text-center">
-                  {e.alumno || "Sin asignar"}
-                </td>
-                <td className="border p-2 text-center">
-                  {e.githubLink ? (
-                    <a
-                      href={e.githubLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      GitHub
-                    </a>
-                  ) : (
-                    "No entregado"
-                  )}
-                </td>
-                <td className="border p-2 text-center">
-                  {e.renderLink ? (
-                    <a
-                      href={e.renderLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      Render
-                    </a>
-                  ) : (
-                    "No entregado"
-                  )}
-                </td>
-                <td className="border p-2 text-center">
-                  {e.comentarios || "-"}
-                </td>
-                <td className="border p-2 text-center">
-                  {e.fechaEntrega || "—"}
-                </td>
-                <td className="border p-2 text-center">
-                  <Status status={getEstadoUI(e)} />
-                </td>
-                <td className="border p-2 text-center">
-                  {esPendiente(e) && (
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        variant="success"
-                        className="py-1"
-                        onClick={() => handleAprobarEntrega(e)}
-                        disabled={processingEntregaId === e.id}
-                      >
-                        Aprobar
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="py-1"
-                        onClick={() => handleDesaprobarEntrega(e)}
-                        disabled={processingEntregaId === e.id}
-                      >
-                        Desaprobar
-                      </Button>
-                    </div>
-                  )}
-                </td>
-              </>
-            )}
-          >
-            {/* Fila vacía dentro del mismo Table */}
-            {!paginatedEntregasPendientes.items.length && (
-              <EmptyRow
-                columns={[
-                  "Sprint",
-                  "Alumno",
-                  "GitHub",
-                  "Render",
-                  "Comentarios",
-                  "Fecha",
-                  "Estado",
-                  "Acción",
-                ]}
-              />
-            )}
-          </Table>
-        </div>
-
-        {/* ---- Versión Mobile ---- */}
-        <div className="mt-4 space-y-4 px-2 sm:hidden">
-          {paginatedEntregasPendientes.items.length > 0 ? (
-            paginatedEntregasPendientes.items.map((e) => (
-              <div
-                key={e.id}
-                className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-md p-4 shadow-md"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-                    Sprint {e.sprint}
-                  </h3>
-                  <Status status={getEstadoUI(e)} />
-                </div>
-
-                <p className="text-sm dark:text-gray-200">
-                  <strong>Alumno:</strong> {e.alumno || "Sin asignar"}
-                </p>
-                <p className="text-sm dark:text-gray-200">
-                  <strong>Fecha:</strong> {e.fechaEntrega || "—"}
-                </p>
-                <p className="text-sm dark:text-gray-200 mb-2">
-                  <strong>Comentarios:</strong> {e.comentarios || "—"}
-                </p>
-
-                <div className="flex justify-between text-sm">
+        <Table
+          responsive
+          testId="evaluar-entregas"
+          columns={[
+            "Sprint",
+            "Alumno",
+            "GitHub",
+            "Render",
+            "Comentarios",
+            "Fecha",
+            "Estado",
+            "Acción",
+          ]}
+          data={paginatedEntregasPendientes.items || []}
+          minWidth="min-w-[680px]"
+          containerClass="px-4"
+          isLoading={false}
+          emptyMessage="No hay entregas pendientes."
+          renderRow={(e) => (
+            <>
+              <td className="border p-2 text-center">Sprint {e.sprint}</td>
+              <td className="border p-2 text-center">
+                {e.alumno || "Sin asignar"}
+              </td>
+              <td className="border p-2 text-center">
+                {e.githubLink ? (
                   <a
-                    href={e.githubLink || "#"}
+                    href={e.githubLink}
                     target="_blank"
                     rel="noreferrer"
-                    className={`${
-                      e.githubLink
-                        ? "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        : "text-gray-400 cursor-not-allowed"
-                    }`}
+                    className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     GitHub
                   </a>
+                ) : (
+                  "No entregado"
+                )}
+              </td>
+              <td className="border p-2 text-center">
+                {e.renderLink ? (
                   <a
-                    href={e.renderLink || "#"}
+                    href={e.renderLink}
                     target="_blank"
                     rel="noreferrer"
-                    className={`${
-                      e.renderLink
-                        ? "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        : "text-gray-400 cursor-not-allowed"
-                    }`}
+                    className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     Render
                   </a>
-                </div>
-
+                ) : (
+                  "No entregado"
+                )}
+              </td>
+              <td className="border p-2 text-center">
+                {e.comentarios || "-"}
+              </td>
+              <td className="border p-2 text-center">
+                {formatDateForTable(e.fechaEntrega) || "—"}
+              </td>
+              <td className="border p-2 text-center">
+                <Status status={getEstadoUI(e)} />
+              </td>
+              <td className="border p-2 text-center">
                 {esPendiente(e) && (
-                  <div className="mt-3 flex justify-end gap-2">
+                  <div className="flex justify-center gap-2">
                     <Button
                       variant="success"
-                      className="py-1 text-xs"
+                      className="py-1"
                       onClick={() => handleAprobarEntrega(e)}
                       disabled={processingEntregaId === e.id}
                     >
@@ -340,7 +252,7 @@ export const EvaluarEntregas = () => {
                     </Button>
                     <Button
                       variant="danger"
-                      className="py-1 text-xs"
+                      className="py-1"
                       onClick={() => handleDesaprobarEntrega(e)}
                       disabled={processingEntregaId === e.id}
                     >
@@ -348,12 +260,78 @@ export const EvaluarEntregas = () => {
                     </Button>
                   </div>
                 )}
-              </div>
-            ))
-          ) : (
-            <EmptyRow.Mobile message="No hay entregas pendientes." />
+              </td>
+            </>
           )}
-        </div>
+          renderMobileCard={(e) => (
+            <div className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-md p-4 shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+                  Sprint {e.sprint}
+                </h3>
+                <Status status={getEstadoUI(e)} />
+              </div>
+
+              <p className="text-sm dark:text-gray-200">
+                <strong>Alumno:</strong> {e.alumno || "Sin asignar"}
+              </p>
+              <p className="text-sm dark:text-gray-200">
+                <strong>Fecha:</strong> {formatDateForTable(e.fechaEntrega) || "—"}
+              </p>
+              <p className="text-sm dark:text-gray-200 mb-2">
+                <strong>Comentarios:</strong> {e.comentarios || "—"}
+              </p>
+
+              <div className="flex justify-between text-sm">
+                <a
+                  href={e.githubLink || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${
+                    e.githubLink
+                      ? "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      : "text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  GitHub
+                </a>
+                <a
+                  href={e.renderLink || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${
+                    e.renderLink
+                      ? "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      : "text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  Render
+                </a>
+              </div>
+
+              {esPendiente(e) && (
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button
+                    variant="success"
+                    className="py-1 text-xs"
+                    onClick={() => handleAprobarEntrega(e)}
+                    disabled={processingEntregaId === e.id}
+                  >
+                    Aprobar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="py-1 text-xs"
+                    onClick={() => handleDesaprobarEntrega(e)}
+                    disabled={processingEntregaId === e.id}
+                  >
+                    Desaprobar
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        />
 
         <Pagination
           totalItems={paginatedEntregasPendientes.totalItems}

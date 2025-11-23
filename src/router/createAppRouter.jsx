@@ -30,6 +30,10 @@ export const RUTAS_APLICACION = [
         lazy: () => import("../routes/createTurnos"),
       },
       {
+        path: "crear-turnos",
+        lazy: () => import("../routes/createTurnos"),
+      },
+      {
         path: "contacto",
         lazy: () => import("../routes/contacto"),
       },

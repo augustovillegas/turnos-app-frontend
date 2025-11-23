@@ -9,22 +9,28 @@ import { useModal } from "../context/ModalContext";
 import { useError } from "../context/ErrorContext";
 import { useAuth } from "../context/AuthContext";
 import { showToast } from "../utils/feedback/toasts";
-import { normalizeUsuario } from "../utils/usuarios/normalizeUsuario";
+import { extractFormErrors } from "../utils/feedback/errorExtractor";
 import { MODULE_OPTIONS, ensureModuleLabel } from "../utils/moduleMap";
+import {
+  mapUsuario,
+  validateSelections,
+} from "../utils/usuarios/helpers";
+import { paginate } from "../utils/pagination";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const DEFAULT_COHORT = 1;
 const DEFAULT_MODULE = MODULE_OPTIONS[0]?.label ?? "HTML-CSS";
 
-const ROLE_PERMISSIONS = {
-  superadmin: ["alumno", "profesor", "superadmin"],
-  profesor: ["alumno"],
-};
-
-const ROLE_PASSWORDS = {
+// Passwords por defecto según rol (backend las puede validar/requerir)
+const DEFAULT_PASSWORDS = {
   alumno: "Alumno-fullstack-2025",
   profesor: "Prof-fullstack-2025",
   superadmin: "Superadmin-fullstack-2025",
+};
+
+const ROLE_PERMISSIONS = {
+  superadmin: ["alumno", "profesor", "superadmin"],
+  profesor: ["alumno"],
 };
 
 const ROLE_LABELS = {
@@ -53,6 +59,7 @@ const FIELD_IDS = Object.freeze({
   passwordConfirm: "create-user-password-confirm",
 });
 
+// Helper local: construye valores por defecto del formulario basado en rol permitido
 const buildDefaultForm = (tipo = "alumno") => ({
   tipo: tipo || "alumno",
   nombre: "",
@@ -63,51 +70,6 @@ const buildDefaultForm = (tipo = "alumno") => ({
   password: "",
   passwordConfirm: "",
 });
-
-const generateId = () => {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-  return `usuario-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
-
-const mapUsuario = (entry) => {
-  const normalized = normalizeUsuario(entry) ?? {};
-  const tipo = String(
-    normalized.rol ?? normalized.role ?? "alumno"
-  ).toLowerCase();
-  return {
-    id: normalized.id ?? normalized._id ?? generateId(),
-    tipo,
-    nombre: normalized.nombre ?? normalized.name ?? "",
-    email: normalized.email ?? "",
-    identificador: normalized.identificador ?? "",
-    cohorte:
-      normalized.cohorte ??
-      normalized.cohort ??
-      String(DEFAULT_COHORT),
-    modulo:
-      ensureModuleLabel(normalized.modulo ?? normalized.module) ??
-      DEFAULT_MODULE,
-    estado: normalized.estado ?? normalized.status ?? "",
-  };
-};
-
-const paginate = (items, page, perPage) => {
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const currentPage = Math.min(Math.max(page, 1), totalPages);
-  const start = (currentPage - 1) * perPage;
-  return {
-    currentPage,
-    totalPages,
-    totalItems: total,
-    items: items.slice(start, start + perPage),
-  };
-};
 
 export const CreateUsers = () => {
   const {
@@ -138,6 +100,7 @@ export const CreateUsers = () => {
   const [formValues, setFormValues] = useState(
     buildDefaultForm(allowedRoles[0])
   );
+  const [formErrors, setFormErrors] = useState({});
   const [filtered, setFiltered] = useState([]);
   const [page, setPage] = useState(1);
 
@@ -205,6 +168,7 @@ export const CreateUsers = () => {
 
   const resetForm = () => {
     setFormValues(buildDefaultForm(allowedRoles[0]));
+    setFormErrors({});
     setEditingId(null);
   };
 
@@ -299,8 +263,9 @@ export const CreateUsers = () => {
         if (!custom) return;
         payload.password = custom;
       } else {
-        // Asignar password default según rol (el backend requiere password en registro).
-        payload.password = ROLE_PASSWORDS[targetRole] || ROLE_PASSWORDS.alumno;
+        // Usar password por defecto según rol
+        const defaultPassword = DEFAULT_PASSWORDS[targetRole] || DEFAULT_PASSWORDS.alumno;
+        payload.password = defaultPassword;
       }
     } else if (passwordValue || passwordConfirm) {
       const custom = validateCustomPassword(passwordValue, passwordConfirm);
@@ -310,6 +275,7 @@ export const CreateUsers = () => {
 
     setProcessingId(editingId || "creating");
     try {
+      setFormErrors({}); // Limpiar errores previos
       if (isCreating) {
         await createUsuarioRemoto?.(payload);
       } else {
@@ -318,6 +284,11 @@ export const CreateUsers = () => {
       resetForm();
       await loadUsuarios?.();
     } catch (error) {
+      // Extraer errores de validación del backend según contrato {message, errores?}
+      const fieldErrors = extractFormErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        setFormErrors(fieldErrors);
+      }
       const message =
         error?.response?.data?.message ||
         error?.message ||
@@ -411,15 +382,23 @@ export const CreateUsers = () => {
     );
   }
 
+  // ARQUITECTURA: Layout estandarizado con padding uniforme, max-width consistente.
+  // Alineado con patrón visual de EvaluarEntregas/TurnoForm para coherencia UI.
+  // Helpers (paginate, mapUsuario, validateSelections) movidos a utils/ para reutilización.
   return (
-    <section className="space-y-6">
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6">
-        <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <section className="space-y-6" data-testid="create-users-section">
+      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6" data-testid="create-users-container">
+        <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between" data-testid="create-users-header">
           <div>
-            <h2 className="text-lg font-bold text-[#111827] dark:text-white">
+            <h2
+              className="text-lg font-bold text-[#111827] dark:text-white"
+              data-testid="create-users-heading"
+            >
               {editingId ? "Editar usuario" : "Crear nuevo usuario"}
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="create-users-subheading">
               Completa los datos y guarda. Las operaciones usan tu rol
               actual para validar permisos.
             </p>
@@ -441,6 +420,7 @@ export const CreateUsers = () => {
         <form
           onSubmit={handleSubmit}
           className="space-y-4 rounded-md bg-gray-50 p-4 shadow-sm dark:bg-[#020617]"
+          data-testid="create-users-form"
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             <div>
@@ -457,6 +437,7 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 disabled={Boolean(editingId)}
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] disabled:bg-gray-100 dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                data-testid="field-tipo"
               >
                 {allowedRoles.map((role) => (
                   <option key={role} value={role}>
@@ -480,7 +461,13 @@ export const CreateUsers = () => {
                 required
                 placeholder="Nombre y apellido"
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                data-testid="field-nombre"
               />
+              {formErrors.nombre && (
+                <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                  {formErrors.nombre}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -498,7 +485,13 @@ export const CreateUsers = () => {
                 required
                 placeholder="correo@ejemplo.com"
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                data-testid="field-email"
               />
+              {formErrors.email && (
+                <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                  {formErrors.email}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -514,6 +507,7 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 placeholder="Legajo / ID interno"
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                data-testid="field-identificador"
               />
             </div>
             <div>
@@ -531,6 +525,7 @@ export const CreateUsers = () => {
                 value={formValues.cohorte}
                 onChange={handleFieldChange}
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                data-testid="field-cohorte"
               />
             </div>
             <div>
@@ -546,6 +541,7 @@ export const CreateUsers = () => {
                 value={formValues.modulo}
                 onChange={handleFieldChange}
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                data-testid="field-modulo"
               >
                 {MODULE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.label}>
@@ -556,7 +552,7 @@ export const CreateUsers = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-testid="password-fields">
             <div>
               <label
                 htmlFor={FIELD_IDS.password}
@@ -572,6 +568,7 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 placeholder="Dejar vacio para usar la default"
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                data-testid="field-password"
               />
             </div>
             <div>
@@ -589,12 +586,13 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 placeholder="Requerido solo si ingresas una password"
                 className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                data-testid="field-password-confirm"
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="primary" disabled={isBusy}>
+          <div className="flex flex-wrap gap-2" data-testid="form-actions">
+            <Button type="submit" variant="primary" disabled={isBusy} data-testid="btn-guardar">
               {editingId ? "Guardar cambios" : "Guardar"}
             </Button>
             {editingId && (
@@ -603,6 +601,7 @@ export const CreateUsers = () => {
                 variant="secondary"
                 disabled={isBusy}
                 onClick={resetForm}
+                data-testid="btn-cancelar"
               >
                 Cancelar
               </Button>
@@ -611,7 +610,7 @@ export const CreateUsers = () => {
         </form>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6">
+      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6" data-testid="users-table-container">
         <Table
           columns={USER_TABLE_COLUMNS}
           data={paginated.items}
@@ -631,6 +630,7 @@ export const CreateUsers = () => {
                     variant="secondary"
                     disabled={isBusy}
                     onClick={() => handleEditar(persona)}
+                    data-testid={`btn-editar-${persona.id}`}
                   >
                     Editar
                   </Button>
@@ -639,6 +639,7 @@ export const CreateUsers = () => {
                     variant="danger"
                     disabled={isBusy}
                     onClick={() => handleEliminar(persona)}
+                    data-testid={`btn-eliminar-${persona.id}`}
                   >
                     Eliminar
                   </Button>
@@ -653,18 +654,13 @@ export const CreateUsers = () => {
               currentPage={paginated.currentPage}
               totalPages={paginated.totalPages}
               onPageChange={setPage}
+              data-testid="pagination-users"
             />
           </div>
         )}
       </div>
-    </section>
+        </section>
+      </div>
+    </div>
   );
-};
-
-const validateSelections = (cohorte, modulo) => {
-  const cohortNumber = Number.parseInt(cohorte, 10);
-  if (!Number.isFinite(cohortNumber) || cohortNumber <= 0) {
-    return false;
-  }
-  return Boolean(ensureModuleLabel(modulo));
 };

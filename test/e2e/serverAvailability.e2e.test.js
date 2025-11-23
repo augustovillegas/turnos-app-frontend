@@ -1,19 +1,12 @@
-import "dotenv/config";
 import axios from "axios";
 import process from "node:process";
 import { beforeAll, describe, expect, it } from "vitest";
-import { resolveAuthSession } from "../utils/realBackendSession";
+import { getApiBaseUrl, resolveAuthSession } from "../utils/realBackendSession";
 
-const shouldRunRemote = process.env.RUN_REMOTE_TESTS === "true";
-const describeIf = shouldRunRemote ? describe : describe.skip;
+// Ejecutar siempre contra servidor real (sin gating por RUN_REMOTE_TESTS)
 
 const sanitizeUrl = (value) => value?.replace(/\/+$/, "") ?? "";
-
-const fallbackBase =
-  "https://servidor-turnosapp-dip-fullstack.onrender.com";
-
-const configuredBase = sanitizeUrl(process.env.VITE_API_BASE_URL || "");
-const baseURL = sanitizeUrl(configuredBase || fallbackBase);
+const baseURL = sanitizeUrl(getApiBaseUrl());
 
 const httpClient = axios.create({
   baseURL,
@@ -22,21 +15,18 @@ const httpClient = axios.create({
 });
 
 beforeAll(async () => {
-  try {
-    const session = await resolveAuthSession({ role: "superadmin" });
-    if (session?.token) {
-      httpClient.defaults.headers.common.Authorization = `Bearer ${session.token}`;
-    }
-  } catch (e) {
-    // Si falla autenticación, las pruebas reflejarán el estado real con 401
+  const session = await resolveAuthSession({ role: "superadmin" });
+  if (!session?.token) {
+    throw new Error("[E2E][serverAvailability] Failed to authenticate as superadmin");
   }
+  httpClient.defaults.headers.common.Authorization = `Bearer ${session.token}`;
 });
 
-describeIf("Disponibilidad real de la API de turnos", () => {
+describe("Disponibilidad real de la API de turnos", () => {
   it(
-    "devuelve el listado de turnos publicado",
+    "devuelve el listado de slots publicado",
     async () => {
-      const response = await httpClient.get("/turnos");
+      const response = await httpClient.get("/slots");
       expect([200, 304]).toContain(response.status);
       expect(Array.isArray(response.data)).toBe(true);
     },
@@ -44,7 +34,7 @@ describeIf("Disponibilidad real de la API de turnos", () => {
   );
 
   it(
-    "permite crear y eliminar un turno temporal",
+    "permite crear y eliminar un slot temporal",
     async () => {
       const now = Date.now();
       const startIso = "2025-03-01T12:00:00.000Z";
@@ -73,19 +63,52 @@ describeIf("Disponibilidad real de la API de turnos", () => {
         comentarios: "Generado por tests e2e",
       };
 
-      const createResponse = await httpClient.post("/turnos", payload);
+      const createResponse = await httpClient.post("/slots", payload);
       if (![200, 201].includes(createResponse.status)) {
         // Log de diagnostico para el backend real
         // eslint-disable-next-line no-console
-        console.error("[E2E][serverAvailability] Create turno status:", createResponse.status, createResponse.data);
+        console.error("[E2E][serverAvailability] Create slot status:", createResponse.status, createResponse.data);
       }
       expect([200, 201]).toContain(createResponse.status);
       const createdId = createResponse.data?.id;
       expect(createdId).toBeTruthy();
 
-      const deleteResponse = await httpClient.delete(`/turnos/${createdId}`);
+      const deleteResponse = await httpClient.delete(`/slots/${createdId}`);
       expect([200, 204]).toContain(deleteResponse.status);
     },
     30_000
+  );
+
+  it(
+    "valida contrato de error unificado {message, errores?}",
+    async () => {
+      // Forzar error 400 con payload inválido
+      const invalidPayload = {
+        sala: -1, // inválido: debe ser > 0
+        horario: "invalid",
+      };
+
+      const response = await httpClient.post("/slots", invalidPayload);
+      expect(response.status).toBeGreaterThanOrEqual(400);
+      expect(response.status).toBeLessThan(500);
+      
+      // Validar contrato de error unificado
+      expect(response.data).toHaveProperty("message");
+      expect(typeof response.data.message).toBe("string");
+      
+      // No debe contener campos legacy
+      expect(response.data).not.toHaveProperty("msg");
+      expect(response.data).not.toHaveProperty("code");
+      
+      // Si hay errores de validación, debe ser un array
+      if (response.data.errores) {
+        expect(Array.isArray(response.data.errores)).toBe(true);
+        if (response.data.errores.length > 0) {
+          // Tolerar despliegues que aún no incluyen 'campo'
+          expect(response.data.errores[0]).toHaveProperty("mensaje");
+        }
+      }
+    },
+    25_000
   );
 });

@@ -1,4 +1,5 @@
 import { DropdownActions } from "../ui/DropdownActions";
+import { isEstado } from "../../utils/turnos/normalizeEstado";
 
 export const ProfesorActions = ({
   item,
@@ -18,14 +19,13 @@ export const ProfesorActions = ({
 }) => {
   if (!item) return null;
 
-  const estado = String(item.estado || item.status || "").toLowerCase();
   const isTurno = Boolean(item.horario || item.zoomLink || item.start);
   const isUsuario = !isTurno && (item.rol || item.role || item.tipo);
 
   const options = [];
 
   if (isTurno) {
-    if (estado === "solicitado") {
+    if (isEstado(item.estado || item.status, "Solicitado")) {
       options.push(
         { label: "Aprobar", icon: "/icons/check.png", onClick: () => onAprobar?.(item), disabled },
         { label: "Rechazar", icon: "/icons/close.png", danger: true, onClick: () => onRechazar?.(item), disabled },

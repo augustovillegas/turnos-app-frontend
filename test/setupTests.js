@@ -23,12 +23,13 @@ const taskStartTimes = new Map();
 
 const sanitizeUrl = (value) => value?.replace(/\/+$/, "") ?? "";
 
-const DEFAULT_BASE_URL = "http://localhost:3000";
-
-const configuredBase = sanitizeUrl(
-  process.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
-);
-const activeBaseUrl = configuredBase || DEFAULT_BASE_URL;
+const configuredBase = sanitizeUrl(process.env.VITE_API_BASE_URL || "");
+if (!configuredBase) {
+  throw new Error(
+    "[setupTests] Debes definir VITE_API_BASE_URL para ejecutar las pruebas (sin fallback)."
+  );
+}
+const activeBaseUrl = configuredBase;
 
 process.env.VITE_API_BASE_URL = activeBaseUrl;
 process.env.TEST_USE_REAL_API = "true";

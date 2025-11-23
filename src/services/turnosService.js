@@ -1,8 +1,9 @@
 // === Turnos Service ===
 // Clientes HTTP para CRUD de turnos.
+// MIGRADO: Ahora usa /slots en lugar de /turnos (consolidación backend Nov 2025)
 import { apiClient } from "./apiClient";
 
-const RESOURCE = "/turnos";
+const RESOURCE = "/slots";
 
 const toNumberIfPossible = (value) => {
   if (value === undefined) return undefined;
@@ -138,6 +139,9 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
 export const getTurnos = (params = {}) =>
   apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
 
+// Alias para compatibilidad (antes en slotsService)
+export const getSlots = getTurnos;
+
 export const getTurnoById = (id) =>
   apiClient.get(`${RESOURCE}/${id}`).then((response) => response.data);
 
@@ -151,3 +155,16 @@ export const updateTurno = (id, payload) =>
 
 export const deleteTurno = (id) =>
   apiClient.delete(`${RESOURCE}/${id}`).then((response) => response.data);
+
+// === Operaciones de slots (alumno) ===
+// Estas funciones estaban en slotsService, ahora unificadas aquí tras consolidación backend
+
+export const solicitarSlot = (id) =>
+  apiClient.patch(`${RESOURCE}/${id}/solicitar`).then((r) => r.data);
+
+export const cancelarSlot = (id) =>
+  apiClient.patch(`${RESOURCE}/${id}/cancelar`).then((r) => r.data);
+
+// Cambio de estado (aprobado/pendiente/cancelado) para profesor/superadmin
+export const actualizarEstadoSlot = (id, estado) =>
+  apiClient.patch(`${RESOURCE}/${id}/estado`, { estado }).then((r) => r.data);

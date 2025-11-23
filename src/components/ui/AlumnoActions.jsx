@@ -1,4 +1,5 @@
 import { DropdownActions } from "../ui/DropdownActions";
+import { normalizeEstado, isEstado, anyEstado } from "../../utils/turnos/normalizeEstado";
 
 export const AlumnoActions = ({
   item,
@@ -15,16 +16,14 @@ export const AlumnoActions = ({
 
   // === ACCIONES PARA TURNOS ===
   if (tipo === "turno") {
-    const estado = String(item.estado || "").toLowerCase();
-
-    if (estado === "disponible") {
+    if (isEstado(item.estado, "Disponible")) {
       options.push({
         label: "Solicitar turno",
         icon: "/icons/check.png",
         onClick: () => onSolicitar?.(item),
         disabled,
       });
-    } else if (estado === "solicitado") {
+    } else if (isEstado(item.estado, "Solicitado")) {
       options.push({
         label: "Cancelar turno",
         icon: "/icons/close.png",
@@ -32,7 +31,7 @@ export const AlumnoActions = ({
         onClick: () => onCancelarTurno?.(item),
         disabled,
       });
-    } else if (["aprobado", "rechazado"].includes(estado)) {
+    } else if (anyEstado(item.estado, ["Aprobado", "Rechazado"])) {
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
@@ -43,9 +42,7 @@ export const AlumnoActions = ({
 
   // === ACCIONES PARA ENTREGAS ===
   if (tipo === "entrega") {
-    const estado = String(item.reviewStatus || "").toLowerCase();
-
-    if (estado === "a revisar") {
+    if (isEstado(item.reviewStatus || item.estado, "A revisar")) {
       options.push({
         label: "Editar entrega",
         icon: "/icons/edit.png",

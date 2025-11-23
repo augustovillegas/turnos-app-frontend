@@ -44,7 +44,8 @@ import {
   updateUsuario as apiUpdateUsuario,
   deleteUsuario as apiDeleteUsuario,
 } from "../services/usuariosService";
-import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
+import { showToast } from "../utils/feedback/toasts";
+import { formatErrorMessage } from "../utils/feedback/errorExtractor"; // ⬅️ añadido
 import { normalizeUsuario, normalizeUsuariosCollection } from "../utils/usuarios/normalizeUsuario";
 
 // --- Utilidades internas para normalizar ids y colecciones ---
@@ -105,19 +106,22 @@ export const AppProvider = ({ children }) => {
 
   const notifyError = useCallback(
     (message, error, title = "Error en la operación") => {
+      // Usar extractor unificado según contrato backend {message, errores?}
+      const detailedMessage = formatErrorMessage(error, message);
+
       if (pushError) {
         const description =
-          error?.message && error.message !== message
+          error?.message && error.message !== detailedMessage
             ? error.message
             : "Inténtalo nuevamente en unos instantes.";
-        pushError(message, {
+        pushError(detailedMessage, {
           title,
           description,
           autoDismiss: false,
         });
       }
       // ⬇️ toast global para mantener el mismo comportamiento que el toasty anterior
-      showToast(message, "error");
+      showToast(detailedMessage, "error");
     },
     [pushError]
   );
@@ -202,6 +206,7 @@ export const AppProvider = ({ children }) => {
         setEntregas(normalized);
         return normalized;
       } catch (error) {
+        console.error("[AppContext] loadEntregas failed:", error);
         notifyError("No se pudieron cargar las entregas.", error, "Error al cargar entregas");
         return entregasRef.current;
       } finally {
@@ -358,8 +363,6 @@ export const AppProvider = ({ children }) => {
             normalizado?.status ??
             normalizado?.estado ??
             "Aprobado",
-          isApproved:
-            normalizado?.isApproved ?? existente?.isApproved ?? true,
         };
 
         setUsuarios((prev) => {
@@ -417,12 +420,6 @@ export const AppProvider = ({ children }) => {
             existente?.status ??
             existente?.estado ??
             null,
-          isApproved:
-            estado === "Aprobado"
-              ? true
-              : estado === "Rechazado"
-              ? false
-              : normalizado?.isApproved ?? existente?.isApproved ?? false,
         };
 
         setUsuarios((prev) => {

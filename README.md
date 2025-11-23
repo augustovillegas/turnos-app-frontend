@@ -48,7 +48,8 @@
 
 ## Configuración para pruebas con API real
 
-- `VITE_API_BASE_URL` siempre debe apuntar a un backend real (localhost, staging o producción). Si necesitás sobrescribir la URL usada en los tests, podés definir `TEST_E2E_API_BASE_URL`.
+- `VITE_API_BASE_URL` debe apuntar a un backend real (localhost, staging o producción).
+- Para forzar que los tests E2E usen el servidor remoto independientemente del valor de `VITE_API_BASE_URL`, configura `TEST_E2E_FORCE_REMOTE=true`.
 - Cada flujo E2E usa credenciales reales y obtiene el token llamando a `/auth/login`. Configurá las siguientes variables de entorno con cuentas válidas y aprobadas:
   - `TEST_E2E_ALUMNO_EMAIL` / `TEST_E2E_ALUMNO_PASSWORD`
   - `TEST_E2E_PROFESOR_EMAIL` / `TEST_E2E_PROFESOR_PASSWORD`

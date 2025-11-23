@@ -9,8 +9,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:full": "node ./test/run-tests.js",
-    "test:e2e": "vitest run test/e2e --reporter=basic",
+    "test:e2e": "vitest run test/e2e --reporter=default",
     "test:api": "node ./scripts/apiHealthTest.mjs",
+    "test:report": "vitest run --reporter=default --reporter=json --outputFile test-reports/e2e-suite/results.json && node ./scripts/renderHtmlReport.mjs test-reports/e2e-suite/results.json test-reports/e2e-suite/report.html",
     "build": "vite build"
   },
   "dependencies": {

@@ -48,9 +48,7 @@ export const updateUsuarioEstado = (id, estado) =>
 // Crear usuario (registro). Se asume endpoint público/privado existente.
 // Usa /auth/register si se maneja registro con autenticación.
 export const createUsuario = async (payload = {}) => {
-  const moduloLabel = ensureModuleLabel(payload.modulo ?? payload.module)
-    ? sanitizeModuleLabel(payload.modulo ?? payload.module)
-    : null;
+  const moduloLabel = sanitizeModuleLabel(payload.modulo ?? payload.module);
 
   // Resolver cohorte numérico (prioriza valor explícito, luego derivado de módulo)
   let cohortNumber = null;
@@ -67,16 +65,18 @@ export const createUsuario = async (payload = {}) => {
   // Estado canónico (Pendiente/Aprobado/Rechazado) por defecto usar "Pendiente"
   const estadoCanonico = payload.estado ?? payload.status ?? "Pendiente";
 
+  // Canonical payload: preferir claves actuales del backend (name/status)
+  const baseName = payload.nombre ?? payload.name ?? "";
   const data = {
-    name: payload.nombre ?? payload.name ?? "",
+    name: baseName,
+    nombre: baseName, // compatibilidad con despliegues legacy
     email: payload.email ?? "",
-    password: payload.password, // Debe venir validada desde el formulario
+    password: payload.password, // validada por el formulario
+    rol: payload.rol ?? payload.tipo ?? payload.role ?? "alumno",
     role: payload.rol ?? payload.tipo ?? payload.role ?? "alumno",
-    rol: payload.rol ?? payload.role ?? payload.tipo ?? "alumno",
-    tipo: payload.tipo ?? payload.rol ?? payload.role ?? "alumno",
-    estado: estadoCanonico,
     status: estadoCanonico,
-    ...(cohortNumber != null ? { cohort: cohortNumber, cohorte: cohortNumber } : {}),
+    estado: estadoCanonico, // compatibilidad
+    ...(cohortNumber != null ? { cohorte: cohortNumber, cohort: cohortNumber } : {}),
     ...(moduloLabel ? { modulo: moduloLabel } : {}),
   };
 
@@ -99,14 +99,13 @@ export const createUsuario = async (payload = {}) => {
     return created;
   } catch (err) {
     const status = err?.response?.status;
-    if (status === 400 || status === 404 || status === 403) {
-      // Fallback a registro autenticado si el endpoint admin no acepta el formato
+    // Fallback solo si el endpoint no existe (404)
+    if (status === 404) {
       const registerPayload = {
-        nombre: payload.nombre ?? payload.name ?? data.name,
+        nombre: data.nombre,
         email: data.email,
         password: data.password,
-        rol: payload.rol ?? payload.role ?? payload.tipo ?? data.role,
-        tipo: payload.tipo ?? payload.rol ?? payload.role ?? data.role,
+        rol: data.rol,
         ...(data.cohorte != null ? { cohorte: data.cohorte } : {}),
         ...(data.modulo ? { modulo: data.modulo } : {}),
       };

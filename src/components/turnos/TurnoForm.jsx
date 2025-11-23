@@ -10,6 +10,7 @@ import {
   validateTurnoForm,
 } from "../../utils/turnos/form";
 import { showToast } from "../../utils/feedback/toasts";
+import { extractFormErrors } from "../../utils/feedback/errorExtractor";
 import { Button } from "../ui/Button";
 
 export const TurnoForm = ({ onVolver }) => {
@@ -40,6 +41,11 @@ export const TurnoForm = ({ onVolver }) => {
       showToast("Turno creado correctamente.");
       onVolver?.();
     } catch (error) {
+      // Extraer errores de validación del backend según contrato {message, errores?}
+      const formErrors = extractFormErrors(error);
+      if (Object.keys(formErrors).length > 0) {
+        establecerErroresFormulario(formErrors);
+      }
       showToast(error.message || "No se pudo crear el turno.", "error");
     }
   };
