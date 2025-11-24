@@ -28,14 +28,17 @@ export const Pagination = ({
     1,
     Math.ceil(Number(totalItems) / safeItemsPerPage || 0)
   );
+
   const parsedControlledPage = Number(controlledPage);
   const isControlled = Number.isFinite(parsedControlledPage);
   const initialPage = clampPage(
     isControlled ? parsedControlledPage : 1,
     totalPages
   );
+
   const [page, setPage] = useState(initialPage);
   const [inputPage, setInputPage] = useState("");
+
   const effectivePage = isControlled
     ? clampPage(parsedControlledPage, totalPages)
     : page;
@@ -83,120 +86,172 @@ export const Pagination = ({
     }
   };
 
+  // ---- LÓGICA PARA EL CUADRO DE NÚMEROS (máx. 5) ----
+  const maxButtons = 5;
+  let startPage = 1;
+  let endPage = totalPages;
+
+  if (totalPages > maxButtons) {
+    const half = Math.floor(maxButtons / 2);
+    startPage = effectivePage - half;
+    endPage = effectivePage + half;
+
+    if (startPage < 1) {
+      startPage = 1;
+      endPage = maxButtons;
+    } else if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = totalPages - maxButtons + 1;
+    }
+  }
+
+  const pageNumbers = [];
+  for (let p = startPage; p <= endPage; p++) {
+    pageNumbers.push(p);
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-4">
-      {/* Fila principal: anterior / número / siguiente */}
-      <div className="flex items-center justify-center gap-2 text-sm font-semibold">
-        {/* Botón anterior */}
-        <button
-          onClick={() => handleGoToPage(effectivePage - 1)}
-          disabled={effectivePage === 1}
-          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
-                      hover:text-black dark:hover:text-white transition
-                      ${
-                        effectivePage === 1
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-        >
-          <i className="bi bi-chevron-left w-4 h-4 sm:hidden"></i>
-          <span className="hidden sm:inline">Anterior</span>
-        </button>
+    <nav 
+      className="flex flex-col items-center gap-4 py-3 px-2"
+      role="navigation"
+      aria-label="Paginación"
+    >
+      {/* Contenedor principal con mejor organización visual */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+        
+        {/* Grupo de navegación optimizado para todas las resoluciones */}
+        <div className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#1E1E1E] p-1.5 shadow-lg border-2 border-[#111827]/20 dark:border-[#444]/60">
+          
+          {/* Primera página */}
+          <button
+            onClick={() => handleGoToPage(1)}
+            disabled={effectivePage === 1}
+            aria-label="Primera página"
+            className={`
+              inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+              font-semibold text-sm transition-all duration-200 shadow-sm
+              border-2 border-[#111827]/30 dark:border-[#444]/50
+              ${
+                effectivePage === 1
+                  ? "bg-[#E5E5E5]/50 dark:bg-[#2A2A2A]/50 text-[#111827]/40 dark:text-gray-500 cursor-not-allowed opacity-50"
+                  : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#C9A300] hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+              }
+            `}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+            <span className="hidden md:inline ml-1">Primera</span>
+          </button>
 
-        {/* Página actual */}
-        <span
-          className="px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                     bg-[#FFD700] dark:bg-[#B8860B] text-black dark:text-white font-bold"
-        >
-          {effectivePage}
-        </span>
+          {/* Anterior */}
+          <button
+            onClick={() => handleGoToPage(effectivePage - 1)}
+            disabled={effectivePage === 1}
+            aria-label="Página anterior"
+            className={`
+              inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+              font-semibold text-sm transition-all duration-200 shadow-sm
+              border-2 border-[#111827]/30 dark:border-[#444]/50
+              ${
+                effectivePage === 1
+                  ? "bg-[#E5E5E5]/50 dark:bg-[#2A2A2A]/50 text-[#111827]/40 dark:text-gray-500 cursor-not-allowed opacity-50"
+                  : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#C9A300] hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+              }
+            `}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline ml-1">Prev</span>
+          </button>
 
-        {/* Botón siguiente */}
-        <button
-          onClick={() => handleGoToPage(effectivePage + 1)}
-          disabled={effectivePage === totalPages}
-          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
-                      hover:text-black dark:hover:text-white transition
-                      ${
-                        effectivePage === totalPages
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-        >
-          <span className="hidden sm:inline">Siguiente</span>
-          <i className="bi bi-chevron-right w-4 h-4 sm:hidden"></i>
-        </button>
+          {/* Separador visual solo en desktop */}
+          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5"></div>
+
+          {/* Números de página con diseño mejorado */}
+          <div className="inline-flex items-center gap-1">
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                onClick={() => handleGoToPage(num)}
+                disabled={num === effectivePage}
+                aria-label={`Página ${num}`}
+                aria-current={num === effectivePage ? "page" : undefined}
+                className={`
+                  inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+                  font-bold text-sm transition-all duration-200 shadow-sm
+                  border-2
+                  ${
+                    num === effectivePage
+                      ? "bg-[#FFD700] dark:bg-[#C9A300] text-black dark:text-white border-[#FFD700] dark:border-[#C9A300] shadow-md scale-105 cursor-default ring-2 ring-[#FFD700]/30 dark:ring-[#C9A300]/30"
+                      : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 border-[#111827]/30 dark:border-[#444]/50 hover:bg-[#FFD700]/80 dark:hover:bg-[#C9A300]/80 hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+                  }
+                `}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+
+          {/* Separador visual solo en desktop */}
+          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5"></div>
+
+          {/* Siguiente */}
+          <button
+            onClick={() => handleGoToPage(effectivePage + 1)}
+            disabled={effectivePage === totalPages}
+            aria-label="Página siguiente"
+            className={`
+              inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+              font-semibold text-sm transition-all duration-200 shadow-sm
+              border-2 border-[#111827]/30 dark:border-[#444]/50
+              ${
+                effectivePage === totalPages
+                  ? "bg-[#E5E5E5]/50 dark:bg-[#2A2A2A]/50 text-[#111827]/40 dark:text-gray-500 cursor-not-allowed opacity-50"
+                  : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#C9A300] hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+              }
+            `}
+          >
+            <span className="hidden sm:inline mr-1">Sig</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          {/* Última página */}
+          <button
+            onClick={() => handleGoToPage(totalPages)}
+            disabled={effectivePage === totalPages}
+            aria-label="Última página"
+            className={`
+              inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+              font-semibold text-sm transition-all duration-200 shadow-sm
+              border-2 border-[#111827]/30 dark:border-[#444]/50
+              ${
+                effectivePage === totalPages
+                  ? "bg-[#E5E5E5]/50 dark:bg-[#2A2A2A]/50 text-[#111827]/40 dark:text-gray-500 cursor-not-allowed opacity-50"
+                  : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#C9A300] hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+              }
+            `}
+          >
+            <span className="hidden md:inline mr-1">Última</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Fila inferior: primera / última */}
-      <div className="flex items-center justify-center gap-2 text-sm font-semibold">
-        <button
-          onClick={() => handleGoToPage(1)}
-          disabled={effectivePage === 1}
-          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
-                      hover:text-black dark:hover:text-white transition
-                      ${
-                        effectivePage === 1
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-        >
-          <i className="bi bi-chevron-double-left w-4 h-4 sm:hidden"></i>
-          <span className="hidden sm:inline">Primera</span>
-        </button>
-
-        <button
-          onClick={() => handleGoToPage(totalPages)}
-          disabled={effectivePage === totalPages}
-          className={`flex items-center justify-center gap-1 px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                      bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
-                      hover:text-black dark:hover:text-white transition
-                      ${
-                        effectivePage === totalPages
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-        >
-          <span className="hidden sm:inline">Última</span>
-          <i className="bi bi-chevron-double-right w-4 h-4 sm:hidden"></i>
-        </button>
+      {/* Información de resumen con mejor presentación */}
+      <div className="flex items-center gap-2 text-xs font-medium text-[#111827] dark:text-gray-300 bg-[#E5E5E5]/40 dark:bg-[#2A2A2A]/40 px-3 py-1.5 rounded-full border border-[#111827]/10 dark:border-[#444]/30">
+        <span className="hidden xs:inline">Mostrando página</span>
+        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">{effectivePage}</span>
+        <span>de</span>
+        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">{totalPages}</span>
+        <span className="hidden sm:inline">•</span>
+        <span className="hidden sm:inline">{totalItems} registro{totalItems !== 1 ? 's' : ''}</span>
       </div>
-
-      {/* Formulario ir a página */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-center gap-2 mt-2 text-xs sm:text-sm"
-      >
-        <label className="text-[#111827] dark:text-gray-200">
-          Ir a página:
-        </label>
-        <input
-          type="number"
-          min="1"
-          max={totalPages}
-          value={inputPage}
-          onChange={(e) => setInputPage(e.target.value)}
-          className="w-16 rounded border-2 border-[#111827] dark:border-[#444]
-                     bg-white dark:bg-[#2A2A2A] px-2 py-1 text-center text-[#111827] dark:text-gray-200
-                     focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:focus:ring-[#B8860B]"
-        />
-        <button
-          type="submit"
-          className="px-3 py-1 rounded-md border-2 border-[#111827] dark:border-[#444]
-                     bg-[#E5E5E5] dark:bg-[#2A2A2A] hover:bg-[#FFD700] dark:hover:bg-[#B8860B]
-                     hover:text-black dark:hover:text-white transition"
-        >
-          Ir
-        </button>
-      </form>
-
-      {/* Info resumen */}
-      <p className="text-xs text-[#111827] dark:text-gray-300 mt-1">
-        Página {effectivePage} de {totalPages} ({totalItems} registros)
-      </p>
-    </div>
-  );
-};
+    </nav>
+  )
+}
