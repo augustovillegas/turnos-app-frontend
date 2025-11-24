@@ -8,9 +8,11 @@ import { useAuth } from "../../context/AuthContext";
 import { Table } from "../ui/Table";
 import { Button } from "../ui/Button";
 import { Pagination } from "../ui/Pagination";
+import { Skeleton } from "../ui/Skeleton";
 import { SearchBar } from "../ui/SearchBar";
 import { CardUsuario } from "../ui/CardUsuario";
 import { DropdownActions } from "../ui/DropdownActions";
+import { EmptyRow } from "../ui/EmptyRow";
 import { showToast } from "../../utils/feedback/toasts";
 import { mapUsuario } from "../../utils/usuarios/helpers";
 import { paginate } from "../../utils/pagination";
@@ -126,12 +128,12 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
   return (
     <div className="p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Gestión de Usuarios
           </h2>
-          <Button onClick={onCrear} variant="primary">
-            Crear usuario
+          <Button onClick={onCrear} variant="primary" className="w-full sm:w-auto">
+            Crear nuevo usuario
           </Button>
         </div>
 
@@ -149,6 +151,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
             data={paginated.items}
             containerClass="px-4"
             minWidth="min-w-[680px]"
+            isLoading={isBusy}
             renderRow={(persona) => (
               <>
                 <td className="border p-2 dark:border-[#333]">{persona.nombre}</td>
@@ -183,19 +186,19 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
             )}
           >
             {paginated.items.length === 0 && (
-              <tr>
-                <td colSpan={USER_TABLE_COLUMNS.length} className="p-4 text-center text-sm italic">
-                  No hay usuarios para mostrar.
-                </td>
-              </tr>
+              <EmptyRow columns={USER_TABLE_COLUMNS} />
             )}
           </Table>
         </div>
 
         {/* Vista Mobile - Cards */}
         <div className="space-y-3 sm:hidden">
-          {paginated.items.length === 0 ? (
-            <p className="p-4 text-center text-sm italic">No hay usuarios para mostrar.</p>
+          {isBusy ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} height="8rem" />
+            ))
+          ) : paginated.items.length === 0 ? (
+            <EmptyRow.Mobile message="No hay usuarios para mostrar." />
           ) : (
             paginated.items.map((persona) => (
               <CardUsuario
@@ -209,8 +212,8 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
           )}
         </div>
 
-        {paginated.items.length > 0 && (
-          <div className="flex justify-end">
+        {!isBusy && paginated.items.length > 0 && (
+          <div className="flex justify-center">
             <Pagination
               currentPage={paginated.currentPage}
               totalItems={paginated.totalItems}
