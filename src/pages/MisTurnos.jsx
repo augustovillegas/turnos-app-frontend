@@ -65,19 +65,13 @@ export const MisTurnos = ({
 
         {/* Tabla Desktop */}
         <div className="hidden sm:block">
-          {isTurnosSectionLoading ? (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                <Skeleton key={index} height="2.75rem" />
-              ))}
-            </div>
-          ) : (
-            <Table
-              columns={MIS_TURNOS_COLUMNS}
-              data={paginationData.items}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(t) => (
+          <Table
+            columns={MIS_TURNOS_COLUMNS}
+            data={paginationData.items}
+            minWidth="min-w-[680px]"
+            containerClass="px-4"
+            isLoading={isTurnosSectionLoading}
+            renderRow={(t) => (
                 <>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.review}</td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{formatDateForTable(t.fecha)}</td>
@@ -113,21 +107,10 @@ export const MisTurnos = ({
                 </>
               )}
             >
-              {!hasTurnos && (
-                <EmptyRow
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acciones",
-                  ]}
-                />
+              {paginationData.items.length === 0 && (
+                <EmptyRow columns={MIS_TURNOS_COLUMNS} />
               )}
             </Table>
-          )}
         </div>
 
         {/* Cards Mobile */}
@@ -138,7 +121,9 @@ export const MisTurnos = ({
                 <Skeleton key={index} height="4.5rem" />
               ))}
             </div>
-          ) : hasTurnos ? (
+          ) : paginationData.items.length === 0 ? (
+            <EmptyRow.Mobile message="No tienes turnos agendados." />
+          ) : (
             paginationData.items.map((t) => (
               <CardTurno
                 key={t.id}

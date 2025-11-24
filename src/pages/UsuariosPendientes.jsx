@@ -85,21 +85,15 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
           }}
         />
 
-        {/* Desktop */}
+        {/* Tabla Desktop */}
         <div className="hidden sm:block">
-          {isLoading ? (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                <Skeleton key={index} height="2.75rem" />
-              ))}
-            </div>
-          ) : (
-            <Table
-              columns={USUARIOS_PENDIENTES_COLUMNS}
-              data={paginated.items}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(u) => (
+          <Table
+            columns={USUARIOS_PENDIENTES_COLUMNS}
+            data={paginated.items}
+            minWidth="min-w-[680px]"
+            containerClass="px-4"
+            isLoading={isLoading}
+            renderRow={(u) => (
                 <>
                   <td className="border p-2 text-center">{u.nombre}</td>
                   <td className="border p-2 text-center">{u.rol}</td>
@@ -128,11 +122,10 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                 </>
               )}
             >
-              {!paginated.items.length && (
+              {paginated.items.length === 0 && (
                 <EmptyRow columns={USUARIOS_PENDIENTES_COLUMNS} />
               )}
             </Table>
-          )}
         </div>
 
         {/* Mobile */}

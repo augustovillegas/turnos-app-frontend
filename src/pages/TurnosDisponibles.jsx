@@ -81,19 +81,13 @@ export const TurnosDisponibles = ({
 
         {/* Tabla Desktop */}
         <div className="hidden sm:block">
-          {isTurnosSectionLoading ? (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                <Skeleton key={index} height="2.75rem" />
-              ))}
-            </div>
-          ) : (
-            <Table
-              columns={TURNOS_DISPONIBLES_COLUMNS}
-              data={paginationData.items}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(t) => (
+          <Table
+            columns={TURNOS_DISPONIBLES_COLUMNS}
+            data={paginationData.items}
+            minWidth="min-w-[680px]"
+            containerClass="px-4"
+            isLoading={isTurnosSectionLoading}
+            renderRow={(t) => (
                 <>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.review}
@@ -135,21 +129,10 @@ export const TurnosDisponibles = ({
                 </>
               )}
             >
-              {!hasTurnos && (
-                <EmptyRow
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acciones",
-                  ]}
-                />
+              {paginationData.items.length === 0 && (
+                <EmptyRow columns={TURNOS_DISPONIBLES_COLUMNS} />
               )}
             </Table>
-          )}
         </div>
 
         {/* Cards Mobile */}
@@ -160,7 +143,9 @@ export const TurnosDisponibles = ({
                 <Skeleton key={index} height="4.5rem" />
               ))}
             </div>
-          ) : hasTurnos ? (
+          ) : paginationData.items.length === 0 ? (
+            <EmptyRow.Mobile message="No hay turnos disponibles." />
+          ) : (
             paginationData.items.map((t) => (
               <CardTurno
                 key={t.id}

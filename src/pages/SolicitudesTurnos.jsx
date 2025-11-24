@@ -157,19 +157,13 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
 
         {/* Desktop */}
         <div className="hidden sm:block">
-          {isLoading ? (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                <Skeleton key={i} height="2.75rem" />
-              ))}
-            </div>
-          ) : (
-            <Table
-              columns={SOLICITUDES_COLUMNS}
-              data={paginated.items}
-              minWidth="min-w-[680px]"
-              containerClass="px-4"
-              renderRow={(t) => (
+          <Table
+            columns={SOLICITUDES_COLUMNS}
+            data={paginated.items}
+            minWidth="min-w-[680px]"
+            containerClass="px-4"
+            isLoading={isLoading}
+            renderRow={(t) => (
                 <>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.review}
@@ -222,21 +216,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
                 </>
               )}
             >
-              {!paginated.items.length && (
-                <EmptyRow
-                  columns={[
-                    "Review",
-                    "Fecha",
-                    "Horario",
-                    "Sala",
-                    "Zoom",
-                    "Estado",
-                    "Acciones",
-                  ]}
-                />
+              {paginated.items.length === 0 && (
+                <EmptyRow columns={SOLICITUDES_COLUMNS} />
               )}
             </Table>
-          )}
         </div>
 
         {/* Mobile */}
@@ -260,7 +243,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
               />
             ))
           ) : (
-            <EmptyRow.Mobile />
+            <EmptyRow.Mobile message="No hay solicitudes de turnos." />
           )}
         </div>
 
