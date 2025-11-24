@@ -29,7 +29,6 @@ export const EvaluarEntregas = () => {
   const { isLoading } = useLoading();
   const ITEMS_PER_PAGE = 5;
   const [page, setPage] = useState(1);
-  const [processingEntregaId, setProcessingEntregaId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("Pendientes"); // "Pendientes" | specific reviewStatus | "Todos"
   const hasLoadedRef = useRef(false);
 
