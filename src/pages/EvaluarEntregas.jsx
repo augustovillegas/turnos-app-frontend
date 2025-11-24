@@ -33,9 +33,7 @@ export const EvaluarEntregas = () => {
   const [filterStatus, setFilterStatus] = useState("Pendientes"); // "Pendientes" | specific reviewStatus | "Todos"
   const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
-    // Component mounted - entregas loaded from context
-  }, [entregas, usuarioActual]);
+  // Eliminado efecto vacío que causaba render redundante sin lógica
 
   // Carga defensiva: si el profesor/superadmin entra directo a /evaluar-entregas sin pasar por el dashboard
   useEffect(() => {

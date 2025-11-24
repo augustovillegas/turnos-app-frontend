@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState, useCallback } from "react";
 import { Table } from "../components/ui/Table";
 import { CardUsuario } from "../components/ui/CardUsuario";
 import { Button } from "../components/ui/Button";
@@ -150,12 +150,10 @@ export const CreateUsers = () => {
     isLoading("usuarios-update") ||
     isLoading("usuarios-delete");
 
-  const handleSearch = (results) => {
-    setFiltered(
-      Array.isArray(results) && results.length ? results : personas
-    );
+  const handleSearch = useCallback((results) => {
+    setFiltered(Array.isArray(results) && results.length ? results : personas);
     setPage(1);
-  };
+  }, [personas]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;

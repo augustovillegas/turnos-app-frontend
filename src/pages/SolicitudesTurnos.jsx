@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
 import { formatDateForTable } from "../utils/formatDateForTable";
@@ -56,12 +56,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
     [turnos]
   );
 
-  const aplicarFiltro = (lista) => {
-    if (filtroReview === "todos") return lista;
-    return lista.filter((t) => t.review === Number(filtroReview));
-  };
-
-  const filtrados = aplicarFiltro(turnosSolicitados);
+  const filtrados = useMemo(() => {
+    if (filtroReview === "todos") return turnosSolicitados;
+    return turnosSolicitados.filter((t) => t.review === Number(filtroReview));
+  }, [turnosSolicitados, filtroReview]);
 
   // Estado para resultados de búsqueda (parte del pipeline de filtrado)
   const [turnosBuscados, setTurnosBuscados] = useState(filtrados);
@@ -81,14 +79,13 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   }, [filtroReview]);
 
   // Handler de búsqueda desde SearchBar
-  const handleSearch = (results) => {
-    if (Array.isArray(results)) {
-      setTurnosBuscados(results);
-    } else {
-      setTurnosBuscados(filtrados);
-    }
-    paginated.resetPage();
-  };
+  const handleSearch = useCallback(
+    (results) => {
+      setTurnosBuscados(Array.isArray(results) ? results : filtrados);
+      paginated.resetPage();
+    },
+    [filtrados, paginated]
+  );
 
   // Hook de aprobación/rechazo
   const { handleApprove, handleReject, processingId } = useApproval({

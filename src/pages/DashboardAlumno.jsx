@@ -1,6 +1,6 @@
 // === Dashboard Alumno ===
 // Panel del estudiante: solicitar turnos, ver historial y cargar entregables.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { useAppData } from "../context/AppContext";
@@ -154,12 +154,14 @@ export const DashboardAlumno = () => {
   const [pageMisTurnos, setPageMisTurnos] = useState(1);
 
   // --- Cargar turnos y entregas al iniciar ---
+  const hasLoadedRef = useRef(false);
   useEffect(() => {
+    if (hasLoadedRef.current) return; // evita recarga múltiple si cambian dependencias estructurales
     if (!usuarioActual || !token || usuarioActual.role !== "alumno") return;
     const filtrosTurnos = {};
     if (cohortAlumno != null) filtrosTurnos.cohort = cohortAlumno;
     if (moduloAlumno) filtrosTurnos.modulo = moduloAlumno;
-
+    hasLoadedRef.current = true;
     (async () => {
       try {
         await Promise.all([loadTurnos(filtrosTurnos), loadEntregas()]);
@@ -169,15 +171,7 @@ export const DashboardAlumno = () => {
         });
       }
     })();
-  }, [
-    usuarioActual,
-    token,
-    cohortAlumno,
-    moduloAlumno,
-    loadTurnos,
-    loadEntregas,
-    pushError,
-  ]);
+  }, [usuarioActual, token, cohortAlumno, moduloAlumno, loadTurnos, loadEntregas, pushError]);
 
   // --- Manejo de turnos ---
   const handleSolicitarTurno = async (turno) => {
