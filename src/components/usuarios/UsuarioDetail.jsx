@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
 import { showToast } from "../../utils/feedback/toasts";
+import { ensureModuleLabel, labelToModule } from "../../utils/moduleMap";
 
 export const UsuarioDetail = ({ usuario, onVolver }) => {
   const [currentUsuario, setCurrentUsuario] = useState(usuario ?? null);
@@ -28,6 +29,44 @@ export const UsuarioDetail = ({ usuario, onVolver }) => {
     profesor: "Profesor",
     superadmin: "Superadmin",
   };
+
+  const resolveModuleLabel = (user) => {
+    if (!user) return null;
+    const candidates = [
+      user.modulo,
+      user.module,
+      user.moduleLabel,
+      user.moduloSlug,
+      user.moduleCode,
+      user.moduleNumber,
+      user.datos?.modulo,
+      user.datos?.module,
+    ];
+    return candidates.map(ensureModuleLabel).find(Boolean) || null;
+  };
+
+  const resolveCohort = (user) => {
+    if (!user) return null;
+    const candidates = [
+      user.cohorte,
+      user.cohort,
+      user.cohortId,
+      user.moduleNumber,
+      user.moduleCode,
+      user.datos?.cohort,
+    ];
+    for (const value of candidates) {
+      if (value == null) continue;
+      const numeric = Number(String(value).trim());
+      if (Number.isFinite(numeric)) return Math.trunc(numeric);
+      const fromLabel = labelToModule(value);
+      if (fromLabel != null) return fromLabel;
+    }
+    return null;
+  };
+
+  const moduleLabel = resolveModuleLabel(currentUsuario);
+  const cohortNumber = resolveCohort(currentUsuario);
 
   return (
     <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100">
@@ -77,13 +116,13 @@ export const UsuarioDetail = ({ usuario, onVolver }) => {
               <dt className="text-xs font-semibold uppercase text-[#6B7280]">
                 Módulo
               </dt>
-              <dd className="text-lg font-semibold">{currentUsuario.modulo || currentUsuario.module || "N/A"}</dd>
+              <dd className="text-lg font-semibold">{moduleLabel || "N/A"}</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase text-[#6B7280]">
                 Cohorte
               </dt>
-              <dd className="text-lg font-semibold">{currentUsuario.cohorte || currentUsuario.cohort || "N/A"}</dd>
+              <dd className="text-lg font-semibold">{cohortNumber ?? "N/A"}</dd>
             </div>
             {currentUsuario.identificador && (
               <div>

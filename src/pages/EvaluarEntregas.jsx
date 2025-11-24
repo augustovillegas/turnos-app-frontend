@@ -14,6 +14,7 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { showToast } from "../utils/feedback/toasts";
 import { paginate } from "../utils/pagination";
+import { useEntregaReview } from "../hooks/useEntregaReview";
 
 import {
   ensureModuleLabel,
@@ -143,7 +144,7 @@ export const EvaluarEntregas = () => {
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Evaluar Entregables
         </h2>
 
