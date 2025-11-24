@@ -45,30 +45,11 @@ export const EvaluarEntregas = () => {
     }
   }, [usuarioActual, loadEntregas]);
 
-  const actualizarEstado = async (entrega, nuevoEstado) => {
-    if (!entrega?.id) return;
-    setProcessingEntregaId(entrega.id);
-    try {
-      // Backend Submission solo acepta reviewStatus (NO estado)
-      await updateEntrega(entrega.id, {
-        reviewStatus: nuevoEstado,
-      });
-      showToast(
-        nuevoEstado === "Aprobado"
-          ? "Entrega aprobada correctamente."
-          : "Entrega desaprobada."
-      );
-    } catch (error) {
-      showToast(error.message || "No se pudo actualizar la entrega.", "error");
-    } finally {
-      setProcessingEntregaId(null);
-    }
-  };
-
-  const handleAprobarEntrega = (entrega) =>
-    actualizarEstado(entrega, "Aprobado");
-  const handleDesaprobarEntrega = (entrega) =>
-    actualizarEstado(entrega, "Desaprobado");
+  // Extraído a hook useEntregaReview
+  const { processingEntregaId, handleAprobarEntrega, handleDesaprobarEntrega } = useEntregaReview({
+    updateEntrega,
+    showToast,
+  });
 
   const esPendiente = (e) => {
     const estadoActual = e?.reviewStatus || "";

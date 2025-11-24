@@ -146,7 +146,15 @@ export const DashboardAlumno = () => {
   // --- Estado local ---
   const [active, setActive] = useState("turnos");
   const [filtroReview, setFiltroReview] = useState("todos");
-  const [processingTurno, setProcessingTurno] = useState(null);
+  // Handlers de turnos extraídos a hook
+  const { processingTurno, handleSolicitarTurno, handleCancelarTurno } = useAlumnoTurnos({
+    alumnoId: alumnoIdStr,
+    solicitarTurno,
+    cancelarTurno,
+    showModal,
+    pushError,
+    showToast,
+  });
 
   // --- Configuración de paginación ---
   const ITEMS_PER_PAGE = 5;
@@ -173,41 +181,7 @@ export const DashboardAlumno = () => {
     })();
   }, [usuarioActual, token, cohortAlumno, moduloAlumno, loadTurnos, loadEntregas, pushError]);
 
-  // --- Manejo de turnos ---
-  const handleSolicitarTurno = async (turno) => {
-    if (!turno || !isEstado(turno.estado, "disponible") || !alumnoIdStr) return;
-    setProcessingTurno(turno.id);
-    try {
-      await solicitarTurno(turno.id);
-      showToast("Turno solicitado correctamente", "success");
-    } catch (error) {
-      pushError?.("Error al solicitar turno", { description: error.message });
-    } finally {
-      setProcessingTurno(null);
-    }
-  };
-
-  const handleCancelarTurno = (turno) => {
-    if (!turno || !isEstado(turno.estado, "solicitado")) return;
-    showModal({
-      type: "warning",
-      title: "Cancelar solicitud",
-      message: `¿Cancelar la solicitud para la sala ${turno.sala}?`,
-      onConfirm: async () => {
-        setProcessingTurno(turno.id);
-        try {
-          await cancelarTurno(turno.id);
-          showToast("Solicitud cancelada", "info");
-        } catch (error) {
-          pushError?.("Error al cancelar turno", {
-            description: error.message,
-          });
-        } finally {
-          setProcessingTurno(null);
-        }
-      },
-    });
-  };
+  // --- Manejo de turnos --- (extraído a useAlumnoTurnos)
 
   // --- Manejo de entregas ---
   const handleAgregarEntrega = async ({
