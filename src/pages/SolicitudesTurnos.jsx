@@ -8,12 +8,15 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
-
+import { SuperadminActions } from "../components/ui/SuperadminActions";
+import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
 import { Suspense, lazy } from "react";
-const TurnoDetail = lazy(() => import("../components/turnos/TurnoDetail"));
 import { usePagination } from "../hooks/usePagination";
 import { useApproval } from "../hooks/useApproval";
+
+const TurnoDetail = lazy(() => import("../components/turnos/TurnoDetail"));
+
 // Columnas estáticas (memo implícito al quedar fuera del componente)
 const SOLICITUDES_COLUMNS = [
   "Review",
@@ -28,6 +31,8 @@ import { showToast } from "../utils/feedback/toasts";
 
 export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   const { updateTurno, loadTurnos } = useAppData();
+  const { usuario: usuarioActual } = useAuth();
+  const isSuperadmin = usuarioActual?.role === "superadmin";
 
   // ---- Estado de filtros ----
   const [filtroReview, setFiltroReview] = useState("todos");
@@ -167,14 +172,25 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
                   </td>
 
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                    <ProfesorActions
-                      item={t}
-                      onAprobar={handleAprobar}
-                      onRechazar={handleRechazar}
-                      onVer={onVer}
-                      onCopiarZoom={handleCopiarZoom}
-                      disabled={processingTurno === t.id}
-                    />
+                    {isSuperadmin ? (
+                      <SuperadminActions
+                        item={t}
+                        onAprobar={handleAprobar}
+                        onRechazar={handleRechazar}
+                        onVer={onVer}
+                        onCopiarZoom={handleCopiarZoom}
+                        disabled={processingTurno === t.id}
+                      />
+                    ) : (
+                      <ProfesorActions
+                        item={t}
+                        onAprobar={handleAprobar}
+                        onRechazar={handleRechazar}
+                        onVer={onVer}
+                        onCopiarZoom={handleCopiarZoom}
+                        disabled={processingTurno === t.id}
+                      />
+                    )}
                   </td>
                 </>
               )}

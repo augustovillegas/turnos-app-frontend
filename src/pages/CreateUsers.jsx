@@ -23,6 +23,7 @@ import { paginate } from "../utils/pagination";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const DEFAULT_COHORT = 1;
 const DEFAULT_MODULE = MODULE_OPTIONS[0]?.label ?? "HTML-CSS";
+const ITEMS_PER_PAGE = 8;
 
 // Passwords por defecto según rol (backend las puede validar/requerir)
 const DEFAULT_PASSWORDS = {
@@ -138,7 +139,7 @@ export const CreateUsers = () => {
   }, [personas]);
 
   const paginated = useMemo(
-    () => paginate(filtered, page, 8),
+    () => paginate(filtered, page, ITEMS_PER_PAGE),
     [filtered, page]
   );
 
@@ -393,7 +394,10 @@ export const CreateUsers = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <section className="space-y-6" data-testid="create-users-section">
           <div className="space-y-6" data-testid="create-users-container">
-            <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+            <h2
+              className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]"
+              data-testid="create-users-heading"
+            >
               {editingId ? "Editar usuario" : "Crear nuevo usuario"}
             </h2>
             <form
@@ -605,7 +609,7 @@ export const CreateUsers = () => {
                     <td className="border p-2 dark:border-[#333]">{persona.cohorte}</td>
                     <td className="border p-2 dark:border-[#333]">{persona.modulo}</td>
                     <td className="border p-2 dark:border-[#333] text-right">
-                      <div className="flex justify-end">
+                      <div className="flex justify-center">
                         <DropdownActions
                           options={[
                             {
@@ -657,7 +661,8 @@ export const CreateUsers = () => {
               <div className="flex justify-end">
                 <Pagination
                   currentPage={paginated.currentPage}
-                  totalPages={paginated.totalPages}
+                  totalItems={paginated.totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
                   onPageChange={setPage}
                   data-testid="pagination-users"
                 />

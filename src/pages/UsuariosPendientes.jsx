@@ -5,17 +5,21 @@ import { Status } from "../components/ui/Status";
 import { Button } from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
-
 import { SearchBar } from "../components/ui/SearchBar";
+import { SuperadminActions } from "../components/ui/SuperadminActions";
+import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
 import { usePagination } from "../hooks/usePagination";
 import { useApproval } from "../hooks/useApproval";
-const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 
+const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
+
 export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
-  const { approveUsuario, loadUsuarios } = useAppData();
+  const { approveUsuario, updateUsuarioEstado, loadUsuarios } = useAppData();
+  const { usuario: usuarioActual } = useAuth();
+  const isSuperadmin = usuarioActual?.role === "superadmin";
 
   const [usuariosBuscados, setUsuariosBuscados] = useState([]);
   const ITEMS_PER_PAGE = 5;
@@ -48,7 +52,22 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
     },
   });
 
+  // Hook de rechazo
+  const { handleReject, processingId: processingRejectId } = useApproval({
+    onApprove: async (usuario) => {
+      await updateUsuarioEstado(usuario.id, "Rechazado");
+    },
+    messages: {
+      approveTitle: "Rechazar usuario",
+      approveMessage: "¿Confirmar rechazo de {name}?",
+      approveSuccess: "Usuario rechazado",
+      approveError: "Error al rechazar usuario",
+    },
+  });
+
   const handleAprobar = handleApprove;
+  const handleRechazar = handleReject;
+  const processingUsuarioId = processingId || processingRejectId;
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -88,13 +107,23 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                     <Status status={u.estado} />
                   </td>
                   <td className="border p-2 text-center">
-                    <ProfesorActions
-                      item={u}
-                      disabled={isLoading || processingId === u.id}
-                      onAprobarUsuario={handleAprobar}
-                      onRechazarUsuario={() => { /* opcional: implementar si backend soporta */ }}
-                      onVer={() => console.log("Detalle usuario", u)}
-                    />
+                    {isSuperadmin ? (
+                      <SuperadminActions
+                        item={u}
+                        disabled={isLoading || processingUsuarioId === u.id}
+                        onAprobar={handleAprobar}
+                        onRechazar={handleRechazar}
+                        onVer={() => console.log("Detalle usuario", u)}
+                      />
+                    ) : (
+                      <ProfesorActions
+                        item={u}
+                        disabled={isLoading || processingUsuarioId === u.id}
+                        onAprobarUsuario={handleAprobar}
+                        onRechazarUsuario={handleRechazar}
+                        onVer={() => console.log("Detalle usuario", u)}
+                      />
+                    )}
                   </td>
                 </>
               )}
@@ -133,7 +162,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                   variant="success"
                   className="w-full py-1"
                   onClick={() => handleAprobar(u)}
-                  disabled={isLoading || processingId === u.id}
+                  disabled={isLoading || processingUsuarioId === u.id}
                 >
                   Aprobar usuario
                 </Button>
