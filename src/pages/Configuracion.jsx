@@ -38,7 +38,7 @@ export const Configuracion = () => {
 
   return (
     <div className="flex flex-col gap-6 p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
-      <h2 className="text-3xl font-bold text-white dark:text-[#93C5FD]">
+      <h2 className="text-2xl sm:text-3xl font-bold text-white dark:text-[#93C5FD]">
         Configuración
       </h2>
 

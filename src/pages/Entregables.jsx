@@ -58,7 +58,7 @@ export const Entregables = ({
       ========================== */}
       {modoEntrega === "listar" && (
         <div className="mx-auto flex w-full flex-col gap-6 max-w-full sm:max-w-6xl px-2">
-          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Entregables (Trabajos Prácticos)
           </h2>
 
@@ -197,7 +197,7 @@ export const Entregables = ({
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
           {/* Cabecera */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
               Nueva Entrega
             </h2>
           </div>
