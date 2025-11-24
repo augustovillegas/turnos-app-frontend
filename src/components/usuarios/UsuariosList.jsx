@@ -145,7 +145,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
         />
 
         {/* Vista Desktop - Tabla */}
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <Table
             columns={USER_TABLE_COLUMNS}
             data={paginated.items}
@@ -192,7 +192,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
         </div>
 
         {/* Vista Mobile - Cards */}
-        <div className="space-y-3 sm:hidden">
+        <div className="space-y-3 md:hidden">
           {isBusy ? (
             Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} height="8rem" />
