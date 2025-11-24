@@ -258,7 +258,7 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
           <p className="mb-4 text-sm text-[#374151] dark:text-gray-300">
             Verifica que el usuario exista en la base de datos.
           </p>
-          <Button onClick={onVolver} variant="primary">
+          <Button onClick={onVolver} variant="primary" className="w-full sm:w-auto">
             Volver al listado
           </Button>
         </div>
@@ -282,11 +282,11 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
   return (
     <div className="p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Editar usuario
           </h2>
-          <Button onClick={solicitarSalida} variant="secondary">
+          <Button onClick={solicitarSalida} variant="secondary" className="w-full sm:w-auto">
             Volver al listado
           </Button>
         </div>
@@ -429,11 +429,11 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button type="submit" variant="primary" disabled={isBusy}>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="submit" variant="primary" disabled={isBusy} className="w-full sm:w-auto">
               Guardar cambios
             </Button>
-            <Button type="button" variant="secondary" onClick={solicitarSalida} disabled={isBusy}>
+            <Button type="button" variant="secondary" onClick={solicitarSalida} disabled={isBusy} className="w-full sm:w-auto">
               Cancelar
             </Button>
           </div>

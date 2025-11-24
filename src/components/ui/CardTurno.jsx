@@ -44,11 +44,11 @@ export const CardTurno = ({
       )}
 
       {(onSolicitar || onCancelar || onAprobar || onRechazar || onVer) && (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
           {onSolicitar && isEstado(turno.estado, "Disponible") && (
             <Button
               variant="primary"
-              className="w-full"
+              className="w-full sm:w-auto"
               onClick={onSolicitar}
               disabled={disabled}
             >
@@ -58,7 +58,7 @@ export const CardTurno = ({
           {onCancelar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="secondary"
-              className="w-full"
+              className="w-full sm:w-auto"
               onClick={onCancelar}
               disabled={disabled}
             >
@@ -68,7 +68,7 @@ export const CardTurno = ({
           {onAprobar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="success"
-              className="w-full"
+              className="w-full sm:w-auto"
               onClick={onAprobar}
               disabled={disabled}
             >
@@ -78,7 +78,7 @@ export const CardTurno = ({
           {onRechazar && isEstado(turno.estado, "Solicitado") && (
             <Button
               variant="danger"
-              className="w-full"
+              className="w-full sm:w-auto"
               onClick={onRechazar}
               disabled={disabled}
             >
@@ -89,7 +89,7 @@ export const CardTurno = ({
           {onVer && (
             <Button
               variant="secondary"
-              className="w-full"
+              className="w-full sm:w-auto"
               onClick={onVer}
               disabled={disabled}
             >

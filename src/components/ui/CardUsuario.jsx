@@ -23,12 +23,13 @@ export const CardUsuario = ({ usuario, onEditar, onEliminar, disabled = false })
           <p><strong>ID:</strong> {usuario.identificador}</p>
         )}
       </div>
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button
           size="xs"
           variant="secondary"
           disabled={disabled}
           onClick={() => onEditar?.(usuario)}
+          className="w-full sm:w-auto"
         >
           Editar
         </Button>
@@ -37,6 +38,7 @@ export const CardUsuario = ({ usuario, onEditar, onEliminar, disabled = false })
           variant="danger"
           disabled={disabled}
           onClick={() => onEliminar?.(usuario)}
+          className="w-full sm:w-auto"
         >
           Eliminar
         </Button>

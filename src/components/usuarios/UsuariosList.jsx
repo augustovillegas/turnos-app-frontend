@@ -136,13 +136,13 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
         </div>
 
         <SearchBar
-          data={personas}
+          data={usuarios}
           fields={["nombre", "email", "tipo", "modulo", "cohorte"]}
           onSearch={handleSearch}
           placeholder="Buscar por nombre, email, rol o módulo"
         />
 
-        {/* Desktop Table */}
+        {/* Vista Desktop - Tabla */}
         <div className="hidden sm:block">
           <Table
             columns={USER_TABLE_COLUMNS}
@@ -192,8 +192,8 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
           </Table>
         </div>
 
-        {/* Mobile Cards */}
-        <div className="sm:hidden space-y-3">
+        {/* Vista Mobile - Cards */}
+        <div className="space-y-3 sm:hidden">
           {paginated.items.length === 0 ? (
             <p className="p-4 text-center text-sm italic">No hay usuarios para mostrar.</p>
           ) : (
