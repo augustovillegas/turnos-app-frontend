@@ -12,6 +12,7 @@ import { EmptyRow } from "../components/ui/EmptyRow";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { Table } from "../components/ui/Table";
 import { EntregaEdit } from "../components/ui/EntregaEdit";
+import { EntregaDetail } from "../components/entregas/EntregaDetail";
 import { extractFormErrors } from "../utils/feedback/errorExtractor";
 import { paginate } from "../utils/pagination";
 const ENTREGABLES_COLUMNS = ["Sprint", "GitHub", "Render", "Comentarios", "Estado", "Acciones"];
@@ -134,8 +135,12 @@ export const Entregables = ({
                         item={e}
                         onCancelarEntrega={onCancelarEntrega}
                         onEditarEntrega={() => {
-                          setEntregaSeleccionada(e); // 🔹 agregado
-                          setModoEntrega("editar"); // 🔹 agregado
+                          setEntregaSeleccionada(e);
+                          setModoEntrega("editar");
+                        }}
+                        onVerDetalle={() => {
+                          setEntregaSeleccionada(e);
+                          setModoEntrega("detalle");
                         }}
                         disabled={entregasLoading}
                       />
@@ -231,16 +236,28 @@ export const Entregables = ({
       {/* =========================
           FORMULARIO DE EDICIÓN
       ========================== */}
-      {modoEntrega === "editar" &&
-        entregaSeleccionada && ( 
-          <EntregaEdit
-            entrega={entregaSeleccionada}
-            onVolver={() => {
-              setModoEntrega("listar");
-              setEntregaSeleccionada(null);
-            }}
-          />
-        )}
+      {modoEntrega === "editar" && entregaSeleccionada && (
+        <EntregaEdit
+          entrega={entregaSeleccionada}
+          onVolver={() => {
+            setModoEntrega("listar");
+            setEntregaSeleccionada(null);
+          }}
+        />
+      )}
+
+      {/* =========================
+          DETALLE DE ENTREGA
+      ========================== */}
+      {modoEntrega === "detalle" && entregaSeleccionada && (
+        <EntregaDetail
+          entrega={entregaSeleccionada}
+          onVolver={() => {
+            setModoEntrega("listar");
+            setEntregaSeleccionada(null);
+          }}
+        />
+      )}
     </div>
   );
 };

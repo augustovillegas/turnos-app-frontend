@@ -13,10 +13,13 @@ import { showToast } from "../../utils/feedback/toasts";
 import { extractFormErrors } from "../../utils/feedback/errorExtractor";
 import { Button } from "../ui/Button";
 
+import { useAuth } from "../../context/AuthContext";
+
 export const TurnoForm = ({ onVolver }) => {
   // --- Estado local y helpers del formulario ---
   const { createTurno } = useAppData();
   const { isLoading } = useLoading();
+  const { usuario: sessionUser } = useAuth();
   const turnosLoading = isLoading("turnos");
   const [valoresFormulario, establecerValoresFormulario] = useState(() =>
     formValuesFromTurno(null)
@@ -37,7 +40,11 @@ export const TurnoForm = ({ onVolver }) => {
     }
 
     try {
-      await createTurno(buildTurnoPayloadFromForm(valoresFormulario));
+      const creadorInfo = {
+        id: sessionUser?.id || sessionUser?._id,
+        nombre: sessionUser?.name || sessionUser?.nombre || "Sistema",
+      };
+      await createTurno(buildTurnoPayloadFromForm(valoresFormulario, creadorInfo));
       showToast("Turno creado correctamente.");
       onVolver?.();
     } catch (error) {

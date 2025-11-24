@@ -8,6 +8,7 @@ export const AlumnoActions = ({
   onCancelarTurno,
   onCancelarEntrega,  
   onEditarEntrega,
+  onVerDetalle,
   disabled = false,
 }) => {
   if (!item) return null;
@@ -35,7 +36,7 @@ export const AlumnoActions = ({
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
-        onClick: () => {}, // TODO: Implementar modal de detalle
+        onClick: () => onVerDetalle?.(item),
       });
     }
   }
@@ -61,7 +62,7 @@ export const AlumnoActions = ({
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
-        onClick: () => {}, // TODO: Implementar modal de detalle
+        onClick: () => onVerDetalle?.(item),
       });
     }
   }

@@ -12,6 +12,8 @@ import { CardTurno } from "../components/ui/CardTurno";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { paginate } from "../utils/pagination";
+import { TurnoDetail } from "../components/turnos/TurnoDetail";
+
 const TURNOS_DISPONIBLES_COLUMNS = [
   "Review",
   "Fecha",
@@ -36,6 +38,8 @@ export const TurnosDisponibles = ({
 }) => {
   const { loadTurnos } = useAppData();
   const [turnosBuscados, setTurnosBuscados] = useState(turnos);
+  const [modo, setModo] = useState("listar");
+  const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
 
   // Actualizar resultados cuando cambien los turnos
   useEffect(() => {
@@ -54,6 +58,20 @@ export const TurnosDisponibles = ({
   );
 
   const hasTurnos = paginationData.items.length > 0;
+
+  const onVerDetalle = (turno) => {
+    setTurnoSeleccionado(turno);
+    setModo("detalle");
+  };
+
+  const goListar = () => {
+    setModo("listar");
+    setTurnoSeleccionado(null);
+  };
+
+  if (modo === "detalle") {
+    return <TurnoDetail turno={turnoSeleccionado} onVolver={goListar} />;
+  }
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
@@ -121,6 +139,7 @@ export const TurnosDisponibles = ({
                       item={t}
                       onSolicitar={onSolicitar}
                       onCancelarTurno={handleCancelarTurno}
+                      onVerDetalle={onVerDetalle}
                       disabled={
                         isTurnosSectionLoading || processingTurno === t.id
                       }

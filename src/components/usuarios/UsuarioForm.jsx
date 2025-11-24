@@ -59,6 +59,8 @@ export const UsuarioForm = ({ onVolver }) => {
   const { isLoading } = useLoading();
   const { pushError } = useError();
   const { usuario: sessionUser } = useAuth();
+  const creadorId = sessionUser?.id || sessionUser?._id;
+  const creadorNombre = sessionUser?.name || sessionUser?.nombre || "Sistema";
 
   const loggedRole = String(sessionUser?.rol ?? sessionUser?.role ?? "").toLowerCase();
 
@@ -141,6 +143,8 @@ export const UsuarioForm = ({ onVolver }) => {
       cohort: cohortNumber,
       modulo: moduloLabel,
       ...(identificador ? { identificador } : {}),
+      creador: creadorNombre,
+      creadorId: creadorId,
     };
 
     const passwordValue = formValues.password.trim();

@@ -27,7 +27,7 @@ const normalizarFecha = (valor) => {
   return valor;
 };
 
-export const construirPayloadTurnoDesdeFormulario = (valores) => {
+export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}) => {
   const inicio = construirFechaIso(valores.fecha, valores.horaInicio);
   const fin = construirFechaIso(valores.fecha, valores.horaFin);
   const fechaNormalizada = normalizarFecha(valores.fecha);
@@ -62,6 +62,8 @@ export const construirPayloadTurnoDesdeFormulario = (valores) => {
     descripcion: valores.descripcion?.trim?.() || "Generado por pruebas",
     modulo: valores.modulo?.trim?.() || "HTML-CSS",
     comentarios: valores.comentarios?.trim() || "",
+    creador: creadorInfo.nombre || "Sistema",
+    creadorId: creadorInfo.id || null,
   };
 };
 

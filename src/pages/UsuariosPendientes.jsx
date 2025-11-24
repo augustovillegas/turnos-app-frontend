@@ -13,6 +13,7 @@ import { usePagination } from "../hooks/usePagination";
 import { useApproval } from "../hooks/useApproval";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
+import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
 
 const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
 
@@ -22,6 +23,8 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   const isSuperadmin = usuarioActual?.role === "superadmin";
 
   const [usuariosBuscados, setUsuariosBuscados] = useState([]);
+  const [modo, setModo] = useState("listar");
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
   const usuariosPendientes = useMemo(
@@ -69,6 +72,20 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   const handleRechazar = handleReject;
   const processingUsuarioId = processingId || processingRejectId;
 
+  const onVer = (usuario) => {
+    setUsuarioSeleccionado(usuario);
+    setModo("detalle");
+  };
+
+  const goListar = () => {
+    setModo("listar");
+    setUsuarioSeleccionado(null);
+  };
+
+  if (modo === "detalle") {
+    return <UsuarioDetail usuario={usuarioSeleccionado} onVolver={goListar} />;
+  }
+
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -107,7 +124,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                         disabled={isLoading || processingUsuarioId === u.id}
                         onAprobar={handleAprobar}
                         onRechazar={handleRechazar}
-                        onVer={() => {}} // TODO: Implementar modal de detalle
+                        onVer={onVer}
                       />
                     ) : (
                       <ProfesorActions
@@ -115,7 +132,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                         disabled={isLoading || processingUsuarioId === u.id}
                         onAprobarUsuario={handleAprobar}
                         onRechazarUsuario={handleRechazar}
-                        onVer={() => {}} // TODO: Implementar modal de detalle
+                        onVer={onVer}
                       />
                     )}
                   </td>
