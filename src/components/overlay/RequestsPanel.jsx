@@ -1,7 +1,7 @@
 // === Floating Requests Panel ===
 // Panel lateral para revisar y liberar turnos solicitados sin dejar el dashboard.
 // RESTRINGIDO: Solo visible para profesor/superadmin (backend valida ownership)
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { useAppData } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useModal } from "../../context/ModalContext";
@@ -15,7 +15,7 @@ import { Pagination } from "../ui/Pagination";
 
 const TURNOS_POR_PAGINA = 5;
 
-export const RequestsPanel = () => {
+const RequestsPanelComponent = () => {
   const { user } = useAuth();
   const { turnos, updateTurno, totalTurnosSolicitados } = useAppData();
   const { isLoading } = useLoading();
@@ -73,24 +73,7 @@ export const RequestsPanel = () => {
     };
   }, [solicitudesPendientes, totalSolicitudes, pagina]);
 
-  const gestionarCancelacionTurno = (turnoId) => {
-    const turno = turnos.find((item) => String(item.id) === String(turnoId));
-    if (!turno) {
-      showToast("No encontramos el turno seleccionado.", "error");
-      return;
-    }
-
-    showModal({
-      type: "warning",
-      title: "Cancelar solicitud",
-      message: `¿Cancelar la solicitud del turno "${turno.sala}"?`,
-      onConfirm: () => {
-        void ejecutarCancelacion(turno);
-      },
-    });
-  };
-
-  const ejecutarCancelacion = async (turno) => {
+  const ejecutarCancelacion = useCallback(async (turno) => {
     establecerTurnoProcesandoId(turno.id);
     try {
       const payload = buildTurnoPayloadFromForm({
@@ -110,12 +93,33 @@ export const RequestsPanel = () => {
     } finally {
       establecerTurnoProcesandoId(null);
     }
-  };
+  }, [updateTurno]);
+
+  const gestionarCancelacionTurno = useCallback((turnoId) => {
+    const turno = turnos.find((item) => String(item.id) === String(turnoId));
+    if (!turno) {
+      showToast("No encontramos el turno seleccionado.", "error");
+      return;
+    }
+
+    showModal({
+      type: "warning",
+      title: "Cancelar solicitud",
+      message: `¿Cancelar la solicitud del turno "${turno.sala}"?`,
+      onConfirm: () => {
+        void ejecutarCancelacion(turno);
+      },
+    });
+  }, [turnos, showModal, ejecutarCancelacion]);
+
+  const togglePanel = useCallback(() => {
+    establecerPanelAbierto((previo) => !previo);
+  }, []);
 
   return (
     <>
       <button
-        onClick={() => establecerPanelAbierto((previo) => !previo)}
+        onClick={togglePanel}
         className="fixed bottom-16 right-4 z-50 bg-[#FFD700] text-black border-2 border-[#111827] rounded-full px-4 py-2 font-bold shadow-md hover:opacity-90"
       >
         Solicitudes ({totalTurnosSolicitados})
@@ -190,6 +194,8 @@ export const RequestsPanel = () => {
     </>
   );
 };
+
+export const RequestsPanel = memo(RequestsPanelComponent);
 
 
 

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { filtrarDatos } from "../../utils/filterUtils";
 
+const DEBOUNCE_MS = 300;
+
 export const SearchBar = ({
   data = [],
   onSearch,
@@ -15,6 +17,7 @@ export const SearchBar = ({
   const [query, setQuery] = useState("");
   const latestOnSearch = useRef(onSearch);
   const latestData = useRef(data);
+  const debounceTimer = useRef(null);
 
   useEffect(() => {
     latestOnSearch.current = onSearch;
@@ -23,9 +26,18 @@ export const SearchBar = ({
   useEffect(() => {
     latestData.current = data;
     if (!query.trim()) return;
-    const handler = latestOnSearch.current;
-    if (typeof handler !== "function") return;
-    handler(filtrarDatos(data, fields, query));
+    
+    // Debounce para evitar filtrados excesivos mientras usuario escribe
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      const handler = latestOnSearch.current;
+      if (typeof handler !== "function") return;
+      handler(filtrarDatos(data, fields, query));
+    }, DEBOUNCE_MS);
+    
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
   }, [data, fields, query]);
 
   const handleChange = (event) => {

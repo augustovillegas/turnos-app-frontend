@@ -1,6 +1,6 @@
 // === usePagination Hook ===
 // Hook reutilizable para manejar lógica de paginación en tablas y listas.
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 
 /**
  * Hook para gestionar paginación de datos.
@@ -36,26 +36,26 @@ export const usePagination = (items = [], itemsPerPage = 5) => {
     };
   }, [items, currentPage, itemsPerPage]);
 
-  const goToPage = (page) => {
-    const safePage = Math.min(Math.max(page, 1), paginationData.totalPages);
+  const goToPage = useCallback((page) => {
+    const totalPages = Math.ceil(items.length / itemsPerPage) || 1;
+    const safePage = Math.min(Math.max(page, 1), totalPages);
     setCurrentPage(safePage);
-  };
+  }, [items.length, itemsPerPage]);
 
-  const nextPage = () => {
-    if (paginationData.hasNext) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
+  const nextPage = useCallback(() => {
+    setCurrentPage((prev) => {
+      const totalPages = Math.ceil(items.length / itemsPerPage) || 1;
+      return prev < totalPages ? prev + 1 : prev;
+    });
+  }, [items.length, itemsPerPage]);
 
-  const prevPage = () => {
-    if (paginationData.hasPrev) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
+  const prevPage = useCallback(() => {
+    setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
+  }, []);
 
-  const resetPage = () => {
+  const resetPage = useCallback(() => {
     setCurrentPage(1);
-  };
+  }, []);
 
   return {
     ...paginationData,

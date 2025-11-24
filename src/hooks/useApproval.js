@@ -1,6 +1,6 @@
 // === useApproval Hook ===
 // Hook reutilizable para manejar aprobación/rechazo con confirmación modal.
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useModal } from "../context/ModalContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
@@ -36,7 +36,7 @@ export const useApproval = ({
 
   const msgs = { ...defaultMessages, ...messages };
 
-  const handleApprove = async (item) => {
+  const handleApprove = useCallback(async (item) => {
     if (!item?.id) return;
 
     const itemName = item.nombre || item.email || item.sala || item.fecha || "este elemento";
@@ -63,9 +63,9 @@ export const useApproval = ({
         }
       },
     });
-  };
+  }, [onApprove, showModal, pushError, msgs]);
 
-  const handleReject = async (item) => {
+  const handleReject = useCallback(async (item) => {
     if (!item?.id) return;
 
     const itemName = item.nombre || item.email || item.sala || item.fecha || "este elemento";
@@ -92,7 +92,7 @@ export const useApproval = ({
         }
       },
     });
-  };
+  }, [onReject, showModal, pushError, msgs]);
 
   return {
     handleApprove,
