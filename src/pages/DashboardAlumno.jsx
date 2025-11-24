@@ -318,12 +318,6 @@ export const DashboardAlumno = () => {
   const entregasAlumno = (entregas || []).filter(isEntregaDelAlumno);
   const isEntregasSectionLoading = isLoading("entregas");
 
-  useEffect(() => {
-    console.log("[DashboardAlumno] Entregas del contexto:", entregas.length);
-    console.log("[DashboardAlumno] Entregas filtradas del alumno:", entregasAlumno.length);
-    console.log("[DashboardAlumno] AlumnoId:", alumnoIdStr);
-  }, [entregas, entregasAlumno, alumnoIdStr]);
-
   // --- Sidebar ---
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {

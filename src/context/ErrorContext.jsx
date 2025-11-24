@@ -78,7 +78,7 @@ export const ErrorProvider = ({
             break;
         }
       } catch (e) {
-        console.warn("No se pudo mostrar toast global del ErrorContext", e);
+        // Toast fallback error - silent fail
       }
 
       // --- Autodescarta mensajes no sticky ---

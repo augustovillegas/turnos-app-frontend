@@ -113,7 +113,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                         disabled={isLoading || processingUsuarioId === u.id}
                         onAprobar={handleAprobar}
                         onRechazar={handleRechazar}
-                        onVer={() => console.log("Detalle usuario", u)}
+                        onVer={() => {}} // TODO: Implementar modal de detalle
                       />
                     ) : (
                       <ProfesorActions
@@ -121,7 +121,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                         disabled={isLoading || processingUsuarioId === u.id}
                         onAprobarUsuario={handleAprobar}
                         onRechazarUsuario={handleRechazar}
-                        onVer={() => console.log("Detalle usuario", u)}
+                        onVer={() => {}} // TODO: Implementar modal de detalle
                       />
                     )}
                   </td>

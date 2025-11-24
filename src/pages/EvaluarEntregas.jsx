@@ -34,9 +34,7 @@ export const EvaluarEntregas = () => {
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    console.log("[EvaluarEntregas] Mounted. Entregas count:", entregas.length, "Usuario:", usuarioActual?.email);
-    console.log("[EvaluarEntregas] Usuario completo:", JSON.stringify(usuarioActual, null, 2));
-    console.log("[EvaluarEntregas] First 3 entregas:", JSON.stringify(entregas.slice(0, 3), null, 2));
+    // Component mounted - entregas loaded from context
   }, [entregas, usuarioActual]);
 
   // Carga defensiva: si el profesor/superadmin entra directo a /evaluar-entregas sin pasar por el dashboard
@@ -44,7 +42,6 @@ export const EvaluarEntregas = () => {
     if (!usuarioActual) return;
     if (hasLoadedRef.current) return; // Evitar loop infinito
     if (usuarioActual.role === "profesor" || usuarioActual.role === "superadmin") {
-      console.log("[EvaluarEntregas] Triggering loadEntregas() (defensive autoload)");
       hasLoadedRef.current = true;
       loadEntregas?.();
     }
@@ -131,7 +128,6 @@ export const EvaluarEntregas = () => {
   // Filtrado por módulo delegado completamente al backend (permissionUtils). Se usa listado directo.
   const entregasFiltradas = useMemo(() => {
     const result = Array.isArray(entregas) ? entregas : [];
-    console.log("[EvaluarEntregas] entregasFiltradas:", result.length, "items");
     return result;
   }, [entregas]);
 
@@ -140,7 +136,6 @@ export const EvaluarEntregas = () => {
 
   // Aplicar filtro de estado seleccionado
   const entregasFiltradasPorEstado = useMemo(() => {
-    console.log("[EvaluarEntregas] Aplicando filtro de estado:", filterStatus);
     let result;
     if (filterStatus === "Todos") {
       result = entregasFiltradas;
@@ -149,16 +144,6 @@ export const EvaluarEntregas = () => {
     } else {
       result = entregasFiltradas.filter((e) => e?.reviewStatus === filterStatus);
     }
-    console.log("[EvaluarEntregas] Entregas después de filtro estado:", result.length);
-    console.log("[EvaluarEntregas] Detalle filtradas por estado:", JSON.stringify(result.map(e => ({ 
-      id: e.id, 
-      alumno: e.alumno, 
-      alumnoNombre: e.alumnoNombre,
-      student: e.student,
-      alumnoId: e.alumnoId,
-      reviewStatus: e.reviewStatus,
-      sprint: e.sprint 
-    })), null, 2));
     return result;
   }, [filterStatus, entregasFiltradas, entregasPendientes]);
 

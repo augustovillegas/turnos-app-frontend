@@ -35,7 +35,7 @@ export const AlumnoActions = ({
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
-        onClick: () => console.log("Detalle del turno", item),
+        onClick: () => {}, // TODO: Implementar modal de detalle
       });
     }
   }
@@ -61,7 +61,7 @@ export const AlumnoActions = ({
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
-        onClick: () => console.log("Detalle de entrega", item),
+        onClick: () => {}, // TODO: Implementar modal de detalle
       });
     }
   }

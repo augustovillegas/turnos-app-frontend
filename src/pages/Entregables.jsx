@@ -37,8 +37,6 @@ export const Entregables = ({
 
   // 🔄 Actualizar resultados cuando cambien las entregas
   useEffect(() => {
-    console.log("[Entregables] Mounted. Entregas count:", entregas.length);
-    console.log("[Entregables] Raw entregas data:", JSON.stringify(entregas.slice(0, 2), null, 2));
     setEntregasBuscadas(entregas);
     setPageEntregas(1); // Reset página cuando cambian entregas
   }, [entregas]);
