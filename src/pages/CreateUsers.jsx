@@ -25,14 +25,14 @@ export const CreateUsers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
-      {modo === "listar" && (
-        <UsuariosList onCrear={handleCrear} onEditar={handleEditar} />
-      )}
-      {modo === "crear" && <UsuarioForm onVolver={handleVolver} />}
-      {modo === "editar" && (
-        <UsuarioEdit usuario={usuarioSeleccionado} onVolver={handleVolver} />
-      )}
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300">
+        {modo === "listar" && (
+          <UsuariosList onCrear={handleCrear} onEditar={handleEditar} />
+        )}
+        {modo === "crear" && <UsuarioForm onVolver={handleVolver} />}
+        {modo === "editar" && (
+          <UsuarioEdit usuario={usuarioSeleccionado} onVolver={handleVolver} />
+        )}
     </div>
   );
 };

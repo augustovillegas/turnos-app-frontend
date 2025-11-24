@@ -52,12 +52,12 @@ export const Entregables = ({
     paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
 
   return (
-    <div className="p-4 sm:p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 flex flex-col gap-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       {/* =========================
           LISTAR ENTREGAS
       ========================== */}
       {modoEntrega === "listar" && (
-        <div className="mx-auto flex w-full flex-col gap-6 max-w-6xl">
+        <div className="flex flex-col gap-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Entregables (Trabajos Prácticos)
           </h2>
@@ -194,7 +194,7 @@ export const Entregables = ({
           FORMULARIO DE NUEVA ENTREGA
       ========================== */}
       {modoEntrega === "crear" && (
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <div className="flex flex-col gap-6">
           {/* Cabecera */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">

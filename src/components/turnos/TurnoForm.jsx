@@ -58,7 +58,7 @@ export const TurnoForm = ({ onVolver }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#017F82] p-4 sm:p-6 transition-colors duration-300 dark:bg-[#0F3D3F]">
+    <div className="p-4 sm:p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
