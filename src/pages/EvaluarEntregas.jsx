@@ -7,13 +7,14 @@ import { useLoading } from "../context/LoadingContext";
 import { anyEstado } from "../utils/turnos/normalizeEstado";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
+import { DropdownActions } from "../components/ui/DropdownActions";
 import { Status } from "../components/ui/Status";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { showToast } from "../utils/feedback/toasts";
 import { paginate } from "../utils/pagination";
-import { ListToolbar } from "../components/ui/ListToolbar";
+
 import {
   ensureModuleLabel,
   labelToModule,
@@ -75,9 +76,7 @@ export const EvaluarEntregas = () => {
     actualizarEstado(entrega, "Desaprobado");
 
   const esPendiente = (e) => {
-      // ARQUITECTURA: Usa `anyEstado` para validar estados normalizados (case-insensitive).
-      // Backend envía "A revisar" o "Pendiente"; helper unifica ambas variantes.
-    const estadoActual = e?.estado || e?.reviewStatus || "";
+    const estadoActual = e?.reviewStatus || "";
     return anyEstado(estadoActual, ["Pendiente", "A revisar"]) || !estadoActual;
   };
 
@@ -148,10 +147,7 @@ export const EvaluarEntregas = () => {
     } else if (filterStatus === "Pendientes") {
       result = entregasPendientes;
     } else {
-      result = entregasFiltradas.filter((e) => {
-        const status = e?.reviewStatus || e?.estado || "";
-        return status === filterStatus;
-      });
+      result = entregasFiltradas.filter((e) => e?.reviewStatus === filterStatus);
     }
     console.log("[EvaluarEntregas] Entregas después de filtro estado:", result.length);
     console.log("[EvaluarEntregas] Detalle filtradas por estado:", JSON.stringify(result.map(e => ({ 
@@ -184,33 +180,9 @@ export const EvaluarEntregas = () => {
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <ListToolbar
-          title="Evaluar Entregables"
-          total={Array.isArray(entregas) ? entregas.length : 0}
-          filtered={entregasFiltradasPorEstado.length}
-          loading={isLoading("entregas")}
-          onRefresh={() => loadEntregas?.()}
-          currentPage={paginatedEntregasPendientes.currentPage}
-          totalPages={paginatedEntregasPendientes.totalPages}
-          rightSlot={null}
-        >
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold dark:text-gray-200">Estado:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="border-2 border-[#111827] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 px-2 py-1 rounded text-sm"
-            >
-              <option value="Pendientes">Pendientes</option>
-              <option value="Todos">Todos</option>
-              <option value="A revisar">A revisar</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Desaprobado">Desaprobado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
-          </div>
-        </ListToolbar>
+        <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          Evaluar Entregables
+        </h2>
 
         <SearchBar
           data={entregasFiltradasPorEstado}
@@ -240,7 +212,7 @@ export const EvaluarEntregas = () => {
             "Comentarios",
             "Fecha",
             "Estado",
-            "Acción",
+            "Acciones",
           ]}
           data={paginatedEntregasPendientes.items || []}
           minWidth="min-w-[680px]"
@@ -291,25 +263,26 @@ export const EvaluarEntregas = () => {
                 <Status status={getEstadoUI(e)} />
               </td>
               <td className="border p-2 text-center">
-                {esPendiente(e) && (
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      variant="success"
-                      className="py-1"
-                      onClick={() => handleAprobarEntrega(e)}
-                      disabled={processingEntregaId === e.id}
-                    >
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="py-1"
-                      onClick={() => handleDesaprobarEntrega(e)}
-                      disabled={processingEntregaId === e.id}
-                    >
-                      Desaprobar
-                    </Button>
-                  </div>
+                {esPendiente(e) ? (
+                  <DropdownActions
+                    options={[
+                      {
+                        label: "Aprobar",
+                        icon: "/icons/check.png",
+                        onClick: () => handleAprobarEntrega(e),
+                        disabled: processingEntregaId === e.id,
+                      },
+                      {
+                        label: "Desaprobar",
+                        icon: "/icons/close.png",
+                        danger: true,
+                        onClick: () => handleDesaprobarEntrega(e),
+                        disabled: processingEntregaId === e.id,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <span className="text-xs opacity-60">-</span>
                 )}
               </td>
             </>

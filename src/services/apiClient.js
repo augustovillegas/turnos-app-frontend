@@ -133,7 +133,7 @@ apiClient.interceptors.request.use(
 // Manejo uniforme de errores 401
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (debeRedirigirPor401(error)) {
       console.warn("[apiClient] Sesión expirada o token inválido");
       almacenamiento?.removeItem("token");
@@ -142,6 +142,27 @@ apiClient.interceptors.response.use(
         window.location.href = "/login";
       }
     }
+    // Retry simple para métodos idempotentes (GET) si VITE_API_RETRY>0
+    const maxRetriesRaw = leerVarEntorno("VITE_API_RETRY");
+    const maxRetries = Number(maxRetriesRaw) || 0;
+    const config = error.config || {};
+    if (maxRetries > 0 && config.method === 'get') {
+      config.__retryCount = config.__retryCount || 0;
+      if (config.__retryCount < maxRetries) {
+        config.__retryCount += 1;
+        const delayMs = 300 * config.__retryCount; // backoff lineal simple
+        await new Promise(r => setTimeout(r, delayMs));
+        return apiClient(config);
+      }
+    }
     return Promise.reject(error);
   }
 );
+
+// Helper opcional para usar AbortController con solicitudes manuales.
+export const apiGetWithAbort = (url, config = {}) => {
+  const controller = new AbortController();
+  const promise = apiClient.get(url, { ...config, signal: controller.signal });
+  return { promise, abort: () => controller.abort() };
+};
+

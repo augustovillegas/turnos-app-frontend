@@ -4,7 +4,7 @@ import { CardEntrega } from "../components/ui/CardEntrega";
 import { EntregaForm } from "../components/ui/EntregaForm";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
-import { ListToolbar } from "../components/ui/ListToolbar";
+
 import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -14,6 +14,7 @@ import { Table } from "../components/ui/Table";
 import { EntregaEdit } from "../components/ui/EntregaEdit";
 import { extractFormErrors } from "../utils/feedback/errorExtractor";
 import { paginate } from "../utils/pagination";
+const ENTREGABLES_COLUMNS = ["Sprint", "GitHub", "Render", "Comentarios", "Estado", "Acciones"];
 
 export const Entregables = ({
   entregas = [],
@@ -58,26 +59,9 @@ export const Entregables = ({
       ========================== */}
       {modoEntrega === "listar" && (
         <div className="mx-auto flex w-full flex-col gap-6 max-w-full sm:max-w-6xl px-2">
-          {/* Encabezado */}
-          <ListToolbar
-            title="Entregables (Trabajos Prácticos)"
-            total={Array.isArray(entregas) ? entregas.length : 0}
-            filtered={paginatedEntregas.totalItems}
-            loading={entregasLoading}
-            onRefresh={() => loadEntregas?.()}
-            currentPage={paginatedEntregas.currentPage}
-            totalPages={paginatedEntregas.totalPages}
-            rightSlot={null}
-          >
-            <Button
-              variant="primary"
-              className="w-full md:w-auto px-6 py-2 self-start md:self-auto"
-              onClick={() => setModoEntrega("crear")}
-              disabled={entregasLoading}
-            >
-              Nueva Entrega
-            </Button>
-          </ListToolbar>
+          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+            Entregables (Trabajos Prácticos)
+          </h2>
 
           {/* Buscador */}
           <SearchBar
@@ -101,20 +85,13 @@ export const Entregables = ({
           <div className="hidden sm:block">
             {entregasLoading ? (
               <div className="space-y-3 py-6">
-                {Array.from({ length: 4 }).map((_, index) => (
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <Skeleton key={index} height="2.75rem" />
                 ))}
               </div>
             ) : (
               <Table
-                columns={[
-                  "Sprint",
-                  "GitHub",
-                  "Render",
-                  "Comentarios",
-                  "Estado",
-                  "Acción",
-                ]}
+                columns={ENTREGABLES_COLUMNS}
                 data={paginatedEntregas.items || []}
                 minWidth="min-w-[680px]"
                 containerClass="px-4"
@@ -169,16 +146,7 @@ export const Entregables = ({
                 )}
               >
                 {!hasEntregas && (
-                  <EmptyRow
-                    columns={[
-                      "Sprint",
-                      "GitHub",
-                      "Render",
-                      "Comentarios",
-                      "Estado",
-                      "Acción",
-                    ]}
-                  />
+                  <EmptyRow columns={ENTREGABLES_COLUMNS} />
                 )}
               </Table>
             )}
@@ -188,7 +156,7 @@ export const Entregables = ({
           <div className="mt-4 space-y-4 px-2 sm:hidden">
             {entregasLoading ? (
               <div className="space-y-3 py-4">
-                {Array.from({ length: 3 }).map((_, index) => (
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <Skeleton key={index} height="4.5rem" />
                 ))}
               </div>

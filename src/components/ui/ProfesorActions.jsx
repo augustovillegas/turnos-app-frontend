@@ -18,6 +18,7 @@ export const ProfesorActions = ({
   onEliminarUsuario,
 }) => {
   if (!item) return null;
+  const estado = String(item.estado || item.status || '').toLowerCase();
 
   const isTurno = Boolean(item.horario || item.zoomLink || item.start);
   const isUsuario = !isTurno && (item.rol || item.role || item.tipo);

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
-import { ListToolbar } from "../components/ui/ListToolbar";
+
 import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
 import { formatDateForTable } from "../utils/formatDateForTable";
@@ -12,6 +12,7 @@ import { CardTurno } from "../components/ui/CardTurno";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { paginate } from "../utils/pagination";
+const MIS_TURNOS_COLUMNS = ["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acciones"];
 
 export const MisTurnos = ({
   turnos,
@@ -48,17 +49,9 @@ export const MisTurnos = ({
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <ListToolbar
-          title="Mis Turnos"
-          total={Array.isArray(turnos) ? turnos.length : 0}
-          filtered={paginationData.totalItems}
-          loading={isTurnosSectionLoading}
-          onRefresh={() => loadTurnos?.()}
-          currentPage={paginationData.currentPage}
-          totalPages={paginationData.totalPages}
-        >
-          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-        </ListToolbar>
+        <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          Mis Turnos
+        </h2>
 
         <SearchBar
           data={turnos}
@@ -74,13 +67,13 @@ export const MisTurnos = ({
         <div className="hidden sm:block">
           {isTurnosSectionLoading ? (
             <div className="space-y-3 py-6">
-              {Array.from({ length: 4 }).map((_, index) => (
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                 <Skeleton key={index} height="2.75rem" />
               ))}
             </div>
           ) : (
             <Table
-              columns={["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acción"]}
+              columns={MIS_TURNOS_COLUMNS}
               data={paginationData.items}
               minWidth="min-w-[680px]"
               containerClass="px-4"
@@ -92,7 +85,7 @@ export const MisTurnos = ({
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">{t.sala}</td>
                   <td className="border p-2 text-center dark:border-[#333]">
                     {t.zoomLink ? (
-                      <a href={t.zoomLink} target="_blank" rel="noreferrer">
+                      <a href={t.zoomLink} target="_blank" rel="noreferrer" aria-label="Abrir enlace Zoom" role="link">
                         <img
                           src="/icons/video_-2.png"
                           alt="Zoom"
@@ -129,7 +122,7 @@ export const MisTurnos = ({
                     "Sala",
                     "Zoom",
                     "Estado",
-                    "Acción",
+                    "Acciones",
                   ]}
                 />
               )}
@@ -141,7 +134,7 @@ export const MisTurnos = ({
         <div className="mt-4 space-y-4 px-2 sm:hidden">
           {isTurnosSectionLoading ? (
             <div className="space-y-3 py-4">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                 <Skeleton key={index} height="4.5rem" />
               ))}
             </div>

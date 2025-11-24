@@ -2,6 +2,11 @@
 // Clientes HTTP para CRUD de turnos.
 // MIGRADO: Ahora usa /slots en lugar de /turnos (consolidación backend Nov 2025)
 import { apiClient } from "./apiClient";
+/**
+ * Convierte a número si es posible, devolviendo el valor original si no.
+ * @param {any} value
+ * @returns {any}
+ */
 
 const RESOURCE = "/slots";
 
@@ -11,6 +16,13 @@ const toNumberIfPossible = (value) => {
   return Number.isNaN(parsed) ? value : parsed;
 };
 
+/**
+ * Construye el payload del turno mapeando alias y valores derivados.
+ * @param {Object} payload
+ * @param {Object} options
+ * @param {boolean} options.includeDefaults
+ * @returns {Object}
+ */
 const mapTurnoPayload = (payload = {}, options = {}) => {
   const { includeDefaults = false } = options;
   const result = {};
@@ -136,35 +148,64 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
   return result;
 };
 
+/**
+ * Lista turnos/slots.
+ * @param {Object} params
+ * @returns {Promise<Array>}
+ */
 export const getTurnos = (params = {}) =>
   apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
 
 // Alias para compatibilidad (antes en slotsService)
 export const getSlots = getTurnos;
 
+/**
+ * Obtiene turno por ID.
+ * @param {string|number} id
+ * @returns {Promise<Object>}
+ */
 export const getTurnoById = (id) =>
   apiClient.get(`${RESOURCE}/${id}`).then((response) => response.data);
 
+/**
+ * Crea un turno.
+ * @param {Object} payload
+ * @returns {Promise<Object>}
+ */
 export const createTurno = (payload) =>
   apiClient
     .post(RESOURCE, mapTurnoPayload(payload, { includeDefaults: true }))
     .then((response) => response.data);
 
+/**
+ * Actualiza un turno.
+ * @param {string|number} id
+ * @param {Object} payload
+ * @returns {Promise<Object>}
+ */
 export const updateTurno = (id, payload) =>
   apiClient.put(`${RESOURCE}/${id}`, mapTurnoPayload(payload)).then((response) => response.data);
 
+/**
+ * Elimina un turno.
+ * @param {string|number} id
+ * @returns {Promise<any>}
+ */
 export const deleteTurno = (id) =>
   apiClient.delete(`${RESOURCE}/${id}`).then((response) => response.data);
 
 // === Operaciones de slots (alumno) ===
 // Estas funciones estaban en slotsService, ahora unificadas aquí tras consolidación backend
 
+/** Solicita un slot como alumno. */
 export const solicitarSlot = (id) =>
   apiClient.patch(`${RESOURCE}/${id}/solicitar`).then((r) => r.data);
 
+/** Cancela solicitud de slot. */
 export const cancelarSlot = (id) =>
   apiClient.patch(`${RESOURCE}/${id}/cancelar`).then((r) => r.data);
 
 // Cambio de estado (aprobado/pendiente/cancelado) para profesor/superadmin
+/** Actualiza estado del slot. */
 export const actualizarEstadoSlot = (id, estado) =>
   apiClient.patch(`${RESOURCE}/${id}/estado`, { estado }).then((r) => r.data);

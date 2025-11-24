@@ -1,6 +1,12 @@
 // === Usuarios Service ===
 // Clientes HTTP para usuarios.
 import { apiClient } from "./apiClient";
+/**
+ * Obtiene listado de usuarios.
+ * @param {Object} params
+ * @param {Object} opciones
+ * @returns {Promise<Array>}
+ */
 import {
   MODULE_OPTIONS,
   ensureModuleLabel,
@@ -32,11 +38,13 @@ export const getUsuarios = (params = {}, opciones = {}) => {
     });
 };
 
+/** Aprueba usuario pendiente. */
 export const approveUsuario = (id) =>
   apiClient
     .patch(`/auth/aprobar/${id}`)
     .then((response) => response.data);
 
+/** Actualiza estado/status del usuario. */
 export const updateUsuarioEstado = (id, estado) =>
   apiClient
     .put(`${RESOURCE}/${id}`, {
@@ -47,6 +55,7 @@ export const updateUsuarioEstado = (id, estado) =>
 
 // Crear usuario (registro). Se asume endpoint público/privado existente.
 // Usa /auth/register si se maneja registro con autenticación.
+/** Crea un usuario (o registra fallback). */
 export const createUsuario = async (payload = {}) => {
   const moduloLabel = sanitizeModuleLabel(payload.modulo ?? payload.module);
 
@@ -120,6 +129,7 @@ export const createUsuario = async (payload = {}) => {
   }
 };
 
+/** Actualiza usuario por ID. */
 export const updateUsuario = (id, payload = {}) => {
   const moduloLabel = ensureModuleLabel(payload.modulo ?? payload.module)
     ? sanitizeModuleLabel(payload.modulo ?? payload.module)
@@ -151,5 +161,6 @@ export const updateUsuario = (id, payload = {}) => {
 };
 
 // Eliminar usuario
+/** Elimina usuario por ID. */
 export const deleteUsuario = (id) =>
   apiClient.delete(`${RESOURCE}/${id}`).then((r) => r.data);

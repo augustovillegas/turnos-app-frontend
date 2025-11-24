@@ -73,8 +73,6 @@ export const normalizeEntrega = (raw = {}) => {
     renderLink: raw.renderLink ?? "-", // Backend default: "-"
     comentarios: raw.comentarios ?? "-", // Backend default: "-"
     reviewStatus, // Estados: "Pendiente" | "A revisar" | "Aprobado" | "Desaprobado" | "Rechazado"
-    estado: reviewStatus, // Alias para compatibilidad con UI (mapea reviewStatus)
-    status: reviewStatus, // Alias adicional
     fechaEntrega: raw.createdAt ?? null, // Backend usa createdAt como fecha de entrega
     createdAt: raw.createdAt ?? null,
     updatedAt: raw.updatedAt ?? null,

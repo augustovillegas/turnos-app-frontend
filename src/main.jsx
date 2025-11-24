@@ -6,11 +6,14 @@ import App from "./App.jsx";
 import "./index.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { AppProviders } from "./context/AppProviders";
+import { ErrorBoundary } from './components/ui/ErrorBoundary.jsx';
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AppProviders>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </AppProviders>
   </StrictMode>
 );

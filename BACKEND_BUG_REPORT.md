@@ -208,6 +208,20 @@ console.log('[GET /entregas] Primeras 2 entregas:', JSON.stringify(entregas.slic
 
 ## 🛠️ Solución propuesta
 
+### (Actualización 2025-11-24) Cambio en Frontend
+
+Se eliminó el alias `estado` y `status` en el normalizador de entregas (`normalizeEntrega.js`). A partir de ahora la UI consume únicamente `reviewStatus` para representar el estado de una entrega. Este ajuste reduce ambigüedad y facilita el contrato único con el backend. Si el backend estaba enviando ambos campos, se recomienda consolidar también el response para no incluir claves redundantes.
+
+Impacto:
+- Componentes actualizados: `EvaluarEntregas.jsx`, `CardEntrega.jsx`, `normalizeEntrega.js`.
+- Búsquedas y filtros utilizan solo `reviewStatus`.
+- No se modificó la semántica funcional: las transiciones de estado (A revisar → Aprobado / Desaprobado / Rechazado) permanecen iguales.
+
+Revisión pendiente backend:
+1. Confirmar que el payload de `GET /entregas` no depende de que el frontend lea `estado`.
+2. Validar si existen otras capas (serializers / DTO) agregando alias innecesarios.
+3. Ajustar documentación de la API para indicar claramente: campo único `reviewStatus`.
+
 ### Opción 1: Modificar filtro por rol (RECOMENDADA)
 
 ```javascript

@@ -5,12 +5,14 @@ import { Status } from "../components/ui/Status";
 import { Button } from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
-import { ListToolbar } from "../components/ui/ListToolbar";
+
 import { SearchBar } from "../components/ui/SearchBar";
 import { useAppData } from "../context/AppContext";
 import { usePagination } from "../hooks/usePagination";
 import { useApproval } from "../hooks/useApproval";
+const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
 import { EmptyRow } from "../components/ui/EmptyRow";
+import { ProfesorActions } from "../components/ui/ProfesorActions";
 
 export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   const { approveUsuario, loadUsuarios } = useAppData();
@@ -51,15 +53,9 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <ListToolbar
-          title="Usuarios Pendientes"
-          total={Array.isArray(usuarios) ? usuarios.length : 0}
-          filtered={usuariosPendientes.length}
-          loading={isLoading}
-          onRefresh={() => loadUsuarios?.()}
-          currentPage={paginated.currentPage}
-          totalPages={paginated.totalPages}
-        />
+        <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          Usuarios Pendientes
+        </h2>
 
         <SearchBar
           data={usuariosPendientes}
@@ -74,13 +70,13 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
         <div className="hidden sm:block">
           {isLoading ? (
             <div className="space-y-3 py-6">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                 <Skeleton key={index} height="2.75rem" />
               ))}
             </div>
           ) : (
             <Table
-              columns={["Nombre", "Rol", "Estado", "Acción"]}
+              columns={USUARIOS_PENDIENTES_COLUMNS}
               data={paginated.items}
               minWidth="min-w-[680px]"
               containerClass="px-4"
@@ -92,20 +88,19 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                     <Status status={u.estado} />
                   </td>
                   <td className="border p-2 text-center">
-                    <Button
-                      variant="success"
-                      className="py-1"
-                      onClick={() => handleAprobar(u)}
+                    <ProfesorActions
+                      item={u}
                       disabled={isLoading || processingId === u.id}
-                    >
-                      Aprobar usuario
-                    </Button>
+                      onAprobarUsuario={handleAprobar}
+                      onRechazarUsuario={() => { /* opcional: implementar si backend soporta */ }}
+                      onVer={() => console.log("Detalle usuario", u)}
+                    />
                   </td>
                 </>
               )}
             >
               {!paginated.items.length && (
-                <EmptyRow columns={["Nombre", "Rol", "Estado", "Acción"]} />
+                <EmptyRow columns={USUARIOS_PENDIENTES_COLUMNS} />
               )}
             </Table>
           )}
@@ -115,7 +110,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
         <div className="mt-4 space-y-4 px-2 sm:hidden">
           {isLoading ? (
             <div className="space-y-3 py-4">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                 <Skeleton key={index} height="4.5rem" />
               ))}
             </div>

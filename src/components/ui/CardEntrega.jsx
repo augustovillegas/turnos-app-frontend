@@ -10,7 +10,7 @@ export const CardEntrega = ({ entrega, onCancelar, onEditar, disabled = false })
         <h3 className="text-lg font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Sprint {entrega.sprint ?? "-"}
         </h3>
-        <Status status={entrega.reviewStatus || entrega.estado || "A revisar"} />
+        <Status status={entrega.reviewStatus || "A revisar"} />
       </div>
 
       <div className="flex flex-col gap-1 text-sm text-[#111827] dark:text-gray-200">

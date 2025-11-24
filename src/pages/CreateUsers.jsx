@@ -3,8 +3,9 @@ import { Table } from "../components/ui/Table";
 import { CardUsuario } from "../components/ui/CardUsuario";
 import { Button } from "../components/ui/Button";
 import { Pagination } from "../components/ui/Pagination";
-import { ListToolbar } from "../components/ui/ListToolbar";
+
 import { SearchBar } from "../components/ui/SearchBar";
+import { DropdownActions } from "../components/ui/DropdownActions";
 import { useAppData } from "../context/AppContext";
 import { useLoading } from "../context/LoadingContext";
 import { useModal } from "../context/ModalContext";
@@ -392,32 +393,9 @@ export const CreateUsers = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <section className="space-y-6" data-testid="create-users-section">
           <div className="space-y-6" data-testid="create-users-container">
-            <ListToolbar
-              title={editingId ? "Editar usuario" : "Crear nuevo usuario"}
-              total={Array.isArray(personas) ? personas.length : 0}
-              filtered={filtered.length}
-              loading={isLoading("usuarios")}
-              onRefresh={() => loadUsuarios?.()}
-              currentPage={paginated.currentPage}
-              totalPages={paginated.totalPages}
-              testId="create-users-toolbar"
-            >
-              <SearchBar
-                data={personas}
-                onSearch={handleSearch}
-                fields={["nombre", "email", "tipo", "cohorte", "modulo", "identificador"]}
-                placeholder="Buscar por nombre, email, cohorte, modulo..."
-              />
-              <Button
-                variant="secondary"
-                type="button"
-                className="px-4 py-2"
-                onClick={resetForm}
-                disabled={isBusy}
-              >
-                Limpiar
-              </Button>
-            </ListToolbar>
+            <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+              {editingId ? "Editar usuario" : "Crear nuevo usuario"}
+            </h2>
             <form
               onSubmit={handleSubmit}
               className="space-y-4 rounded-md border-2 border-[#111827]/30 bg-white p-4 shadow-md dark:border-[#333]/60 dark:bg-[#1E1E1E]"
@@ -621,31 +599,30 @@ export const CreateUsers = () => {
                 minWidth="min-w-[680px]"
                 renderRow={(persona) => (
                   <>
-                    <td className="border p-2 dark:border-[#333] font-medium">{persona.nombre}</td>
+                    <td className="border p-2 dark:border-[#333]">{persona.nombre}</td>
                     <td className="border p-2 dark:border-[#333] capitalize">{ROLE_LABELS[persona.tipo] ?? persona.tipo}</td>
                     <td className="border p-2 dark:border-[#333]">{persona.email}</td>
                     <td className="border p-2 dark:border-[#333]">{persona.cohorte}</td>
                     <td className="border p-2 dark:border-[#333]">{persona.modulo}</td>
                     <td className="border p-2 dark:border-[#333] text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="xs"
-                          variant="secondary"
-                          disabled={isBusy}
-                          onClick={() => handleEditar(persona)}
-                          data-testid={`btn-editar-${persona.id}`}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="danger"
-                          disabled={isBusy}
-                          onClick={() => handleEliminar(persona)}
-                          data-testid={`btn-eliminar-${persona.id}`}
-                        >
-                          Eliminar
-                        </Button>
+                      <div className="flex justify-end">
+                        <DropdownActions
+                          options={[
+                            {
+                              label: "Editar",
+                              icon: "/icons/edit.png",
+                              onClick: () => handleEditar(persona),
+                              disabled: isBusy,
+                            },
+                            {
+                              label: "Eliminar",
+                              icon: "/icons/trash.png",
+                              onClick: () => handleEliminar(persona),
+                              disabled: isBusy,
+                              danger: true,
+                            },
+                          ]}
+                        />
                       </div>
                     </td>
                   </>

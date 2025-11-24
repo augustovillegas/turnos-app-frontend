@@ -1,6 +1,11 @@
 // === Entregas Service ===
 // Clientes HTTP para entregas.
 import { apiClient } from "./apiClient";
+/**
+ * Mapea payload de entrega para panel profesor/superadmin.
+ * @param {Object} payload
+ * @returns {Object}
+ */
 
 const RESOURCE = "/entregas";
 
@@ -45,6 +50,11 @@ const mapEntregaPayload = (payload = {}) => {
   return result;
 };
 
+/**
+ * Lista entregas globales.
+ * @param {Object} params
+ * @returns {Promise<Array>}
+ */
 export const getEntregas = (params = {}) => {
   console.log("[entregasService] getEntregas: Llamando a", RESOURCE, "con params:", params);
   return apiClient
@@ -67,16 +77,19 @@ export const getEntregas = (params = {}) => {
     });
 };
 
+/** Crea una entrega. */
 export const createEntrega = (payload) =>
   apiClient
     .post(RESOURCE, mapEntregaPayload(payload))
     .then((response) => response.data);
 
+/** Actualiza una entrega. */
 export const updateEntrega = (id, payload) =>
   apiClient
     .put(`${RESOURCE}/${id}`, mapEntregaPayload(payload))
     .then((response) => response.data);
 
+/** Elimina una entrega. */
 export const deleteEntrega = (id) =>
   apiClient
     .delete(`${RESOURCE}/${id}`)
