@@ -4,6 +4,8 @@ import { CardEntrega } from "../components/ui/CardEntrega";
 import { EntregaForm } from "../components/ui/EntregaForm";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
+import { ListToolbar } from "../components/ui/ListToolbar";
+import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyRow } from "../components/ui/EmptyRow";
@@ -11,6 +13,7 @@ import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { Table } from "../components/ui/Table";
 import { EntregaEdit } from "../components/ui/EntregaEdit";
 import { extractFormErrors } from "../utils/feedback/errorExtractor";
+import { paginate } from "../utils/pagination";
 
 export const Entregables = ({
   entregas = [],
@@ -18,6 +21,7 @@ export const Entregables = ({
   onCancelarEntrega,
   entregasLoading = false,
 }) => {
+  const { loadEntregas } = useAppData();
   const ITEMS_PER_PAGE = 5;
 
   const [modoEntrega, setModoEntrega] = useState("listar");
@@ -33,22 +37,16 @@ export const Entregables = ({
   // 🔄 Actualizar resultados cuando cambien las entregas
   useEffect(() => {
     console.log("[Entregables] Mounted. Entregas count:", entregas.length);
+    console.log("[Entregables] Raw entregas data:", JSON.stringify(entregas.slice(0, 2), null, 2));
     setEntregasBuscadas(entregas);
+    setPageEntregas(1); // Reset página cuando cambian entregas
   }, [entregas]);
 
-  // 🔢 Paginación
-  const totalEntregas = entregasBuscadas.length;
-  const paginatedEntregas = useMemo(() => {
-    const totalPages = Math.ceil(totalEntregas / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(pageEntregas, totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return {
-      items: entregasBuscadas.slice(start, start + ITEMS_PER_PAGE),
-      totalItems: totalEntregas,
-      totalPages,
-      currentPage,
-    };
-  }, [entregasBuscadas, totalEntregas, pageEntregas]);
+  // 🔢 Paginación usando utilidad centralizada
+  const paginatedEntregas = useMemo(
+    () => paginate(entregasBuscadas, pageEntregas, ITEMS_PER_PAGE),
+    [entregasBuscadas, pageEntregas]
+  );
 
   const hasEntregas =
     paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
@@ -61,24 +59,32 @@ export const Entregables = ({
       {modoEntrega === "listar" && (
         <div className="mx-auto flex w-full flex-col gap-6 max-w-full sm:max-w-6xl px-2">
           {/* Encabezado */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-3xl font-bold text-[#1E3A8A] transition-colors duration-300 dark:text-[#93C5FD]">
-              Entregables (Trabajos Prácticos)
-            </h2>
+          <ListToolbar
+            title="Entregables (Trabajos Prácticos)"
+            total={Array.isArray(entregas) ? entregas.length : 0}
+            filtered={paginatedEntregas.totalItems}
+            loading={entregasLoading}
+            onRefresh={() => loadEntregas?.()}
+            currentPage={paginatedEntregas.currentPage}
+            totalPages={paginatedEntregas.totalPages}
+            rightSlot={null}
+          >
             <Button
               variant="primary"
               className="w-full md:w-auto px-6 py-2 self-start md:self-auto"
               onClick={() => setModoEntrega("crear")}
+              disabled={entregasLoading}
             >
               Nueva Entrega
             </Button>
-          </div>
+          </ListToolbar>
 
           {/* Buscador */}
           <SearchBar
             data={entregas}
             fields={[
               "sprint",
+              "alumno",
               "githubLink",
               "renderLink",
               "comentarios",

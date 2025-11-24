@@ -1,7 +1,9 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Table } from "../components/ui/Table";
+import { CardUsuario } from "../components/ui/CardUsuario";
 import { Button } from "../components/ui/Button";
 import { Pagination } from "../components/ui/Pagination";
+import { ListToolbar } from "../components/ui/ListToolbar";
 import { SearchBar } from "../components/ui/SearchBar";
 import { useAppData } from "../context/AppContext";
 import { useLoading } from "../context/LoadingContext";
@@ -386,42 +388,41 @@ export const CreateUsers = () => {
   // Alineado con patrón visual de EvaluarEntregas/TurnoForm para coherencia UI.
   // Helpers (paginate, mapUsuario, validateSelections) movidos a utils/ para reutilización.
   return (
-    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100">
+    <div className="p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <section className="space-y-6" data-testid="create-users-section">
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6" data-testid="create-users-container">
-        <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between" data-testid="create-users-header">
-          <div>
-            <h2
-              className="text-lg font-bold text-[#111827] dark:text-white"
-              data-testid="create-users-heading"
+          <div className="space-y-6" data-testid="create-users-container">
+            <ListToolbar
+              title={editingId ? "Editar usuario" : "Crear nuevo usuario"}
+              total={Array.isArray(personas) ? personas.length : 0}
+              filtered={filtered.length}
+              loading={isLoading("usuarios")}
+              onRefresh={() => loadUsuarios?.()}
+              currentPage={paginated.currentPage}
+              totalPages={paginated.totalPages}
+              testId="create-users-toolbar"
             >
-              {editingId ? "Editar usuario" : "Crear nuevo usuario"}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="create-users-subheading">
-              Completa los datos y guarda. Las operaciones usan tu rol
-              actual para validar permisos.
-            </p>
-          </div>
-          <SearchBar
-            data={personas}
-            onSearch={handleSearch}
-            fields={[
-              "nombre",
-              "email",
-              "tipo",
-              "cohorte",
-              "modulo",
-              "identificador",
-            ]}
-            placeholder="Buscar por nombre, email, cohorte, modulo..."
-          />
-        </div>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 rounded-md bg-gray-50 p-4 shadow-sm dark:bg-[#020617]"
-          data-testid="create-users-form"
-        >
+              <SearchBar
+                data={personas}
+                onSearch={handleSearch}
+                fields={["nombre", "email", "tipo", "cohorte", "modulo", "identificador"]}
+                placeholder="Buscar por nombre, email, cohorte, modulo..."
+              />
+              <Button
+                variant="secondary"
+                type="button"
+                className="px-4 py-2"
+                onClick={resetForm}
+                disabled={isBusy}
+              >
+                Limpiar
+              </Button>
+            </ListToolbar>
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 rounded-md border-2 border-[#111827]/30 bg-white p-4 shadow-md dark:border-[#333]/60 dark:bg-[#1E1E1E]"
+              data-testid="create-users-form"
+            >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             <div>
               <label
@@ -436,7 +437,7 @@ export const CreateUsers = () => {
                 value={formValues.tipo}
                 onChange={handleFieldChange}
                 disabled={Boolean(editingId)}
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] disabled:bg-gray-100 dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] disabled:bg-gray-100 dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
                 data-testid="field-tipo"
               >
                 {allowedRoles.map((role) => (
@@ -460,7 +461,7 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 required
                 placeholder="Nombre y apellido"
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
                 data-testid="field-nombre"
               />
               {formErrors.nombre && (
@@ -484,7 +485,7 @@ export const CreateUsers = () => {
                 onChange={handleFieldChange}
                 required
                 placeholder="correo@ejemplo.com"
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
                 data-testid="field-email"
               />
               {formErrors.email && (
@@ -506,7 +507,7 @@ export const CreateUsers = () => {
                 value={formValues.identificador}
                 onChange={handleFieldChange}
                 placeholder="Legajo / ID interno"
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
                 data-testid="field-identificador"
               />
             </div>
@@ -524,7 +525,7 @@ export const CreateUsers = () => {
                 min={1}
                 value={formValues.cohorte}
                 onChange={handleFieldChange}
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
                 data-testid="field-cohorte"
               />
             </div>
@@ -540,7 +541,7 @@ export const CreateUsers = () => {
                 name="modulo"
                 value={formValues.modulo}
                 onChange={handleFieldChange}
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
                 data-testid="field-modulo"
               >
                 {MODULE_OPTIONS.map((option) => (
@@ -567,7 +568,7 @@ export const CreateUsers = () => {
                 value={formValues.password}
                 onChange={handleFieldChange}
                 placeholder="Dejar vacio para usar la default"
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
                 data-testid="field-password"
               />
             </div>
@@ -585,7 +586,7 @@ export const CreateUsers = () => {
                 value={formValues.passwordConfirm}
                 onChange={handleFieldChange}
                 placeholder="Requerido solo si ingresas una password"
-                className="mt-1 block w-full rounded border border-[#111827] bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#020617] dark:text-gray-200 dark:placeholder:text-gray-500"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
                 data-testid="field-password-confirm"
               />
             </div>
@@ -607,58 +608,85 @@ export const CreateUsers = () => {
               </Button>
             )}
           </div>
-        </form>
-      </div>
-
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#111827] sm:p-6" data-testid="users-table-container">
-        <Table
-          columns={USER_TABLE_COLUMNS}
-          data={paginated.items}
-          renderRow={(persona) => (
-            <>
-              <td className="px-2 py-2 font-medium">{persona.nombre}</td>
-              <td className="px-2 py-2 capitalize">
-                {ROLE_LABELS[persona.tipo] ?? persona.tipo}
-              </td>
-              <td className="px-2 py-2">{persona.email}</td>
-              <td className="px-2 py-2">{persona.cohorte}</td>
-              <td className="px-2 py-2">{persona.modulo}</td>
-              <td className="px-2 py-2 text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    size="xs"
-                    variant="secondary"
-                    disabled={isBusy}
-                    onClick={() => handleEditar(persona)}
-                    data-testid={`btn-editar-${persona.id}`}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="danger"
-                    disabled={isBusy}
-                    onClick={() => handleEliminar(persona)}
-                    data-testid={`btn-eliminar-${persona.id}`}
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              </td>
-            </>
-          )}
-        />
-        {paginated.items.length > 0 && (
-          <div className="mt-4 flex justify-end">
-            <Pagination
-              currentPage={paginated.currentPage}
-              totalPages={paginated.totalPages}
-              onPageChange={setPage}
-              data-testid="pagination-users"
-            />
+            </form>
           </div>
-        )}
-      </div>
+
+          <div className="space-y-4" data-testid="users-table-container">
+            {/* Desktop Table */}
+            <div className="hidden sm:block">
+              <Table
+                columns={USER_TABLE_COLUMNS}
+                data={paginated.items}
+                containerClass="px-4"
+                minWidth="min-w-[680px]"
+                renderRow={(persona) => (
+                  <>
+                    <td className="border p-2 dark:border-[#333] font-medium">{persona.nombre}</td>
+                    <td className="border p-2 dark:border-[#333] capitalize">{ROLE_LABELS[persona.tipo] ?? persona.tipo}</td>
+                    <td className="border p-2 dark:border-[#333]">{persona.email}</td>
+                    <td className="border p-2 dark:border-[#333]">{persona.cohorte}</td>
+                    <td className="border p-2 dark:border-[#333]">{persona.modulo}</td>
+                    <td className="border p-2 dark:border-[#333] text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          disabled={isBusy}
+                          onClick={() => handleEditar(persona)}
+                          data-testid={`btn-editar-${persona.id}`}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="danger"
+                          disabled={isBusy}
+                          onClick={() => handleEliminar(persona)}
+                          data-testid={`btn-eliminar-${persona.id}`}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
+                  </>
+                )}
+              >
+                {paginated.items.length === 0 && (
+                  <tr>
+                    <td colSpan={USER_TABLE_COLUMNS.length} className="p-4 text-center text-sm italic">
+                      No hay usuarios para mostrar.
+                    </td>
+                  </tr>
+                )}
+              </Table>
+            </div>
+            {/* Mobile Cards */}
+            <div className="sm:hidden space-y-3" data-testid="users-mobile-cards">
+              {paginated.items.length === 0 ? (
+                <p className="p-4 text-center text-sm italic">No hay usuarios para mostrar.</p>
+              ) : (
+                paginated.items.map((persona) => (
+                  <CardUsuario
+                    key={persona.id}
+                    usuario={persona}
+                    onEditar={handleEditar}
+                    onEliminar={handleEliminar}
+                    disabled={isBusy}
+                  />
+                ))
+              )}
+            </div>
+            {paginated.items.length > 0 && (
+              <div className="flex justify-end">
+                <Pagination
+                  currentPage={paginated.currentPage}
+                  totalPages={paginated.totalPages}
+                  onPageChange={setPage}
+                  data-testid="pagination-users"
+                />
+              </div>
+            )}
+          </div>
         </section>
       </div>
     </div>

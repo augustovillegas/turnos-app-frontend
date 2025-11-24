@@ -4,6 +4,7 @@ import { apiClient } from "./apiClient";
 
 const RESOURCE = "/entregas";
 
+// Panel /entregas (profesor/superadmin) - acepta más campos que /submissions
 const mapEntregaPayload = (payload = {}) => {
   const result = {};
 
@@ -21,30 +22,50 @@ const mapEntregaPayload = (payload = {}) => {
     result.comentarios = payload.comentarios ?? "";
   }
 
-  const resolvedEstado =
-    payload.estado ?? payload.reviewStatus ?? "A revisar";
-  result.estado = resolvedEstado;
-  result.reviewStatus = payload.reviewStatus ?? resolvedEstado;
+  // Panel /entregas puede aceptar reviewStatus
+  const reviewStatus = payload.reviewStatus ?? payload.estado ?? "A revisar";
+  result.reviewStatus = reviewStatus;
 
+  // Panel /entregas puede requerir student (alumnoId)
   if (payload.alumnoId !== undefined) {
-    result.alumnoId = payload.alumnoId;
+    result.student = payload.alumnoId;
+  } else if (payload.student !== undefined) {
+    result.student = payload.student;
   } else if (payload.alumno?.id !== undefined) {
-    result.alumnoId = payload.alumno.id;
+    result.student = payload.alumno.id;
   } else if (payload.alumno?._id !== undefined) {
-    result.alumnoId = payload.alumno._id;
+    result.student = payload.alumno._id;
   }
 
-  if (payload.modulo !== undefined) {
-    result.modulo = payload.modulo ?? "";
+  // assignment si está disponible
+  if (payload.assignment !== undefined) {
+    result.assignment = payload.assignment;
   }
 
   return result;
 };
 
-export const getEntregas = (params = {}) =>
-  apiClient
+export const getEntregas = (params = {}) => {
+  console.log("[entregasService] getEntregas: Llamando a", RESOURCE, "con params:", params);
+  return apiClient
     .get(RESOURCE, { params })
-    .then((response) => response.data ?? []);
+    .then((response) => {
+      console.log("[entregasService] getEntregas: Respuesta recibida:", {
+        status: response.status,
+        dataLength: response.data?.length ?? 0,
+        headers: response.headers
+      });
+      return response.data ?? [];
+    })
+    .catch((error) => {
+      console.error("[entregasService] getEntregas: Error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error;
+    });
+};
 
 export const createEntrega = (payload) =>
   apiClient

@@ -41,7 +41,10 @@ export const DashboardProfesor = () => {
     const etiquetaDirecta = [
       ensureModuleLabel(usuarioActual.modulo),
       ensureModuleLabel(usuarioActual.module),
+      ensureModuleLabel(usuarioActual.moduleLabel), // <-- añadido: usar virtual del backend
       ensureModuleLabel(usuarioActual.moduloSlug),
+      ensureModuleLabel(usuarioActual.moduleCode),
+      ensureModuleLabel(usuarioActual.moduleNumber),
     ].find(Boolean);
     if (etiquetaDirecta) return etiquetaDirecta;
 
@@ -62,6 +65,8 @@ export const DashboardProfesor = () => {
       usuarioActual.cohort,
       usuarioActual.cohorte,
       usuarioActual.cohortId,
+      usuarioActual.moduleCode,
+      usuarioActual.moduleNumber,
     ];
     for (const candidato of candidatos) {
       if (candidato == null) continue;

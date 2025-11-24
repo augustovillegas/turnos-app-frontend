@@ -80,6 +80,8 @@ export const coincideModulo = (obj, moduloEtiqueta, cohortAsignado) => {
     obj?.modulo,
     obj?.module,
     obj?.moduloSlug,
+    obj?.moduleCode,
+    obj?.moduleNumber,
     obj?.cohort,
     obj?.cohorte,
     obj?.cohortId,
@@ -87,6 +89,8 @@ export const coincideModulo = (obj, moduloEtiqueta, cohortAsignado) => {
     obj?.datos?.modulo,
     obj?.datos?.module,
     obj?.datos?.moduloSlug,
+    obj?.datos?.moduleCode,
+    obj?.datos?.moduleNumber,
     obj?.datos?.cohort,
   ];
 

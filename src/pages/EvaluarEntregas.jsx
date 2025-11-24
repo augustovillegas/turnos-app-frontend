@@ -1,8 +1,9 @@
 // === Evaluar Entregas ===
 // Panel para revisar, aprobar o rechazar entregables pendientes.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useAppData } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
+import { useLoading } from "../context/LoadingContext";
 import { anyEstado } from "../utils/turnos/normalizeEstado";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
@@ -11,24 +12,49 @@ import { formatDateForTable } from "../utils/formatDateForTable";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 import { showToast } from "../utils/feedback/toasts";
+import { paginate } from "../utils/pagination";
+import { ListToolbar } from "../components/ui/ListToolbar";
+import {
+  ensureModuleLabel,
+  labelToModule,
+  moduleToLabel,
+  coincideModulo,
+} from "../utils/moduleMap";
 
 export const EvaluarEntregas = () => {
-  const { entregas, updateEntrega } = useAppData();
+  // Agregamos loadEntregas para disparar la carga si la vista se monta directamente (ruta profunda)
+  const { entregas, updateEntrega, loadEntregas } = useAppData();
   const { usuario: usuarioActual } = useAuth();
+  const { isLoading } = useLoading();
   const ITEMS_PER_PAGE = 5;
   const [page, setPage] = useState(1);
   const [processingEntregaId, setProcessingEntregaId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("Pendientes"); // "Pendientes" | specific reviewStatus | "Todos"
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     console.log("[EvaluarEntregas] Mounted. Entregas count:", entregas.length, "Usuario:", usuarioActual?.email);
+    console.log("[EvaluarEntregas] Usuario completo:", JSON.stringify(usuarioActual, null, 2));
+    console.log("[EvaluarEntregas] First 3 entregas:", JSON.stringify(entregas.slice(0, 3), null, 2));
   }, [entregas, usuarioActual]);
+
+  // Carga defensiva: si el profesor/superadmin entra directo a /evaluar-entregas sin pasar por el dashboard
+  useEffect(() => {
+    if (!usuarioActual) return;
+    if (hasLoadedRef.current) return; // Evitar loop infinito
+    if (usuarioActual.role === "profesor" || usuarioActual.role === "superadmin") {
+      console.log("[EvaluarEntregas] Triggering loadEntregas() (defensive autoload)");
+      hasLoadedRef.current = true;
+      loadEntregas?.();
+    }
+  }, [usuarioActual, loadEntregas]);
 
   const actualizarEstado = async (entrega, nuevoEstado) => {
     if (!entrega?.id) return;
     setProcessingEntregaId(entrega.id);
     try {
+      // Backend Submission solo acepta reviewStatus (NO estado)
       await updateEntrega(entrega.id, {
-        estado: nuevoEstado,
         reviewStatus: nuevoEstado,
       });
       showToast(
@@ -55,120 +81,145 @@ export const EvaluarEntregas = () => {
     return anyEstado(estadoActual, ["Pendiente", "A revisar"]) || !estadoActual;
   };
 
-  const moduloActual = useMemo(() => {
+  const moduloEtiqueta = useMemo(() => {
     if (!usuarioActual) return null;
-    const candidates = [
+    const etiquetaDirecta = [
+      ensureModuleLabel(usuarioActual.modulo),
+      ensureModuleLabel(usuarioActual.module),
+      ensureModuleLabel(usuarioActual.moduleLabel), // <-- añadido: backend expone virtual moduleLabel
+      ensureModuleLabel(usuarioActual.moduloSlug),
+      ensureModuleLabel(usuarioActual.moduleCode),
+      ensureModuleLabel(usuarioActual.moduleNumber),
+    ].find(Boolean);
+    if (etiquetaDirecta) return etiquetaDirecta;
+
+    const desdeCohorte = [
       usuarioActual.cohort,
       usuarioActual.cohorte,
-      usuarioActual.modulo,
-      usuarioActual.module,
-    ];
-    const found = candidates.find((c) => c && String(c).trim() !== "");
-    return found ? String(found).trim() : null;
+      usuarioActual.cohortId,
+    ]
+      .map(moduleToLabel)
+      .find(Boolean);
+
+    return desdeCohorte ?? null;
   }, [usuarioActual]);
 
-  const moduloActualNormalized = moduloActual
-    ? moduloActual.toLowerCase()
-    : null;
-
-  const moduloCoincide = useCallback(
-    (value) => {
-      if (!moduloActualNormalized) return true;
-      if (value === undefined || value === null) return false;
-      if (Array.isArray(value))
-        return value.some((item) => moduloCoincide(item));
-      if (typeof value === "object") {
-        const nestedCandidates = [
-          value.nombre,
-          value.name,
-          value.id,
-          value._id,
-          value.slug,
-          value.codigo,
-        ];
-        return nestedCandidates.some((candidate) => moduloCoincide(candidate));
+  const cohortAsignado = useMemo(() => {
+    if (!usuarioActual) return null;
+    const candidatos = [
+      usuarioActual.cohort,
+      usuarioActual.cohorte,
+      usuarioActual.cohortId,
+      usuarioActual.moduleCode,
+      usuarioActual.moduleNumber,
+    ];
+    for (const candidato of candidatos) {
+      if (candidato == null) continue;
+      const numeroDirecto = Number(String(candidato).trim());
+      if (Number.isFinite(numeroDirecto) && numeroDirecto > 0) {
+        return Math.trunc(numeroDirecto);
       }
-      const normalized = String(value).trim().toLowerCase();
-      return normalized === moduloActualNormalized;
-    },
-    [moduloActualNormalized]
-  );
+      const numeroDesdeEtiqueta = labelToModule(candidato);
+      if (numeroDesdeEtiqueta != null) return numeroDesdeEtiqueta;
+    }
+    if (moduloEtiqueta) {
+      const numeroDesdeModulo = labelToModule(moduloEtiqueta);
+      if (numeroDesdeModulo != null) return numeroDesdeModulo;
+    }
+    return null;
+  }, [usuarioActual, moduloEtiqueta]);
 
+  // Filtrado por módulo delegado completamente al backend (permissionUtils). Se usa listado directo.
   const entregasFiltradas = useMemo(() => {
-    const listado = Array.isArray(entregas) ? entregas : [];
-    if (!usuarioActual) return listado;
-    
-    // NOTA: El backend (Nov 2025) aplica filtrado defensivo por módulo vía permissionUtils.buildModuleFilter
-    // Este filtrado del cliente es redundante pero se mantiene como defensa en profundidad
-    if (usuarioActual.role === "superadmin") return listado;
-    if (usuarioActual.role === "profesor" && moduloActualNormalized) {
-      return listado.filter((entrega) => {
-        const candidates = [
-          entrega.modulo,
-          entrega.module,
-          entrega.cohort,
-          entrega.cohorte,
-          entrega.moduloId,
-          entrega.cohortId,
-          entrega?.alumno?.modulo,
-          entrega?.alumno?.cohort,
-        ];
-        return candidates.some(moduloCoincide);
+    const result = Array.isArray(entregas) ? entregas : [];
+    console.log("[EvaluarEntregas] entregasFiltradas:", result.length, "items");
+    return result;
+  }, [entregas]);
+
+  // Base: ya filtradas por módulo (o no, próximamente se removerá redundancia)
+  const entregasPendientes = useMemo(() => entregasFiltradas.filter(esPendiente), [entregasFiltradas]);
+
+  // Aplicar filtro de estado seleccionado
+  const entregasFiltradasPorEstado = useMemo(() => {
+    console.log("[EvaluarEntregas] Aplicando filtro de estado:", filterStatus);
+    let result;
+    if (filterStatus === "Todos") {
+      result = entregasFiltradas;
+    } else if (filterStatus === "Pendientes") {
+      result = entregasPendientes;
+    } else {
+      result = entregasFiltradas.filter((e) => {
+        const status = e?.reviewStatus || e?.estado || "";
+        return status === filterStatus;
       });
     }
-    return listado;
-  }, [entregas, usuarioActual, moduloActualNormalized, moduloCoincide]);
+    console.log("[EvaluarEntregas] Entregas después de filtro estado:", result.length);
+    console.log("[EvaluarEntregas] Detalle filtradas por estado:", JSON.stringify(result.map(e => ({ 
+      id: e.id, 
+      alumno: e.alumno, 
+      alumnoNombre: e.alumnoNombre,
+      student: e.student,
+      alumnoId: e.alumnoId,
+      reviewStatus: e.reviewStatus,
+      sprint: e.sprint 
+    })), null, 2));
+    return result;
+  }, [filterStatus, entregasFiltradas, entregasPendientes]);
 
-  const entregasPendientes = entregasFiltradas.filter(esPendiente);
-  const [entregasBuscadas, setEntregasBuscadas] = useState(entregasPendientes);
-  const totalPendientes = entregasBuscadas.length;
+  const [entregasBuscadas, setEntregasBuscadas] = useState(entregasFiltradasPorEstado);
 
   useEffect(() => {
-    setEntregasBuscadas(entregasPendientes);
-  }, [entregasPendientes]);
+    setEntregasBuscadas(entregasFiltradasPorEstado);
+    setPage(1); // Reset página cuando cambia dataset filtrado
+  }, [entregasFiltradasPorEstado]);
 
-  useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(totalPendientes / ITEMS_PER_PAGE));
-    setPage((prev) => {
-      if (totalPendientes === 0) return 1;
-      if (prev > totalPages) return totalPages;
-      if (prev < 1) return 1;
-      return prev;
-    });
-  }, [totalPendientes, ITEMS_PER_PAGE]);
+  const paginatedEntregasPendientes = useMemo(
+    () => paginate(entregasBuscadas, page, ITEMS_PER_PAGE),
+    [entregasBuscadas, page]
+  );
 
-  const paginatedEntregasPendientes = useMemo(() => {
-    const totalPages = Math.ceil(totalPendientes / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return {
-      items: entregasBuscadas.slice(start, start + ITEMS_PER_PAGE),
-      totalItems: totalPendientes,
-      totalPages,
-      currentPage,
-    };
-  }, [entregasBuscadas, totalPendientes, page, ITEMS_PER_PAGE]);
-
-  const getEstadoUI = (e) => e?.estado || e?.reviewStatus || "A revisar";
+  // Simplificación: usar sólo reviewStatus proveniente del backend/normalizador.
+  const getEstadoUI = (e) => e?.reviewStatus || "A revisar";
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-            Evaluar Entregables
-          </h2>
-        </div>
+        <ListToolbar
+          title="Evaluar Entregables"
+          total={Array.isArray(entregas) ? entregas.length : 0}
+          filtered={entregasFiltradasPorEstado.length}
+          loading={isLoading("entregas")}
+          onRefresh={() => loadEntregas?.()}
+          currentPage={paginatedEntregasPendientes.currentPage}
+          totalPages={paginatedEntregasPendientes.totalPages}
+          rightSlot={null}
+        >
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold dark:text-gray-200">Estado:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border-2 border-[#111827] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 px-2 py-1 rounded text-sm"
+            >
+              <option value="Pendientes">Pendientes</option>
+              <option value="Todos">Todos</option>
+              <option value="A revisar">A revisar</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Desaprobado">Desaprobado</option>
+              <option value="Rechazado">Rechazado</option>
+            </select>
+          </div>
+        </ListToolbar>
 
         <SearchBar
-          data={entregasPendientes}
+          data={entregasFiltradasPorEstado}
           fields={[
             "sprint",
             "alumno",
             "githubLink",
             "renderLink",
             "comentarios",
-            "estado",
             "reviewStatus",
           ]}
           placeholder="Buscar entregables"
@@ -194,7 +245,7 @@ export const EvaluarEntregas = () => {
           data={paginatedEntregasPendientes.items || []}
           minWidth="min-w-[680px]"
           containerClass="px-4"
-          isLoading={false}
+          isLoading={isLoading("entregas")}
           emptyMessage="No hay entregas pendientes."
           renderRow={(e) => (
             <>
@@ -234,7 +285,7 @@ export const EvaluarEntregas = () => {
                 {e.comentarios || "-"}
               </td>
               <td className="border p-2 text-center">
-                {formatDateForTable(e.fechaEntrega) || "—"}
+                {formatDateForTable(e.fechaEntrega) || "-"}
               </td>
               <td className="border p-2 text-center">
                 <Status status={getEstadoUI(e)} />
@@ -276,10 +327,10 @@ export const EvaluarEntregas = () => {
                 <strong>Alumno:</strong> {e.alumno || "Sin asignar"}
               </p>
               <p className="text-sm dark:text-gray-200">
-                <strong>Fecha:</strong> {formatDateForTable(e.fechaEntrega) || "—"}
+                <strong>Fecha:</strong> {formatDateForTable(e.fechaEntrega) || "-"}
               </p>
               <p className="text-sm dark:text-gray-200 mb-2">
-                <strong>Comentarios:</strong> {e.comentarios || "—"}
+                <strong>Comentarios:</strong> {e.comentarios || "-"}
               </p>
 
               <div className="flex justify-between text-sm">

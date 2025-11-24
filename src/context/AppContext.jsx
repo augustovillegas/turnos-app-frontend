@@ -194,15 +194,23 @@ export const AppProvider = ({ children }) => {
           // Para alumno, listar propias entregas vía /submissions/:userId
           const userId = usuario?.id || usuario?._id;
           if (!userId) {
+            console.warn("[AppContext] loadEntregas: No se pudo resolver userId para alumno.");
             data = [];
           } else {
+            console.log("[AppContext] loadEntregas: Fetching submissions for userId:", userId);
             data = await getSubmissionsByUser(userId);
+            console.log("[AppContext] loadEntregas: Raw submissions received:", data.length, "items");
           }
         } else {
           // Profesor / superadmin usan panel /entregas
+            console.log("[AppContext] loadEntregas: Fetching all entregas (profesor/superadmin)");
             data = await getEntregas(params);
+            console.log("[AppContext] loadEntregas: Raw entregas received:", data.length, "items");
+            console.log("[AppContext] loadEntregas: First 2 raw items:", JSON.stringify(data.slice(0, 2), null, 2));
         }
         const normalized = normalizeCollection(data, "entrega");
+        console.log("[AppContext] loadEntregas: Normalized count:", normalized.length);
+        console.log("[AppContext] loadEntregas: First 2 normalized:", JSON.stringify(normalized.slice(0, 2), null, 2));
         setEntregas(normalized);
         return normalized;
       } catch (error) {
@@ -247,15 +255,27 @@ export const AppProvider = ({ children }) => {
       start("entregas");
       try {
         const esAlumno = usuario?.role === "alumno";
+        console.log("[AppContext] createEntrega: Payload recibido:", JSON.stringify(payload, null, 2));
+        console.log("[AppContext] createEntrega: Usuario actual:", { 
+          id: usuario?.id, 
+          role: usuario?.role, 
+          email: usuario?.email,
+          moduleNumber: usuario?.moduleNumber,
+          moduleLabel: usuario?.moduleLabel 
+        });
         let created;
         if (esAlumno) {
           const slotId = payload.slotId || payload.turnoId || payload.slot || null;
           if (!slotId) throw new Error("Falta slotId para crear la entrega del alumno.");
+          console.log("[AppContext] createEntrega: Creando vía createSubmission con slotId:", slotId);
           created = await createSubmission(slotId, payload);
         } else {
+          console.log("[AppContext] createEntrega: Creando vía apiCreateEntrega (profesor/superadmin)");
           created = await apiCreateEntrega(payload);
         }
+        console.log("[AppContext] createEntrega: Respuesta del backend:", JSON.stringify(created, null, 2));
         const normalized = normalizeItem(created, "entrega");
+        console.log("[AppContext] createEntrega: Entrega normalizada:", JSON.stringify(normalized, null, 2));
         if (normalized) {
           setEntregas((prev) => {
             const base = normalizeCollection(prev);
@@ -304,7 +324,7 @@ export const AppProvider = ({ children }) => {
         showToast("Entrega actualizada", "success");
         return nextEntrega;
       } catch (error) {
-        console.error("Error al actualizar entrega", error);
+        console.error("[AppContext] Error al actualizar entrega:", error);
         showToast("Error al actualizar la entrega", "error");
         throw error;
       } finally {

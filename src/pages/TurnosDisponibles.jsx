@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
+import { ListToolbar } from "../components/ui/ListToolbar";
+import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -9,6 +11,7 @@ import { Pagination } from "../components/ui/Pagination";
 import { CardTurno } from "../components/ui/CardTurno";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { EmptyRow } from "../components/ui/EmptyRow";
+import { paginate } from "../utils/pagination";
 
 export const TurnosDisponibles = ({
   turnos,
@@ -22,43 +25,41 @@ export const TurnosDisponibles = ({
   setPageTurnosDisponibles,
   ITEMS_PER_PAGE,
 }) => {
+  const { loadTurnos } = useAppData();
   const [turnosBuscados, setTurnosBuscados] = useState(turnos);
 
   // Actualizar resultados cuando cambien los turnos
   useEffect(() => {
     setTurnosBuscados(turnos);
-  }, [turnos]);
+    setPageTurnosDisponibles(1); // Reset página cuando cambian turnos
+  }, [turnos, setPageTurnosDisponibles]);
 
   // Resetear página cuando cambia el filtro de review
   useEffect(() => {
     setPageTurnosDisponibles(1);
   }, [filtroReview, setPageTurnosDisponibles]);
 
-  const paginationData = useMemo(() => {
-    const totalItems = turnosBuscados.length;
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-    const currentPage = Math.min(pageTurnosDisponibles, totalPages);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return {
-      items: turnosBuscados.slice(start, start + ITEMS_PER_PAGE),
-      totalItems,
-      totalPages,
-      currentPage,
-    };
-  }, [turnosBuscados, pageTurnosDisponibles, ITEMS_PER_PAGE]);
+  const paginationData = useMemo(
+    () => paginate(turnosBuscados, pageTurnosDisponibles, ITEMS_PER_PAGE),
+    [turnosBuscados, pageTurnosDisponibles]
+  );
 
   const hasTurnos = paginationData.items.length > 0;
 
   return (
     <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-            Listado de Turnos Disponibles
-          </h2>
-        </div>
-
-        <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+        <ListToolbar
+          title="Listado de Turnos Disponibles"
+          total={Array.isArray(turnos) ? turnos.length : 0}
+          filtered={paginationData.totalItems}
+          loading={isTurnosSectionLoading}
+          onRefresh={() => loadTurnos?.()}
+          currentPage={paginationData.currentPage}
+          totalPages={paginationData.totalPages}
+        >
+          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+        </ListToolbar>
 
         <SearchBar
           data={turnos}

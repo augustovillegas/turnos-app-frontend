@@ -22,7 +22,7 @@ export const updateSubmission = (id, payload = {}) =>
 export const deleteSubmission = (id) =>
   apiClient.delete(`/submissions/${id}`).then((r) => r.data);
 
-// Normaliza el payload para enviar sólo los campos esperados
+// Normaliza el payload para enviar sólo los campos esperados según backend
 const mapSubmissionPayload = (payload = {}) => {
   const out = {};
   if (payload.githubLink !== undefined) out.githubLink = payload.githubLink?.trim() ?? "";
@@ -32,10 +32,10 @@ const mapSubmissionPayload = (payload = {}) => {
     const sprintVal = Number(payload.sprint);
     out.sprint = Number.isNaN(sprintVal) ? payload.sprint : sprintVal;
   }
-  // Estados canónicos; si se recibe alias lo dejamos y backend normaliza
-  const estadoBase = payload.estado ?? payload.reviewStatus ?? "A revisar";
-  out.estado = estadoBase;
-  out.reviewStatus = payload.reviewStatus ?? estadoBase;
-  if (payload.modulo !== undefined) out.modulo = payload.modulo;
+  // ⚠️ Backend Submission NO acepta 'estado', solo 'reviewStatus'
+  // Estados: "Pendiente" | "A revisar" | "Aprobado" | "Desaprobado" | "Rechazado"
+  const reviewStatus = payload.reviewStatus ?? payload.estado ?? "A revisar";
+  out.reviewStatus = reviewStatus;
+  // NO enviamos 'estado' ni 'modulo' (backend no los acepta en Submission)
   return out;
 };

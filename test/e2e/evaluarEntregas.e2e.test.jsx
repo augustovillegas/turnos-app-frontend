@@ -4,6 +4,11 @@ import { afterAll, describe, expect, it } from "vitest";
 import { renderApp } from "../utils/renderWithProviders.jsx";
 import { testApi } from "../utils/testApi";
 import { requireRoles } from "../utils/e2eEnv";
+import {
+  ensureModuleLabel,
+  labelToModule,
+} from "../../src/utils/moduleMap.js";
+import { resolveAuthSession } from "../utils/realBackendSession.js";
 
 const resolveId = (entity) =>
   entity?.id ?? entity?._id ?? entity?._id?.$oid ?? null;
@@ -27,9 +32,47 @@ afterAll(async () => {
   await cleanupEntregas();
 });
 
-const createEntregaPendiente = async (tag) => {
+const resolveProfesorScope = async () => {
+  try {
+    const session = await resolveAuthSession({ role: "profesor" }, { persist: false });
+    const user = session?.user ?? {};
+    const moduloLabel =
+      ensureModuleLabel(user.modulo) ||
+      ensureModuleLabel(user.module) ||
+      ensureModuleLabel(user.moduloSlug) ||
+      ensureModuleLabel(user.cohort) ||
+      ensureModuleLabel(user.cohorte) ||
+      ensureModuleLabel(user.cohortId) ||
+      null;
+
+    const cohortCandidates = [user.cohort, user.cohorte, user.cohortId];
+    let cohortNumber = null;
+    for (const candidate of cohortCandidates) {
+      if (candidate == null) continue;
+      const parsed = Number(String(candidate).trim());
+      if (Number.isFinite(parsed) && parsed > 0) {
+        cohortNumber = Math.trunc(parsed);
+        break;
+      }
+      const fromLabel = labelToModule(candidate);
+      if (fromLabel != null) {
+        cohortNumber = fromLabel;
+        break;
+      }
+    }
+
+    return { moduloLabel, cohortNumber };
+  } catch (error) {
+    console.warn("[E2E] No se pudo resolver modulo/cohorte del profesor:", error?.message);
+    return { moduloLabel: null, cohortNumber: null };
+  }
+};
+
+const createEntregaPendiente = async (tag, scope) => {
   const now = Date.now();
   const comentario = `QA ${tag} ${now}`;
+  const modulo = scope?.moduloLabel ?? "HTML-CSS";
+  const cohorte = scope?.cohortNumber ?? undefined;
   
   // createEntrega requiere slot reservado - skip si falla con 403
   let entrega;
@@ -41,7 +84,9 @@ const createEntregaPendiente = async (tag) => {
       comentarios: comentario,
       estado: "A revisar",
       reviewStatus: "A revisar",
-      modulo: "HTML-CSS",
+      modulo,
+      cohort: cohorte,
+      cohorte,
     });
     trackEntrega(entrega);
   } catch (error) {
@@ -75,8 +120,9 @@ describe.sequential("Evaluar Entregas - end-to-end", () => {
   (hasProfesorAndSuperadmin ? it : it.skip)(
     "filtra, aprueba y desaprueba entregables pendientes",
     async () => {
-      const primera = await createEntregaPendiente("alpha");
-      const segunda = await createEntregaPendiente("beta");
+      const scope = await resolveProfesorScope();
+      const primera = await createEntregaPendiente("alpha", scope);
+      const segunda = await createEntregaPendiente("beta", scope);
       
       // Skip si no se pudieron crear entregas (403)
       if (!primera || !segunda) {

@@ -62,6 +62,8 @@ export const DashboardAlumno = () => {
       usuarioActual.cohorte,
       usuarioActual.cohortId,
       usuarioActual?.datos?.cohort,
+      usuarioActual.moduleCode,
+      usuarioActual.moduleNumber,
     ];
     for (const candidato of candidatos) {
       const modulo = labelToModule(candidato);
@@ -83,6 +85,8 @@ export const DashboardAlumno = () => {
       ensureModuleLabel(usuarioActual.modulo),
       ensureModuleLabel(usuarioActual.module),
       ensureModuleLabel(usuarioActual.moduloSlug),
+      ensureModuleLabel(usuarioActual.moduleCode),
+      ensureModuleLabel(usuarioActual.moduleNumber),
     ].find(Boolean);
     if (etiquetaDirecta) return etiquetaDirecta;
     return moduleToLabel(cohortAlumno);
@@ -250,16 +254,14 @@ export const DashboardAlumno = () => {
     }
 
     // No usar try/catch; lanzar error para que Entregables.jsx lo capture y extraiga errores de campo
+    // Según backend: POST /submissions/:id donde id = slotId
     await createEntregaRemoto({
       slotId: slotElegido.id,
       sprint: Number(sprint),
       githubLink: githubLink.trim(),
       renderLink: renderLink.trim(),
       comentarios: comentarios.trim(),
-      reviewStatus: "A revisar",
-      estado: "A revisar",
-      alumnoId: alumnoIdStr,
-      modulo: usuarioActual?.modulo ?? usuarioActual?.cohort ?? "",
+      reviewStatus: "A revisar",  // Backend acepta solo reviewStatus (NO estado)
     });
     showToast("Entrega registrada correctamente", "success");
   };
@@ -315,6 +317,12 @@ export const DashboardAlumno = () => {
 
   const entregasAlumno = (entregas || []).filter(isEntregaDelAlumno);
   const isEntregasSectionLoading = isLoading("entregas");
+
+  useEffect(() => {
+    console.log("[DashboardAlumno] Entregas del contexto:", entregas.length);
+    console.log("[DashboardAlumno] Entregas filtradas del alumno:", entregasAlumno.length);
+    console.log("[DashboardAlumno] AlumnoId:", alumnoIdStr);
+  }, [entregas, entregasAlumno, alumnoIdStr]);
 
   // --- Sidebar ---
   const handleSidebarSelect = (id) => {
@@ -399,7 +407,7 @@ export const DashboardAlumno = () => {
         ========================== */}
         {active === "Entregables" && (
           <Entregables
-            entregas={entregas} // Ya filtradas por backend via /submissions/:userId (solo propias)
+            entregas={entregas} // Backend filtra via /submissions/:userId (solo propias del alumno)
             onAgregarEntrega={handleAgregarEntrega}
             onCancelarEntrega={handleCancelarEntrega}
             entregasLoading={isEntregasSectionLoading}

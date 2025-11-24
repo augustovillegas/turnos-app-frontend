@@ -8,14 +8,15 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
-import { TurnoDetail } from "../components/turnos/TurnoDetail";
+import { ListToolbar } from "../components/ui/ListToolbar";
 import { useAppData } from "../context/AppContext";
+import { TurnoDetail } from "../components/turnos/TurnoDetail";
 import { usePagination } from "../hooks/usePagination";
 import { useApproval } from "../hooks/useApproval";
 import { showToast } from "../utils/feedback/toasts";
 
 export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
-  const { updateTurno } = useAppData();
+  const { updateTurno, loadTurnos } = useAppData();
 
   // ---- Estado de filtros ----
   const [filtroReview, setFiltroReview] = useState("todos");
@@ -105,11 +106,17 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   return (
     <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-          Solicitudes de Turnos
-        </h2>
-
-        <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+        <ListToolbar
+          title="Solicitudes de Turnos"
+          total={Array.isArray(turnos) ? turnos.length : 0}
+          filtered={filtrados.length}
+          loading={isLoading}
+          onRefresh={() => loadTurnos?.()}
+          currentPage={paginated.currentPage}
+          totalPages={paginated.totalPages}
+        >
+          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+        </ListToolbar>
 
         {/* Desktop */}
         <div className="hidden sm:block">
