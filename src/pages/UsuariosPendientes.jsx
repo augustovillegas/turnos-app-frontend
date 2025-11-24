@@ -161,7 +161,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
             paginated.items.map((u, idx) => (
               <div
                 key={u.id || `${u.nombre}-${idx}`}
-                className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
+                className="space-y-2 sm:space-y-3 rounded-md border-2 border-[#111827] bg-white p-3 sm:p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div>

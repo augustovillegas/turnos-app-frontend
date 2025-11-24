@@ -71,15 +71,19 @@ export const MisTurnos = ({
           Mis Turnos
         </h2>
 
-        <SearchBar
-          data={turnos}
-          fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
-          placeholder="Buscar en mis turnos"
-          onSearch={(results) => {
-            setTurnosBuscados(results);
-            setPageMisTurnos(1);
-          }}
-        />
+        {/* Filtros y búsqueda */}
+        <div className="flex flex-col gap-2">
+          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+          <SearchBar
+            data={turnos}
+            fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
+            placeholder="Buscar en mis turnos"
+            onSearch={(results) => {
+              setTurnosBuscados(results);
+              setPageMisTurnos(1);
+            }}
+          />
+        </div>
 
         {/* Tabla Desktop */}
         <div className="hidden md:block">
