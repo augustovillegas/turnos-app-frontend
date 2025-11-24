@@ -9,6 +9,7 @@ import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { SuperadminActions } from "../components/ui/SuperadminActions";
+import { SearchBar } from "../components/ui/SearchBar";
 import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
 import { Suspense, lazy } from "react";
@@ -62,14 +63,32 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
 
   const filtrados = aplicarFiltro(turnosSolicitados);
 
-  // Hook de paginación
-  const paginated = usePagination(filtrados, ITEMS_PER_PAGE);
+  // Estado para resultados de búsqueda (parte del pipeline de filtrado)
+  const [turnosBuscados, setTurnosBuscados] = useState(filtrados);
+
+  // Actualizar base de búsqueda cuando cambian filtros externos
+  useEffect(() => {
+    setTurnosBuscados(filtrados);
+  }, [filtrados]);
+
+  // Hook de paginación sobre el resultado final (filtrado + búsqueda)
+  const paginated = usePagination(turnosBuscados, ITEMS_PER_PAGE);
 
   // Resetear página cuando cambia el filtro
   useEffect(() => {
     paginated.resetPage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroReview]);
+
+  // Handler de búsqueda desde SearchBar
+  const handleSearch = (results) => {
+    if (Array.isArray(results)) {
+      setTurnosBuscados(results);
+    } else {
+      setTurnosBuscados(filtrados);
+    }
+    paginated.resetPage();
+  };
 
   // Hook de aprobación/rechazo
   const { handleApprove, handleReject, processingId } = useApproval({
@@ -127,6 +146,17 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
         <h2 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Solicitudes de Turnos
         </h2>
+
+        {/* Filtros y búsqueda */}
+        <div className="flex flex-col gap-2">
+          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
+          <SearchBar
+            data={filtrados}
+            fields={["horario", "sala", "zoomLink", "estado"]}
+            onSearch={handleSearch}
+            placeholder="Buscar por horario, sala, zoom o estado"
+          />
+        </div>
 
         {/* Desktop */}
         <div className="hidden sm:block">
