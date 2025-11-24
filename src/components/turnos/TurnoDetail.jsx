@@ -169,6 +169,9 @@ export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
   );
 };
 
+// Default export requerido para lazy(() => import("../components/turnos/TurnoDetail"))
+export default TurnoDetail;
+
 
 
 
