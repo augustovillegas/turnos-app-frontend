@@ -52,12 +52,12 @@ export const Entregables = ({
     paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
 
   return (
-    <div className="p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
+    <div className="p-4 sm:p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       {/* =========================
           LISTAR ENTREGAS
       ========================== */}
       {modoEntrega === "listar" && (
-        <div className="mx-auto flex w-full flex-col gap-6 max-w-full sm:max-w-6xl px-2">
+        <div className="mx-auto flex w-full flex-col gap-6 max-w-6xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Entregables (Trabajos Prácticos)
           </h2>
@@ -81,7 +81,7 @@ export const Entregables = ({
           />
 
           {/* ====== TABLA DESKTOP ====== */}
-          <div className="hidden sm:block">
+          <div className="hidden md:block">
             {entregasLoading ? (
               <div className="space-y-3 py-6">
                 {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -156,7 +156,7 @@ export const Entregables = ({
           </div>
 
           {/* ====== CARDS MOBILE ====== */}
-          <div className="mt-4 space-y-4 px-2 sm:hidden">
+          <div className="mt-4 space-y-4 px-2 md:hidden">
             {entregasLoading ? (
               <div className="space-y-3 py-4">
                 {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -177,7 +177,7 @@ export const Entregables = ({
                 />
               ))
             ) : (
-              <EmptyRow.Mobile />
+              <EmptyRow.Mobile message="No hay entregas registradas." />
             )}
           </div>
 
@@ -194,7 +194,7 @@ export const Entregables = ({
           FORMULARIO DE NUEVA ENTREGA
       ========================== */}
       {modoEntrega === "crear" && (
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           {/* Cabecera */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">

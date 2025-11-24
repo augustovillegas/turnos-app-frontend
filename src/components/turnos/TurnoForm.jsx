@@ -58,10 +58,10 @@ export const TurnoForm = ({ onVolver }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#017F82] p-6 transition-colors duration-300 dark:bg-[#0F3D3F]">
+    <div className="min-h-screen bg-[#017F82] p-4 sm:p-6 transition-colors duration-300 dark:bg-[#0F3D3F]">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Crear turno
           </h1>
           <Button variant="secondary" onClick={() => onVolver?.()}>

@@ -280,7 +280,7 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
   }
 
   return (
-    <div className="p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
+    <div className="p-4 sm:p-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">

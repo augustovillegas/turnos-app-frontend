@@ -74,7 +74,7 @@ export const TurnosDisponibles = ({
   }
 
   return (
-    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+    <div className="p-4 sm:p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Listado de Turnos Disponibles
@@ -98,7 +98,7 @@ export const TurnosDisponibles = ({
         />
 
         {/* Tabla Desktop */}
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <Table
             columns={TURNOS_DISPONIBLES_COLUMNS}
             data={paginationData.items}
@@ -155,16 +155,14 @@ export const TurnosDisponibles = ({
         </div>
 
         {/* Cards Mobile */}
-        <div className="mt-4 space-y-4 px-2 sm:hidden">
+        <div className="mt-4 space-y-4 px-2 md:hidden">
           {isTurnosSectionLoading ? (
             <div className="space-y-3 py-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                 <Skeleton key={index} height="4.5rem" />
               ))}
             </div>
-          ) : paginationData.items.length === 0 ? (
-            <EmptyRow.Mobile message="No hay turnos disponibles." />
-          ) : (
+          ) : paginationData.items.length > 0 ? (
             paginationData.items.map((t) => (
               <CardTurno
                 key={t.id}
@@ -175,7 +173,7 @@ export const TurnosDisponibles = ({
               />
             ))
           ) : (
-            <EmptyRow.Mobile />
+            <EmptyRow.Mobile message="No hay turnos disponibles." />
           )}
         </div>
 

@@ -87,7 +87,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
   }
 
   return (
-    <div className="p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+    <div className="p-4 sm:p-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Usuarios Pendientes
@@ -103,7 +103,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
         />
 
         {/* Tabla Desktop */}
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <Table
             columns={USUARIOS_PENDIENTES_COLUMNS}
             data={paginated.items}
@@ -112,12 +112,16 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
             isLoading={isLoading}
             renderRow={(u) => (
                 <>
-                  <td className="border p-2 text-center">{u.nombre}</td>
-                  <td className="border p-2 text-center">{u.rol}</td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {u.nombre}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {u.rol}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     <Status status={u.estado} />
                   </td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {isSuperadmin ? (
                       <SuperadminActions
                         item={u}
@@ -146,7 +150,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
         </div>
 
         {/* Mobile */}
-        <div className="mt-4 space-y-4 px-2 sm:hidden">
+        <div className="mt-4 space-y-4 px-2 md:hidden">
           {isLoading ? (
             <div className="space-y-3 py-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -160,22 +164,42 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading }) => {
                 className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
-                    {u.nombre}
-                  </h3>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#1E3A8A] dark:text-[#93C5FD]">
+                      {u.nombre}
+                    </h3>
+                    <p className="text-sm text-[#111827] dark:text-gray-200">
+                      <strong>Rol:</strong> {u.rol}
+                    </p>
+                  </div>
                   <Status status={u.estado} />
                 </div>
-                <p className="text-sm text-[#111827] dark:text-gray-200">
-                  <strong>Rol:</strong> {u.rol}
-                </p>
-                <Button
-                  variant="success"
-                  className="w-full py-1"
-                  onClick={() => handleAprobar(u)}
-                  disabled={isLoading || processingUsuarioId === u.id}
-                >
-                  Aprobar usuario
-                </Button>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Button
+                    variant="secondary"
+                    className="w-full py-1"
+                    onClick={() => onVer(u)}
+                    disabled={isLoading || processingUsuarioId === u.id}
+                  >
+                    Ver detalle
+                  </Button>
+                  <Button
+                    variant="success"
+                    className="w-full py-1"
+                    onClick={() => handleAprobar(u)}
+                    disabled={isLoading || processingUsuarioId === u.id}
+                  >
+                    Aprobar usuario
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="w-full py-1"
+                    onClick={() => handleRechazar(u)}
+                    disabled={isLoading || processingUsuarioId === u.id}
+                  >
+                    Rechazar usuario
+                  </Button>
+                </div>
               </div>
             ))
           ) : (

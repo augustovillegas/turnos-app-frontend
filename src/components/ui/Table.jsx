@@ -103,7 +103,7 @@ export const Table = ({
   return (
     <>
       {/* Desktop */}
-      <div className="hidden sm:block" data-testid={`${testId}-desktop`}>
+      <div className="hidden md:block" data-testid={`${testId}-desktop`}>
         {showLoader ? (
           <div className="space-y-3 py-6">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -168,7 +168,7 @@ export const Table = ({
         )}
       </div>
       {/* Mobile */}
-      <div className="mt-4 space-y-4 px-2 sm:hidden" data-testid={`${testId}-mobile`}>
+      <div className="mt-4 space-y-4 px-2 md:hidden" data-testid={`${testId}-mobile`}>
         {showLoader ? (
           <div className="space-y-3 py-4">
             {Array.from({ length: 3 }).map((_, index) => (

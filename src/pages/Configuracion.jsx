@@ -37,7 +37,7 @@ export const Configuracion = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
       <h2 className="text-2xl sm:text-3xl font-bold text-white dark:text-[#93C5FD]">
         Configuración
       </h2>
@@ -61,7 +61,7 @@ export const Configuracion = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white dark:bg-[#1E1E1E] border-2 border-[#373c47] dark:border-[#333] rounded-lg p-6 shadow-md transition-colors duration-300"
+        className="bg-white dark:bg-[#1E1E1E] border-2 border-[#373c47] dark:border-[#333] rounded-lg p-4 sm:p-6 shadow-md transition-colors duration-300"
       >
         {activeTab === "perfil" && (
           <div>

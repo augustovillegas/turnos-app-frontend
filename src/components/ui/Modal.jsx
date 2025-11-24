@@ -42,7 +42,7 @@ export const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -52,7 +52,7 @@ export const Modal = ({
         ref={modalRef}
         tabIndex={-1}
         className={`relative border-2 border-[#111827] dark:border-[#333] 
-                    ${colors[type]} p-6 rounded-md w-96 shadow-[4px_4px_0_#808080] 
+                    ${colors[type]} p-4 sm:p-6 rounded-md w-full max-w-md shadow-[4px_4px_0_#808080] 
                     dark:shadow-[4px_4px_0_#222] transition-all duration-300`}
       >
         {/* Encabezado con icono */}

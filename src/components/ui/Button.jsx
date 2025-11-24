@@ -8,7 +8,7 @@ export const Button = ({
   ...rest
 }) => {
   const base =
-    "px-3 py-1 rounded-md font-bold border-2 shadow-md transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed";
+    "px-3 sm:px-4 py-1.5 sm:py-2 rounded-md font-bold border-2 shadow-md transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base";
   const styles = {
     primary:
       "bg-[#FFD700] text-black border-[#111827] hover:opacity-90 dark:bg-[#C9A300] dark:text-white dark:border-[#555]",

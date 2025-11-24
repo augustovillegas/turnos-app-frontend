@@ -69,14 +69,14 @@ export const UsuarioDetail = ({ usuario, onVolver }) => {
   const cohortNumber = resolveCohort(currentUsuario);
 
   return (
-    <div className="min-h-screen bg-[#017F82] p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100">
+    <div className="min-h-screen bg-[#017F82] p-4 sm:p-6 text-[#111827] transition-colors duration-300 dark:bg-[#0F3D3F] dark:text-gray-100">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <Button variant="secondary" onClick={() => onVolver?.()} className="w-fit">
           Volver
         </Button>
 
         <div className="rounded-md border-2 border-[#111827] bg-white p-6 shadow-lg dark:border-[#333] dark:bg-[#1E1E1E]">
-          <h1 className="mb-2 text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Detalle del usuario
           </h1>
           <p className="text-sm text-[#4B5563] dark:text-gray-300">

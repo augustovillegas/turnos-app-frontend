@@ -138,7 +138,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
   }
 
   return (
-    <div className="p-6 text-[#111827] dark:text-gray-100 rounded-lg">
+    <div className="p-4 sm:p-6 text-[#111827] dark:text-gray-100 rounded-lg">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Solicitudes de Turnos
@@ -156,7 +156,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
         </div>
 
         {/* Desktop */}
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <Table
             columns={SOLICITUDES_COLUMNS}
             data={paginated.items}
@@ -223,7 +223,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
         </div>
 
         {/* Mobile */}
-        <div className="mt-4 space-y-4 px-2 sm:hidden">
+        <div className="mt-4 space-y-4 px-2 md:hidden">
           {isLoading ? (
             <div className="space-y-3 py-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (

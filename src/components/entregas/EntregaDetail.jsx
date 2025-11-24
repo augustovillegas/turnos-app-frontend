@@ -22,7 +22,7 @@ export const EntregaDetail = ({ entrega, onVolver }) => {
         </Button>
 
         <div className="rounded-md border-2 border-[#111827] bg-white p-6 shadow-lg dark:border-[#333] dark:bg-[#1E1E1E]">
-          <h1 className="mb-2 text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
             Detalle de la entrega
           </h1>
           <p className="text-sm text-[#4B5563] dark:text-gray-300">

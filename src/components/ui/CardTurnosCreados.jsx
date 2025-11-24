@@ -16,7 +16,7 @@ export const CardTurnosCreados = ({
   const tieneAccionesAprobacion = Boolean(onAprobar || onRechazar);
 
   return (
-    <div className="space-y-2 rounded-md border-2 border-[#111827] bg-white p-3 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+    <div className="space-y-2 sm:space-y-3 rounded-md border-2 border-[#111827] bg-white p-3 sm:p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
       <div className="flex items-start justify-between gap-2">
         <p className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Review {turno.review}
