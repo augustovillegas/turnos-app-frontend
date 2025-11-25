@@ -168,7 +168,7 @@ export const Table = ({
         )}
       </div>
       {/* Mobile */}
-      <div className="mt-4 space-y-4 px-2 md:hidden" data-testid={`${testId}-mobile`}>
+      <div className="mt-4 space-y-4 md:hidden" data-testid={`${testId}-mobile`}>
         {showLoader ? (
           <div className="space-y-3 py-4">
             {Array.from({ length: 3 }).map((_, index) => (

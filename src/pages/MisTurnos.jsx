@@ -3,8 +3,8 @@ import { ReviewFilter } from "../components/ui/ReviewFilter";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
 
-import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
@@ -26,8 +26,8 @@ export const MisTurnos = ({
   pageMisTurnos,
   setPageMisTurnos,
   ITEMS_PER_PAGE,
+  withWrapper = true,
 }) => {
-  const { loadTurnos } = useAppData();
   const [turnosBuscados, setTurnosBuscados] = useState(turnos);
   const [modo, setModo] = useState("listar");
   const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
@@ -60,15 +60,17 @@ export const MisTurnos = ({
     setTurnoSeleccionado(null);
   };
 
-  if (modo === "detalle") {
-    return <TurnoDetail turno={turnoSeleccionado} onVolver={goListar} />;
-  }
+  const containerClass = "text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg";
+  const Container = withWrapper ? LayoutWrapper : "div";
+  const containerProps = withWrapper
+    ? { className: containerClass }
+    : { className: `w-full flex flex-col gap-6 ${containerClass}` };
 
-  return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 flex flex-col gap-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
-          Mis Turnos
-        </h2>
+  const content = (
+    <>
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+        Mis Turnos
+      </h2>
 
         {/* Filtros y búsqueda */}
         <div className="flex flex-col gap-2">
@@ -136,7 +138,7 @@ export const MisTurnos = ({
         </div>
 
         {/* Cards Mobile */}
-        <div className="mt-4 space-y-4 px-2 md:hidden">
+        <div className="mt-4 space-y-4 md:hidden">
           {isTurnosSectionLoading ? (
             <div className="space-y-3 py-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -165,6 +167,21 @@ export const MisTurnos = ({
             onPageChange={setPageMisTurnos}
           />
         )}
-    </div>
+    </>
   );
+
+  if (modo === "detalle") {
+    const detail = <TurnoDetail turno={turnoSeleccionado} onVolver={goListar} />;
+    return withWrapper ? (
+      <LayoutWrapper className={containerClass}>{detail}</LayoutWrapper>
+    ) : (
+      detail
+    );
+  }
+
+  if (!withWrapper) {
+    return <div className={`w-full flex flex-col gap-6 ${containerClass}`}>{content}</div>;
+  }
+
+  return <Container {...containerProps}>{content}</Container>;
 };

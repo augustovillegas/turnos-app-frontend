@@ -58,7 +58,7 @@ export const CardEntrega = ({ entrega, onCancelar, onEditar, disabled = false })
             variant="outline"
             onClick={() => onEditar?.(entrega)}
             disabled={disabled}
-            className="w-full md:w-auto py-1"
+            className="w-full sm:w-auto py-1"
           >
             Editar
           </Button>
@@ -66,7 +66,7 @@ export const CardEntrega = ({ entrega, onCancelar, onEditar, disabled = false })
             variant="danger"
             onClick={() => onCancelar?.(entrega)}
             disabled={disabled}
-            className="w-full md:w-auto py-1"
+            className="w-full sm:w-auto py-1"
           >
             Cancelar
           </Button>

@@ -5,8 +5,8 @@ import { EntregaForm } from "../components/ui/EntregaForm";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
 
-import { useAppData } from "../context/AppContext";
 import { Status } from "../components/ui/Status";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { AlumnoActions } from "../components/ui/AlumnoActions";
@@ -22,8 +22,8 @@ export const Entregables = ({
   onAgregarEntrega,
   onCancelarEntrega,
   entregasLoading = false,
+  withWrapper = true,
 }) => {
-  const { loadEntregas } = useAppData();
   const ITEMS_PER_PAGE = 5;
 
   const [modoEntrega, setModoEntrega] = useState("listar");
@@ -51,8 +51,14 @@ export const Entregables = ({
   const hasEntregas =
     paginatedEntregas.totalItems > 0 && paginatedEntregas.items.length > 0;
 
+  const containerClass = "text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg";
+  const Container = withWrapper ? LayoutWrapper : "div";
+  const containerProps = withWrapper
+    ? { className: containerClass }
+    : { className: `w-full flex flex-col gap-6 ${containerClass}` };
+
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 flex flex-col gap-6 text-[#111827] dark:text-gray-100 transition-colors duration-300 rounded-lg">
+    <Container {...containerProps}>
       {/* =========================
           LISTAR ENTREGAS
       ========================== */}
@@ -156,7 +162,7 @@ export const Entregables = ({
           </div>
 
           {/* ====== CARDS MOBILE ====== */}
-          <div className="mt-4 space-y-4 px-2 md:hidden">
+          <div className="mt-4 space-y-4 md:hidden">
             {entregasLoading ? (
               <div className="space-y-3 py-4">
                 {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
@@ -258,6 +264,6 @@ export const Entregables = ({
           }}
         />
       )}
-    </div>
+    </Container>
   );
 };

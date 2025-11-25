@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { useAppData } from "../context/AppContext";
 import { showToast } from "../utils/feedback/toasts";
 import { useAuth } from "../context/AuthContext";
@@ -328,7 +329,11 @@ export const DashboardAlumno = () => {
         active={active}
         onSelect={handleSidebarSelect}
       />
-      <div className="flex-1 p-6">
+      <LayoutWrapper
+        as="main"
+        className="flex-1 text-[#111827] dark:text-gray-100 transition-colors duration-300"
+        maxWidthClass="max-w-6xl"
+      >
         {/* =========================
             SECCION: TURNOS DISPONIBLES
         ========================== */}
@@ -344,6 +349,7 @@ export const DashboardAlumno = () => {
             filtroReview={filtroReview}
             setFiltroReview={setFiltroReview}
             handleCancelarTurno={handleCancelarTurno}
+            withWrapper={false}
           />
         )}
 
@@ -361,6 +367,7 @@ export const DashboardAlumno = () => {
             pageMisTurnos={pageMisTurnos}
             setPageMisTurnos={setPageMisTurnos}
             ITEMS_PER_PAGE={ITEMS_PER_PAGE}
+            withWrapper={false}
           />
         )}
 
@@ -373,14 +380,15 @@ export const DashboardAlumno = () => {
             onAgregarEntrega={handleAgregarEntrega}
             onCancelarEntrega={handleCancelarEntrega}
             entregasLoading={isEntregasSectionLoading}
+            withWrapper={false}
           />
         )}
 
         {/* =========================
             SECCION: CONFIGURACION
         ========================== */}
-        {active === "config" && <Configuracion />}
-      </div>
+        {active === "config" && <Configuracion withWrapper={false} />}
+      </LayoutWrapper>
     </div>
   );
 };

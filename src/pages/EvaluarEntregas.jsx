@@ -9,6 +9,7 @@ import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { DropdownActions } from "../components/ui/DropdownActions";
 import { Status } from "../components/ui/Status";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Pagination } from "../components/ui/Pagination";
@@ -23,7 +24,7 @@ import {
   coincideModulo,
 } from "../utils/moduleMap";
 
-export const EvaluarEntregas = () => {
+export const EvaluarEntregas = ({ withWrapper = true }) => {
   // Agregamos loadEntregas para disparar la carga si la vista se monta directamente (ruta profunda)
   const { entregas, updateEntrega, loadEntregas } = useAppData();
   const { usuario: usuarioActual } = useAuth();
@@ -141,8 +142,14 @@ export const EvaluarEntregas = () => {
   // Simplificación: usar sólo reviewStatus proveniente del backend/normalizador.
   const getEstadoUI = (e) => e?.reviewStatus || "A revisar";
 
+  const containerClass = "text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg";
+  const Container = withWrapper ? LayoutWrapper : "div";
+  const containerProps = withWrapper
+    ? { className: containerClass }
+    : { className: `w-full flex flex-col gap-6 ${containerClass}` };
+
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 flex flex-col gap-6 text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg">
+    <Container {...containerProps}>
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Evaluar Entregables
         </h2>
@@ -251,23 +258,25 @@ export const EvaluarEntregas = () => {
             </>
           )}
           renderMobileCard={(e) => (
-            <div className="bg-white dark:bg-[#1E1E1E] border-2 border-[#111827] dark:border-[#333] rounded-md p-4 shadow-md">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+            <div className="space-y-2 sm:space-y-3 rounded-md border-2 border-[#111827] bg-white p-3 sm:p-4 shadow-md dark:border-[#333] dark:bg-[#1E1E1E]">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-lg font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
                   Sprint {e.sprint}
                 </h3>
                 <Status status={getEstadoUI(e)} />
               </div>
 
-              <p className="text-sm dark:text-gray-200">
-                <strong>Alumno:</strong> {e.alumno || "Sin asignar"}
-              </p>
-              <p className="text-sm dark:text-gray-200">
-                <strong>Fecha:</strong> {formatDateForTable(e.fechaEntrega) || "-"}
-              </p>
-              <p className="text-sm dark:text-gray-200 mb-2">
-                <strong>Comentarios:</strong> {e.comentarios || "-"}
-              </p>
+              <div className="flex flex-col gap-1 text-sm text-[#111827] dark:text-gray-200">
+                <p>
+                  <strong>Alumno:</strong> {e.alumno || "Sin asignar"}
+                </p>
+                <p>
+                  <strong>Fecha:</strong> {formatDateForTable(e.fechaEntrega) || "-"}
+                </p>
+                <p>
+                  <strong>Comentarios:</strong> {e.comentarios || "-"}
+                </p>
+              </div>
 
               <div className="flex justify-between text-sm">
                 <a
@@ -297,10 +306,10 @@ export const EvaluarEntregas = () => {
               </div>
 
               {esPendiente(e) && (
-                <div className="mt-3 flex justify-end gap-2">
+                <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
                   <Button
                     variant="success"
-                    className="py-1 text-xs"
+                    className="w-full sm:w-auto"
                     onClick={() => handleAprobarEntrega(e)}
                     disabled={processingEntregaId === e.id}
                   >
@@ -308,7 +317,7 @@ export const EvaluarEntregas = () => {
                   </Button>
                   <Button
                     variant="danger"
-                    className="py-1 text-xs"
+                    className="w-full sm:w-auto"
                     onClick={() => handleDesaprobarEntrega(e)}
                     disabled={processingEntregaId === e.id}
                   >
@@ -326,6 +335,6 @@ export const EvaluarEntregas = () => {
           currentPage={paginatedEntregasPendientes.currentPage}
           onPageChange={setPage}
         />
-    </div>
+    </Container>
   );
 };

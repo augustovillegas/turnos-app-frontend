@@ -4,10 +4,11 @@ import { useTheme } from "../context/ThemeContext";
 import { useSound } from "../context/SoundContext";
 import { showToast } from "../utils/feedback/toasts";
 import { Button } from "../components/ui/Button";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 
 const MotionContainer = motion.div;
 
-export const Configuracion = () => {
+export const Configuracion = ({ withWrapper = true }) => {
   const { theme, toggleTheme } = useTheme();
   const { muted, toggleMute } = useSound();
   const [activeTab, setActiveTab] = useState("perfil");
@@ -15,10 +16,10 @@ export const Configuracion = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab === "preferencias") {
-      showToast("Personaliza tu experiencia desde aquí.", "info");
+      showToast("Personaliza tu experiencia desde aqui.", "info");
     } else {
       showToast(
-        "Estamos trabajando en esta sección. Pronto tendrás novedades.",
+        "Estamos trabajando en esta seccion. Pronto tendras novedades.",
         "warning"
       );
     }
@@ -36,13 +37,15 @@ export const Configuracion = () => {
     showToast(`Sonido ${siguienteEstado}.`, muted ? "success" : "info");
   };
 
-  return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F] transition-colors duration-300">
+  const baseClass =
+    "flex flex-col gap-6 text-[#111827] dark:text-gray-100 transition-colors duration-300";
+
+  const content = (
+    <>
       <h2 className="text-2xl sm:text-3xl font-bold text-white dark:text-[#93C5FD]">
-        Configuración
+        Configuracion
       </h2>
 
-      {/* Navegación */}
       <div className="flex flex-wrap gap-3">
         {["perfil", "preferencias", "seguridad"].map((tab) => (
           <Button
@@ -55,7 +58,6 @@ export const Configuracion = () => {
         ))}
       </div>
 
-      {/* Contenido */}
       <MotionContainer
         key={activeTab}
         initial={{ opacity: 0, y: 10 }}
@@ -69,22 +71,20 @@ export const Configuracion = () => {
               Perfil del usuario
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              Aquí podrás ver y editar tus datos personales.
+              Aqui podras ver y editar tus datos personales.
             </p>
             <p className="italic text-gray-500 dark:text-gray-400 mt-2">
-              (Sección en construcción)
+              (Seccion en construccion)
             </p>
           </div>
         )}
 
-        {/* Sección: Preferencias */}
         {activeTab === "preferencias" && (
           <div className="space-y-6">
             <h3 className="text-xl font-semibold dark:text-gray-100">
               Preferencias
             </h3>
 
-            {/* Sección: Tema */}
             <section className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <img
@@ -112,7 +112,6 @@ export const Configuracion = () => {
               </Button>
             </section>
 
-            {/* Sección: Sonido */}
             <section className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <img
@@ -141,7 +140,6 @@ export const Configuracion = () => {
           </div>
         )}
 
-        {/* Sección: Seguridad */}
         {activeTab === "seguridad" && (
           <MotionContainer
             initial={{ opacity: 0 }}
@@ -152,17 +150,27 @@ export const Configuracion = () => {
               Seguridad
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              Aquí podrás cambiar tu contraseña o gestionar autenticación.
+              Aqui podras cambiar tu contraseña o gestionar autenticacion.
             </p>
             <p className="italic text-gray-500 dark:text-gray-400 mt-2">
-              (Sección en construcción)
+              (Seccion en construccion)
             </p>
           </MotionContainer>
         )}
       </MotionContainer>
-    </div>
+    </>
   );
+
+  if (withWrapper) {
+    return (
+      <LayoutWrapper
+        className={`${baseClass} p-4 sm:p-6 min-h-screen bg-[#017F82] dark:bg-[#0F3D3F]`}
+        maxWidthClass="max-w-6xl"
+      >
+        {content}
+      </LayoutWrapper>
+    );
+  }
+
+  return <div className={`${baseClass} w-full`}>{content}</div>;
 };
-
-
-

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { CreateTurnos } from "./CreateTurnos";
 import { useAppData } from "../context/AppContext";
 import { EvaluarEntregas } from "./EvaluarEntregas";
@@ -101,7 +102,11 @@ export const DashboardSuperadmin = () => {
         onSelect={handleSidebarSelect}
       />
 
-      <div className="flex-1 p-6">
+      <LayoutWrapper
+        as="main"
+        className="flex-1 text-[#111827] dark:text-gray-100 transition-colors duration-300"
+        maxWidthClass="max-w-6xl"
+      >
         {/* =========================
           SECCIÓN: GESTIÓN USUARIOS
         ========================== */}
@@ -110,6 +115,7 @@ export const DashboardSuperadmin = () => {
             usuarios={usuarios}
             isLoading={isLoading("usuarios")}
             itemsPerPage={ITEMS_PER_PAGE}
+            withWrapper={false}
           />
         )}
 
@@ -121,29 +127,30 @@ export const DashboardSuperadmin = () => {
             turnos={turnos}
             isLoading={isLoading("turnos")}
             itemsPerPage={ITEMS_PER_PAGE}
+            withWrapper={false}
           />
         )}
 
         {/* =========================
           SECCIÓN: EVALUAR ENTREGAS
         ========================== */}
-        {active === "evaluar-entregas" && <EvaluarEntregas />}
+        {active === "evaluar-entregas" && <EvaluarEntregas withWrapper={false} />}
 
         {/* =========================
           SECCIÓN: CREAR TURNOS
         ========================== */}
-        {active === "crear-turnos" && <CreateTurnos />}
+        {active === "crear-turnos" && <CreateTurnos withWrapper={false} />}
 
         {/* =========================
           SECCION: CARGAR USUARIOS
         ========================== */}
-        {active === "cargar-usuarios" && <CreateUsers />}
+        {active === "cargar-usuarios" && <CreateUsers withWrapper={false} />}
 
         {/* =========================
           SECCIÓN: CONFIGURACIÓN
         ========================== */}
-        {active === "config" && <Configuracion />}
-      </div>
+        {active === "config" && <Configuracion withWrapper={false} />}
+      </LayoutWrapper>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
@@ -30,7 +31,7 @@ const SOLICITUDES_COLUMNS = [
 ];
 import { showToast } from "../utils/feedback/toasts";
 
-export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
+export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }) => {
   const { updateTurno, loadTurnos } = useAppData();
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = usuarioActual?.role === "superadmin";
@@ -137,8 +138,14 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
     );
   }
 
+  const containerClass = "text-[#111827] dark:text-gray-100 rounded-lg";
+  const Container = withWrapper ? LayoutWrapper : "div";
+  const containerProps = withWrapper
+    ? { className: containerClass }
+    : { className: `w-full flex flex-col gap-6 ${containerClass}` };
+
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 flex flex-col gap-6 text-[#111827] dark:text-gray-100 rounded-lg">
+    <Container {...containerProps}>
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Solicitudes de Turnos
         </h2>
@@ -222,7 +229,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
         </div>
 
         {/* Mobile */}
-        <div className="mt-4 space-y-4 px-2 md:hidden">
+        <div className="mt-4 space-y-4 md:hidden">
           {isLoading ? (
             <div className="space-y-3 py-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
@@ -254,6 +261,6 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading }) => {
             onPageChange={paginated.goToPage}
           />
         )}
-    </div>
+    </Container>
   );
 };
