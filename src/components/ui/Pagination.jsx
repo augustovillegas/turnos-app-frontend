@@ -86,42 +86,58 @@ export const Pagination = ({
     }
   };
 
-  // ---- LÓGICA PARA EL CUADRO DE NÚMEROS (máx. 5) ----
-  const maxButtons = 5;
-  let startPage = 1;
-  let endPage = totalPages;
+  // ---- LÓGICA PARA EL CUADRO DE NÚMEROS (desktop y mobile) ----
+  const getPageNumbers = (maxButtons) => {
+    let startPage = 1;
+    let endPage = totalPages;
 
-  if (totalPages > maxButtons) {
-    const half = Math.floor(maxButtons / 2);
-    startPage = effectivePage - half;
-    endPage = effectivePage + half;
+    if (totalPages > maxButtons) {
+      const half = Math.floor(maxButtons / 2);
+      startPage = effectivePage - half;
+      endPage = effectivePage + half;
 
-    if (startPage < 1) {
-      startPage = 1;
-      endPage = maxButtons;
-    } else if (endPage > totalPages) {
-      endPage = totalPages;
-      startPage = totalPages - maxButtons + 1;
+      if (startPage < 1) {
+        startPage = 1;
+        endPage = maxButtons;
+      } else if (endPage > totalPages) {
+        endPage = totalPages;
+        startPage = totalPages - maxButtons + 1;
+      }
     }
-  }
 
-  const pageNumbers = [];
-  for (let p = startPage; p <= endPage; p++) {
-    pageNumbers.push(p);
-  }
+    const nums = [];
+    for (let p = startPage; p <= endPage; p++) {
+      nums.push(p);
+    }
+    return nums;
+  };
+
+  // Desktop: hasta 5 botones
+  const pageNumbersDesktop = getPageNumbers(5);
+  // Mobile: hasta 3 botones
+  const pageNumbersMobile = getPageNumbers(3);
+
+  const pageButtonClasses = (num) => `
+    inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
+    font-bold text-sm transition-all duration-200 shadow-sm
+    border-2
+    ${
+      num === effectivePage
+        ? "bg-[#FFD700] dark:bg-[#C9A300] text-black dark:text-white border-[#FFD700] dark:border-[#C9A300] shadow-md scale-105 cursor-default ring-2 ring-[#FFD700]/30 dark:ring-[#C9A300]/30"
+        : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 border-[#111827]/30 dark:border-[#444]/50 hover:bg-[#FFD700]/80 dark:hover:bg-[#C9A300]/80 hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
+    }
+  `;
 
   return (
-    <nav 
+    <nav
       className="flex flex-col items-center gap-4 py-3 px-2"
       role="navigation"
       aria-label="Paginación"
     >
       {/* Contenedor principal con mejor organización visual */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-        
         {/* Grupo de navegación optimizado para todas las resoluciones */}
         <div className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#1E1E1E] p-1.5 shadow-lg border-2 border-[#111827]/20 dark:border-[#444]/60">
-          
           {/* Primera página */}
           <button
             onClick={() => handleGoToPage(1)}
@@ -138,8 +154,18 @@ export const Pagination = ({
               }
             `}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
             </svg>
             <span className="hidden md:inline ml-1">Primera</span>
           </button>
@@ -160,34 +186,51 @@ export const Pagination = ({
               }
             `}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             <span className="hidden sm:inline ml-1">Prev</span>
           </button>
 
           {/* Separador visual solo en desktop */}
-          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5"></div>
+          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5" />
 
-          {/* Números de página con diseño mejorado */}
-          <div className="inline-flex items-center gap-1">
-            {pageNumbers.map((num) => (
+          {/* Números de página - MOBILE: máx 3 */}
+          <div className="inline-flex items-center gap-1 sm:hidden">
+            {pageNumbersMobile.map((num) => (
               <button
-                key={num}
+                key={`m-${num}`}
                 onClick={() => handleGoToPage(num)}
                 disabled={num === effectivePage}
                 aria-label={`Página ${num}`}
                 aria-current={num === effectivePage ? "page" : undefined}
-                className={`
-                  inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-md
-                  font-bold text-sm transition-all duration-200 shadow-sm
-                  border-2
-                  ${
-                    num === effectivePage
-                      ? "bg-[#FFD700] dark:bg-[#C9A300] text-black dark:text-white border-[#FFD700] dark:border-[#C9A300] shadow-md scale-105 cursor-default ring-2 ring-[#FFD700]/30 dark:ring-[#C9A300]/30"
-                      : "bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200 border-[#111827]/30 dark:border-[#444]/50 hover:bg-[#FFD700]/80 dark:hover:bg-[#C9A300]/80 hover:text-black dark:hover:text-white hover:border-[#FFD700] dark:hover:border-[#C9A300] hover:shadow-md active:scale-95"
-                  }
-                `}
+                className={pageButtonClasses(num)}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+
+          {/* Números de página - DESKTOP: máx 5 */}
+          <div className="hidden sm:inline-flex items-center gap-1">
+            {pageNumbersDesktop.map((num) => (
+              <button
+                key={`d-${num}`}
+                onClick={() => handleGoToPage(num)}
+                disabled={num === effectivePage}
+                aria-label={`Página ${num}`}
+                aria-current={num === effectivePage ? "page" : undefined}
+                className={pageButtonClasses(num)}
               >
                 {num}
               </button>
@@ -195,7 +238,7 @@ export const Pagination = ({
           </div>
 
           {/* Separador visual solo en desktop */}
-          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5"></div>
+          <div className="hidden sm:block w-px h-6 bg-[#111827]/20 dark:bg-[#444]/40 mx-0.5" />
 
           {/* Siguiente */}
           <button
@@ -214,8 +257,18 @@ export const Pagination = ({
             `}
           >
             <span className="hidden sm:inline mr-1">Sig</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
 
@@ -236,8 +289,18 @@ export const Pagination = ({
             `}
           >
             <span className="hidden md:inline mr-1">Última</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -246,12 +309,18 @@ export const Pagination = ({
       {/* Información de resumen con mejor presentación */}
       <div className="flex items-center gap-2 text-xs font-medium text-[#111827] dark:text-gray-300 bg-[#E5E5E5]/40 dark:bg-[#2A2A2A]/40 px-3 py-1.5 rounded-full border border-[#111827]/10 dark:border-[#444]/30">
         <span className="hidden xs:inline">Mostrando página</span>
-        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">{effectivePage}</span>
+        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          {effectivePage}
+        </span>
         <span>de</span>
-        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">{totalPages}</span>
+        <span className="font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+          {totalPages}
+        </span>
         <span className="hidden sm:inline">•</span>
-        <span className="hidden sm:inline">{totalItems} registro{totalItems !== 1 ? 's' : ''}</span>
+        <span className="hidden sm:inline">
+          {totalItems} registro{totalItems !== 1 ? "s" : ""}
+        </span>
       </div>
     </nav>
-  )
-}
+  );
+};
