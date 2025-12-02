@@ -8,13 +8,13 @@ import PropTypes from "prop-types";
 export const ReviewFilter = ({
   value,
   onChange,
-  label = "Filtrar por Review",
+  label = "Review",
   className = "",
 }) => {
   return (
-    <div className={`mb-4 ${className}`}>
-      <label className="block text-sm font-bold mb-1 text-[#111827] dark:text-gray-200">
-        {label}
+    <div className={`mb-4 flex items-center gap-2 ${className}`}>
+      <label className="text-sm font-bold text-[#111827] dark:text-gray-200">
+        {label}:
       </label>
       <select
         value={value}

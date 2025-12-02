@@ -109,11 +109,7 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
     } catch {
       showToast("No se pudo copiar el enlace.", "error");
     }
-  };
-
-  // Acciones de aprobar/rechazar removidas: se gestionan exclusivamente
-  // desde el panel de solicitudes (RequestsPanel). Se ocultan aquí para
-  // evitar UX inconsistente.
+  };  
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -156,7 +152,7 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
             />
           </div>
 
-          {/* Derecha: ReviewFilter tal cual */}
+          {/* ReviewFilter*/}
           <div className="order-2 sm:order-none shrink-0">
             <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
           </div>
