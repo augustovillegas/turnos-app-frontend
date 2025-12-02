@@ -9,22 +9,22 @@ const sanitizarUrlBase = (valor) =>
   typeof valor === "string" ? valor.replace(/\/+$/, "") : "";
 
 const leerVarEntorno = (key) => {
-  try {
-    // Preferir Vite env cuando esté disponible
-    // NOTA: en bundlers, Vite reemplaza import.meta.env en build time
-    const viteEnv = typeof import.meta !== "undefined" ? import.meta.env : undefined;
-    if (viteEnv && typeof viteEnv[key] === "string") return viteEnv[key];
-  } catch {}
-  try {
-    // Compatibilidad con Node (tests/scripts)
-    if (typeof process !== "undefined" && process.env && process.env[key]) {
-      return process.env[key];
-    }
-  } catch {}
-  try {
-    // Permitir override en runtime (útil en integraciones E2E)
-    if (typeof globalThis !== "undefined" && globalThis[key]) return globalThis[key];
-  } catch {}
+  // Preferir Vite env cuando este disponible (reemplazado en build time)
+  const viteEnv =
+    typeof import.meta !== "undefined" && import.meta?.env ? import.meta.env : undefined;
+  if (viteEnv && typeof viteEnv[key] === "string") return viteEnv[key];
+
+  // Compatibilidad con Node (tests/scripts) sin depender de "process" global
+  const nodeEnv =
+    typeof globalThis !== "undefined" && globalThis.process?.env
+      ? globalThis.process.env
+      : undefined;
+  if (nodeEnv && nodeEnv[key]) {
+    return nodeEnv[key];
+  }
+
+  // Permitir override en runtime (util en integraciones E2E)
+  if (typeof globalThis !== "undefined" && globalThis[key]) return globalThis[key];
   return undefined;
 };
 

@@ -1,7 +1,9 @@
+/* eslint-env node */
 import axios from "axios";
 import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import process from "node:process";
 
 // Ensure .env is loaded for ESM context
 const __filename = fileURLToPath(import.meta.url);

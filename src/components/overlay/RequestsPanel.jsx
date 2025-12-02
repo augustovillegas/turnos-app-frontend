@@ -27,24 +27,25 @@ const RequestsPanelComponent = () => {
 
   // Ocultar panel si el usuario no es profesor/superadmin
   const puedeVerPanel = user?.role === "profesor" || user?.role === "superadmin";
-  
-  if (!puedeVerPanel) {
-    return null;
-  }
+  const turnosList = useMemo(() => (Array.isArray(turnos) ? turnos : []), [turnos]);
 
   const solicitudesPendientes = useMemo(
-    () => turnos.filter((turno) => isEstado(turno.estado, "solicitado")),
-    [turnos]
+    () =>
+      !puedeVerPanel
+        ? []
+        : turnosList.filter((turno) => isEstado(turno.estado, "solicitado")),
+    [turnosList, puedeVerPanel]
   );
   const totalSolicitudes = solicitudesPendientes.length;
 
   useEffect(() => {
-    if (panelAbierto) {
+    if (panelAbierto && puedeVerPanel) {
       establecerPagina(1);
     }
-  }, [panelAbierto]);
+  }, [panelAbierto, puedeVerPanel]);
 
   useEffect(() => {
+    if (!puedeVerPanel) return;
     const paginasTotales = Math.max(
       1,
       Math.ceil((totalSolicitudes || 0) / TURNOS_POR_PAGINA)
@@ -55,9 +56,17 @@ const RequestsPanelComponent = () => {
       if (paginaActual < 1) return 1;
       return paginaActual;
     });
-  }, [totalSolicitudes]);
+  }, [totalSolicitudes, puedeVerPanel]);
 
   const solicitudesPaginadas = useMemo(() => {
+    if (!puedeVerPanel) {
+      return {
+        items: [],
+        totalItems: 0,
+        totalPages: 1,
+        currentPage: 1,
+      };
+    }
     const paginasTotales =
       Math.ceil((totalSolicitudes || 0) / TURNOS_POR_PAGINA) || 1;
     const paginaNormalizada = Math.min(Math.max(pagina, 1), paginasTotales);
@@ -71,7 +80,7 @@ const RequestsPanelComponent = () => {
       totalPages: paginasTotales,
       currentPage: paginaNormalizada,
     };
-  }, [solicitudesPendientes, totalSolicitudes, pagina]);
+  }, [solicitudesPendientes, totalSolicitudes, pagina, puedeVerPanel]);
 
   const ejecutarCancelacion = useCallback(async (turno) => {
     establecerTurnoProcesandoId(turno.id);
@@ -96,7 +105,7 @@ const RequestsPanelComponent = () => {
   }, [updateTurno]);
 
   const gestionarCancelacionTurno = useCallback((turnoId) => {
-    const turno = turnos.find((item) => String(item.id) === String(turnoId));
+    const turno = turnosList.find((item) => String(item.id) === String(turnoId));
     if (!turno) {
       showToast("No encontramos el turno seleccionado.", "error");
       return;
@@ -110,11 +119,15 @@ const RequestsPanelComponent = () => {
         void ejecutarCancelacion(turno);
       },
     });
-  }, [turnos, showModal, ejecutarCancelacion]);
+  }, [turnosList, showModal, ejecutarCancelacion]);
 
   const togglePanel = useCallback(() => {
     establecerPanelAbierto((previo) => !previo);
   }, []);
+
+  if (!puedeVerPanel) {
+    return null;
+  }
 
   return (
     <>

@@ -12,6 +12,7 @@ import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { ensureModuleLabel, coincideModulo, labelToModule, moduleToLabel } from "../utils/moduleMap";
 import { normalizeEstado, isEstado, anyEstado } from "../utils/turnos/normalizeEstado";
+import { useAlumnoTurnos } from "../hooks/useAlumnoTurnos";
 
 // Secciones modulares
 import { TurnosDisponibles } from "./TurnosDisponibles";

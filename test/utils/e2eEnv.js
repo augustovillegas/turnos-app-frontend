@@ -1,5 +1,7 @@
+/* eslint-env node */
 import path from "node:path";
 import dotenv from "dotenv";
+import process from "node:process";
 
 dotenv.config({
   path: path.resolve(process.cwd(), ".env"),
