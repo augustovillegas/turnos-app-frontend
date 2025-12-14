@@ -13,7 +13,8 @@ jobs:
       RUN_E2E: ${{ secrets.RUN_E2E }}
     strategy:
       matrix:
-        node-version: [18.x]
+        # Dependencias como webidl-conversions@8 y jsdom@27 requieren Node >= 20
+        node-version: [20.x]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
