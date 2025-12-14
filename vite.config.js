@@ -55,13 +55,15 @@ function walk(dir) {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), forbidE2EVars()],
-  ssr: {
-    external: ['jsdom', 'whatwg-url', 'webidl-conversions']
-  },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
+    server: {
+      deps: {
+        inline: ['vitest-canvas-mock']
+      }
+    },
     reporters: [
       ['default', { summary: false }],
       'json'
@@ -89,15 +91,9 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true,
+        singleFork: false,
+        isolate: true,
       },
     },
-  },
-  deps: {
-    optimizer: {
-      web: {
-        exclude: ['jsdom', 'whatwg-url', 'webidl-conversions']
-      }
-    }
   },
 })
