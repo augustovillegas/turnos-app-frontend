@@ -35,13 +35,12 @@ jobs:
         run: npm run build
 
       - name: E2E tests (optional)
-        if: env.RUN_E2E == 'true'
+        if: ${{ secrets.RUN_E2E == 'true' }}
         env:
-          RUN_E2E: ${{ secrets.RUN_E2E || 'false' }}
-          TEST_E2E_ALUMNO_EMAIL: ${{ secrets.TEST_E2E_ALUMNO_EMAIL || '' }}
-          TEST_E2E_ALUMNO_PASSWORD: ${{ secrets.TEST_E2E_ALUMNO_PASSWORD || '' }}
-          TEST_E2E_PROFESOR_EMAIL: ${{ secrets.TEST_E2E_PROFESOR_EMAIL || '' }}
-          TEST_E2E_PROFESOR_PASSWORD: ${{ secrets.TEST_E2E_PROFESOR_PASSWORD || '' }}
-          TEST_E2E_SUPERADMIN_EMAIL: ${{ secrets.TEST_E2E_SUPERADMIN_EMAIL || '' }}
-          TEST_E2E_SUPERADMIN_PASSWORD: ${{ secrets.TEST_E2E_SUPERADMIN_PASSWORD || '' }}
+          TEST_E2E_ALUMNO_EMAIL: ${{ secrets.TEST_E2E_ALUMNO_EMAIL }}
+          TEST_E2E_ALUMNO_PASSWORD: ${{ secrets.TEST_E2E_ALUMNO_PASSWORD }}
+          TEST_E2E_PROFESOR_EMAIL: ${{ secrets.TEST_E2E_PROFESOR_EMAIL }}
+          TEST_E2E_PROFESOR_PASSWORD: ${{ secrets.TEST_E2E_PROFESOR_PASSWORD }}
+          TEST_E2E_SUPERADMIN_EMAIL: ${{ secrets.TEST_E2E_SUPERADMIN_EMAIL }}
+          TEST_E2E_SUPERADMIN_PASSWORD: ${{ secrets.TEST_E2E_SUPERADMIN_PASSWORD }}
         run: npm run test:e2e
