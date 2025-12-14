@@ -9,6 +9,8 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      RUN_E2E: ${{ secrets.RUN_E2E }}
     strategy:
       matrix:
         node-version: [18.x]
@@ -35,7 +37,7 @@ jobs:
         run: npm run build
 
       - name: E2E tests (optional)
-        if: ${{ secrets.RUN_E2E == 'true' }}
+        if: ${{ env.RUN_E2E == 'true' }}
         env:
           TEST_E2E_ALUMNO_EMAIL: ${{ secrets.TEST_E2E_ALUMNO_EMAIL }}
           TEST_E2E_ALUMNO_PASSWORD: ${{ secrets.TEST_E2E_ALUMNO_PASSWORD }}
