@@ -118,6 +118,12 @@ globalThis.localStorage = createStorageMock();
 globalThis.sessionStorage = createStorageMock();
 
 // --- Polyfills necesarios para jsdom ---
+if (typeof globalThis.SharedArrayBuffer === "undefined") {
+  // jsdom no expone SharedArrayBuffer por defecto y algunas dependencias (whatwg-url) lo requieren al inicializarse.
+  class SharedArrayBufferMock extends ArrayBuffer {}
+  globalThis.SharedArrayBuffer = SharedArrayBufferMock;
+}
+
 if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = () => ({
     matches: false,
