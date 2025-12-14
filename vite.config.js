@@ -6,6 +6,28 @@ import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
 
+const requiredRemoteCreds = [
+  'TEST_E2E_ALUMNO_EMAIL',
+  'TEST_E2E_ALUMNO_PASSWORD',
+  'TEST_E2E_PROFESOR_EMAIL',
+  'TEST_E2E_PROFESOR_PASSWORD',
+  'TEST_E2E_SUPERADMIN_EMAIL',
+  'TEST_E2E_SUPERADMIN_PASSWORD',
+]
+
+const hasRemoteCreds = requiredRemoteCreds.every((key) => Boolean(process.env[key]))
+const runRemoteTests =
+  process.env.RUN_E2E === 'true' ||
+  process.env.RUN_REMOTE_TESTS === 'true' ||
+  (!process.env.CI && hasRemoteCreds)
+
+const unitIncludes = ['src/**/*.{test,spec}.{js,jsx,ts,tsx}']
+const remoteIncludes = [
+  'test/integration/**/*.test.{js,jsx,ts,tsx}',
+  'test/e2e/**/*.test.{js,jsx,ts,tsx}',
+]
+const activeIncludes = runRemoteTests ? [...unitIncludes, ...remoteIncludes] : unitIncludes
+
 function forbidE2EVars() {
   return {
     name: 'forbid-e2e-vars',
@@ -72,12 +94,12 @@ export default defineConfig({
     restoreMocks: true,
     unstubGlobals: true,
     unstubEnvs: true,
-    include: [
-      'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
-      'test/integration/**/*.test.{js,jsx,ts,tsx}',
-      'test/e2e/**/*.test.{js,jsx,ts,tsx}',
+    include: activeIncludes,
+    exclude: [
+      ...configDefaults.exclude,
+      'test/logs/**',
+      ...(runRemoteTests ? [] : ['test/e2e/**', 'test/integration/**']),
     ],
-    exclude: [...configDefaults.exclude, 'test/logs/**'],
     coverage: {
       reporter: ['text', 'lcov'],
       reportsDirectory: './test/coverage',
