@@ -78,12 +78,6 @@ export default defineConfig({
       reportsDirectory: './test/coverage',
       include: ['src/**/*.{js,jsx,ts,tsx}'],
     },
-    // Evitar transformar dependencias críticas de jsdom en CI
-    server: {
-      deps: {
-        external: ['jsdom', 'whatwg-url', 'webidl-conversions']
-      }
-    },
     testTimeout: 30_000,
     hookTimeout: 10_000,
     sequence: {
@@ -96,5 +90,12 @@ export default defineConfig({
         maxThreads: 1,
       },
     },
+  },
+  deps: {
+    optimizer: {
+      web: {
+        exclude: ['jsdom', 'whatwg-url', 'webidl-conversions']
+      }
+    }
   },
 })
