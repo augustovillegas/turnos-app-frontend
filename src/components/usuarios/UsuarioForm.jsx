@@ -34,14 +34,22 @@ const DEFAULT_MODULE = MODULE_OPTIONS[0]?.label ?? "HTML-CSS";
 
 
 
+// Password por rol dinámica basada en año actual.
+const generatePasswordByRole = (rol) => {
+  const currentYear = new Date().getFullYear();
+  const rolePasswords = {
+    alumno: `Alumno-${currentYear}#`,
+    profesor: `Profesor-${currentYear}#`,
+    superadmin: `Superadmin-${currentYear}#`,
+  };
+  return rolePasswords[rol] || `User-${currentYear}#`;
+};
+
+// Legacy defaults (compat) – se mantienen para no romper flujos viejos
 const DEFAULT_PASSWORDS = {
-
   alumno: "Alumno-fullstack-2025",
-
   profesor: "Prof-fullstack-2025",
-
   superadmin: "Superadmin-fullstack-2025",
-
 };
 
 
@@ -148,6 +156,8 @@ export const UsuarioForm = ({ onVolver }) => {
 
   const [formErrors, setFormErrors] = useState({});
 
+  const [useCustomPassword, setUseCustomPassword] = useState(false);
+
   const { control, watch, setValue } = useForm({
 
     mode: "onChange",
@@ -194,7 +204,23 @@ export const UsuarioForm = ({ onVolver }) => {
 
     }
 
-    setFormValues((prev) => ({ ...prev, [name]: value }));
+    setFormValues((prev) => {
+
+      const updated = { ...prev, [name]: value };
+
+      if (name === "tipo" && !useCustomPassword) {
+
+        const newPassword = generatePasswordByRole(value);
+
+        updated.password = newPassword;
+
+        updated.passwordConfirm = newPassword;
+
+      }
+
+      return updated;
+
+    });
 
   };
 
@@ -726,7 +752,7 @@ export const UsuarioForm = ({ onVolver }) => {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor={FIELD_IDS.password} className="block text-xs font-bold text-[#111827] dark:text-gray-200">
-                Password (opcional)
+                Password
               </label>
               <Controller
                 name="password"
@@ -735,14 +761,15 @@ export const UsuarioForm = ({ onVolver }) => {
                   <input
                     {...field}
                     id={FIELD_IDS.password}
-                    type="password"
-                    placeholder="Dejar vacío para usar la default"
+                    type="text"
+                    disabled={!useCustomPassword}
+                    placeholder={useCustomPassword ? "Ingrese contraseña" : generatePasswordByRole(formValues.tipo)}
                     data-testid="field-password"
                     onChange={(e) => {
                       field.onChange(e)
                       handleFieldChange(e)
                     }}
-                    className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
+                    className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500 disabled:bg-gray-100 dark:disabled:bg-[#1A1A1A] disabled:cursor-not-allowed"
                   />
                 )}
               />
@@ -759,18 +786,53 @@ export const UsuarioForm = ({ onVolver }) => {
                   <input
                     {...field}
                     id={FIELD_IDS.passwordConfirm}
-                    type="password"
-                    placeholder="Requerido solo si ingresas una password"
+                    type="text"
+                    disabled={!useCustomPassword}
+                    placeholder={useCustomPassword ? "Confirme contraseña" : "Generada automáticamente"}
                     data-testid="field-password-confirm"
                     onChange={(e) => {
                       field.onChange(e)
                       handleFieldChange(e)
                     }}
-                    className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500"
+                    className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm placeholder:text-[#6B7280] focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:placeholder:text-gray-500 disabled:bg-gray-100 dark:disabled:bg-[#1A1A1A] disabled:cursor-not-allowed"
                   />
                 )}
               />
             </div>
+          </div>
+
+          {/* Checkbox desplazado debajo de los inputs para no truncar elementos */}
+          <div className="mt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useCustomPassword}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setUseCustomPassword(checked);
+                  if (!checked) {
+                    const newPassword = generatePasswordByRole(formValues.tipo);
+                    setFormValues(prev => ({
+                      ...prev,
+                      password: newPassword,
+                      passwordConfirm: newPassword
+                    }));
+                    setValue('password', newPassword);
+                    setValue('passwordConfirm', newPassword);
+                  } else {
+                    setFormValues(prev => ({
+                      ...prev,
+                      password: '',
+                      passwordConfirm: ''
+                    }));
+                    setValue('password', '');
+                    setValue('passwordConfirm', '');
+                  }
+                }}
+                className="rounded border-[#111827]/40 dark:border-[#444]"
+              />
+              <span className="text-xs text-[#111827] dark:text-gray-200">Usar contraseña personalizada</span>
+            </label>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
