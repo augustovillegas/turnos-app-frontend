@@ -19,6 +19,7 @@ import {
   createTurno as apiCreateTurno,
   updateTurno as apiUpdateTurno,
   deleteTurno as apiDeleteTurno,
+  actualizarEstadoSlot,
 } from "../services/turnosService";
 import {
   getSlots,
@@ -540,6 +541,42 @@ export const AppProvider = ({ children }) => {
     [setTurnos, start, stop]
   );
 
+  // Cambio de estado de turno (usando endpoint dedicado /slots/:id/estado)
+  const updateTurnoEstado = useCallback(
+    async (id, estado) => {
+      start("turnos");
+      try {
+        const actualizado = await actualizarEstadoSlot(id, estado);
+        const normalizado = normalizeItem(actualizado, "turno");
+        const targetId = normalizado?.id ?? id;
+        const nextTurno = targetId != null
+          ? { ...normalizado, id: targetId, estado: normalizado?.estado ?? estado }
+          : null;
+        if (!nextTurno) throw new Error("No se pudo resolver el turno actualizado.");
+
+        setTurnos((prev) => {
+          const base = Array.isArray(prev) ? normalizeCollection(prev, "turno") : [];
+          const exists = base.some((t) => String(t.id) === String(targetId));
+          if (exists) {
+            return base.map((t) =>
+              String(t.id) === String(targetId) ? { ...t, ...nextTurno } : t
+            );
+          }
+          return [...base, nextTurno];
+        });
+        showToast("Estado de turno actualizado", "success");
+        return nextTurno;
+      } catch (error) {
+        console.error("Error al actualizar estado del turno", error);
+        showToast("No se pudo actualizar el estado del turno", "error");
+        throw error;
+      } finally {
+        stop("turnos");
+      }
+    },
+    [setTurnos, start, stop]
+  );
+
   const removeTurno = useCallback(
     async (id) => {
       start("turnos");
@@ -641,6 +678,7 @@ export const AppProvider = ({ children }) => {
         updateUsuarioEstado: updateUsuarioEstadoRemoto,
         createTurno,
         updateTurno,
+        updateTurnoEstado,
         removeTurno,
         findTurnoById,
         // --- Operaciones específicas alumno sobre /slots ---

@@ -15,12 +15,13 @@ import { showToast } from "../../utils/feedback/toasts";
 import { SuperadminActions } from "../ui/SuperadminActions";
 import { ProfesorActions } from "../ui/ProfesorActions";
 import { formatDateForTable } from "../../utils/formatDateForTable";
+import { useApproval } from "../../hooks/useApproval";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
   // ARQUITECTURA: Recibe `role` como prop para renderizado condicional de acciones
   // (SuperadminActions vs ProfesorActions). El backend valida ownership/permisos.
-  const { turnos, loadTurnos, removeTurno } = useAppData();
+  const { turnos, loadTurnos, removeTurno, updateTurnoEstado } = useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -73,6 +74,26 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   );
   const turnosLoading = isLoading("turnos");
   const showLoader = turnosLoading;
+
+  // --- AprobaciÍn / rechazo de turnos solicitados ---
+  const { handleApprove, handleReject, processingId: approvingId } = useApproval({
+    onApprove: async (t) => {
+      await updateTurnoEstado?.(t.id, "Aprobado");
+    },
+    onReject: async (t) => {
+      await updateTurnoEstado?.(t.id, "Rechazado");
+    },
+    messages: {
+      approveTitle: "Aprobar turno",
+      approveMessage: "¿Confirmas aprobar el turno {name}?",
+      approveSuccess: "Turno aprobado",
+      approveError: "No se pudo aprobar el turno",
+      rejectTitle: "Rechazar turno",
+      rejectMessage: "¿Deseas rechazar este turno? Esta acciÍn no se puede deshacer.",
+      rejectSuccess: "Turno rechazado",
+      rejectError: "No se pudo rechazar el turno",
+    },
+  });
   // --- Eliminacion con confirmacion estilo Win98 ---
   const handleConfirmarEliminacion = (turno) => {
     showModal({
@@ -199,10 +220,10 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
                       onVer={onVer ? (t) => onVer(t) : undefined}
                       onEditar={onEditar ? (t) => onEditar(t) : undefined}
                       onEliminar={() => handleConfirmarEliminacion(turno)}
-                      onAprobar={undefined}
-                      onRechazar={undefined}
+                      onAprobar={handleApprove}
+                      onRechazar={handleReject}
                       onCopiarZoom={handleCopiarZoom}
-                      disabled={showLoader || processingId === turno.id}
+                      disabled={showLoader || processingId === turno.id || approvingId === turno.id}
                     />
                   ) : (
                     <ProfesorActions
@@ -210,10 +231,10 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
                       onVer={onVer ? (t) => onVer(t) : undefined}
                       onEditar={onEditar ? (t) => onEditar(t) : undefined}
                       onEliminar={() => handleConfirmarEliminacion(turno)}
-                      onAprobar={undefined}
-                      onRechazar={undefined}
+                      onAprobar={handleApprove}
+                      onRechazar={handleReject}
                       onCopiarZoom={handleCopiarZoom}
-                      disabled={showLoader || processingId === turno.id}
+                      disabled={showLoader || processingId === turno.id || approvingId === turno.id}
                     />
                   )}
                 </div>
@@ -226,7 +247,9 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
               onVer={onVer ? () => onVer(turno) : undefined}
               onEditar={() => onEditar?.(turno)}
               onEliminar={() => handleConfirmarEliminacion(turno)}
-              disabled={showLoader || processingId === turno.id}
+              onAprobar={() => handleApprove(turno)}
+              onRechazar={() => handleReject(turno)}
+              disabled={showLoader || processingId === turno.id || approvingId === turno.id}
             />
           )}
         />

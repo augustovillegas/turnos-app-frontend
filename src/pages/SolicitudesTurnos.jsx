@@ -32,7 +32,7 @@ const SOLICITUDES_COLUMNS = [
 import { showToast } from "../utils/feedback/toasts";
 
 export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, itemsPerPage = 5 }) => {
-  const { updateTurno } = useAppData();
+  const { updateTurnoEstado } = useAppData();
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = usuarioActual?.role === "superadmin";
 
@@ -95,10 +95,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
   // Hook de aprobación/rechazo
   const { handleApprove, handleReject, processingId } = useApproval({
     onApprove: async (t) => {
-      await updateTurno?.(t.id, { estado: "Aprobado" });
+      await updateTurnoEstado?.(t.id, "Aprobado");
     },
     onReject: async (t) => {
-      await updateTurno?.(t.id, { estado: "Rechazado" });
+      await updateTurnoEstado?.(t.id, "Rechazado");
     },
     messages: {
       approveTitle: "Aprobar turno",
