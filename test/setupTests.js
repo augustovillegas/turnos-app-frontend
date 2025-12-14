@@ -124,6 +124,37 @@ if (typeof globalThis.SharedArrayBuffer === "undefined") {
   globalThis.SharedArrayBuffer = SharedArrayBufferMock;
 }
 
+// Node 18 (GitHub Actions) no soporta ArrayBuffer resizable/growable y whatwg-url
+// asume la presencia de estas props al inicializarse. Declaramos getters no-op
+// para evitar TypeError: Cannot read properties of undefined (reading 'get').
+const resizableDescriptor = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  "resizable"
+);
+if (!resizableDescriptor) {
+  Object.defineProperty(ArrayBuffer.prototype, "resizable", {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return false;
+    },
+  });
+}
+
+const growableDescriptor = Object.getOwnPropertyDescriptor(
+  SharedArrayBuffer.prototype,
+  "growable"
+);
+if (!growableDescriptor) {
+  Object.defineProperty(SharedArrayBuffer.prototype, "growable", {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return false;
+    },
+  });
+}
+
 if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = () => ({
     matches: false,
