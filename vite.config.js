@@ -55,6 +55,9 @@ function walk(dir) {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), forbidE2EVars()],
+  ssr: {
+    external: ['jsdom', 'whatwg-url', 'webidl-conversions']
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -83,11 +86,10 @@ export default defineConfig({
     sequence: {
       concurrent: false,
     },
-    pool: 'threads',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        minThreads: 1,
-        maxThreads: 1,
+      forks: {
+        singleFork: true,
       },
     },
   },
