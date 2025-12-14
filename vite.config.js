@@ -22,6 +22,7 @@ function forbidE2EVars() {
   }
 }
 
+/* eslint-disable no-undef */
 function scanClient() {
   const root = process.cwd()
   const srcDir = path.join(root, 'src')
@@ -37,6 +38,7 @@ function scanClient() {
     }
   }
 }
+/* eslint-enable no-undef */
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })

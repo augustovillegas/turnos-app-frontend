@@ -1,5 +1,5 @@
 import { DropdownActions } from "../ui/DropdownActions";
-import { isEstado, anyEstado } from "../../utils/turnos/normalizeEstado";
+import { isEstado } from "../../utils/turnos/normalizeEstado";
 
 export const AlumnoActions = ({
   item,

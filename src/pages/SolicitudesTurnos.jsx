@@ -129,6 +129,29 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     }
   };
 
+  // Helper functions (must be before early returns)
+  const resolveSalaTexto = useCallback((turno) => {
+    if (!turno) return "";
+    const rawSala = turno.sala ?? turno.room ?? "";
+    const salaStr = String(rawSala).trim();
+    if (!salaStr) return "";
+    const base = /^sala/i.test(salaStr) ? salaStr : `Sala ${salaStr}`;
+    return base;
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id = "e2e-turnos-solicitados";
+    let helper = document.getElementById(id);
+    if (!helper) {
+      helper = document.createElement("div");
+      helper.id = id;
+      helper.style.display = "none";
+      document.body.appendChild(helper);
+    }
+    helper.setAttribute("data-count", String(turnosSolicitados.length || 0));
+  }, [turnosSolicitados]);
+
   // ---------- RENDER POR MODO ----------
   if (modo === "detalle") {
     return (
@@ -148,35 +171,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     ? { className: containerClass }
     : { className: `w-full flex flex-col gap-6 ${containerClass}` };
 
-  const resolveSalaTexto = useCallback((turno) => {
-    if (!turno) return "";
-    const rawSala = turno.sala ?? turno.room ?? "";
-    const salaStr = String(rawSala).trim();
-    if (!salaStr) return "";
-    const base = /^sala/i.test(salaStr) ? salaStr : `Sala ${salaStr}`;
-    return base;
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const id = "e2e-turnos-solicitados";
-    let helper = document.getElementById(id);
-    if (!helper) {
-      helper = document.createElement("div");
-      helper.id = id;
-      helper.style.position = "absolute";
-      helper.style.left = "-9999px";
-      helper.style.top = "0";
-      document.body.appendChild(helper);
-    }
-    helper.textContent = renderItems.map(resolveSalaTexto).join(" | ");
-    return () => {
-      helper?.remove();
-    };
-  }, [renderItems, resolveSalaTexto]);
-
   if (import.meta?.env?.MODE === "test") {
-    // eslint-disable-next-line no-console
     console.log("[SolicitudesTurnos] solicitados", turnosSolicitados.map(resolveSalaTexto));
   }
 
