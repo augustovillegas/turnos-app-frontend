@@ -1,6 +1,27 @@
 /* eslint-env node */
 /* global process */
+// Load environment variables for tests (prioritize E2E locals)
+import { config } from 'dotenv'
+import fs from 'fs'
+import path from 'path'
+
+const root = process.cwd()
+const e2eEnv = path.join(root, '.env.e2e.local')
+const testEnv = path.join(root, '.env.test.local')
+const defaultEnv = path.join(root, '.env')
+
+if (fs.existsSync(e2eEnv)) {
+  config({ path: e2eEnv })
+} else if (fs.existsSync(testEnv)) {
+  config({ path: testEnv })
+} else if (fs.existsSync(defaultEnv)) {
+  config({ path: defaultEnv })
+} else {
+  config()
+}
+
 import "@testing-library/jest-dom/vitest";
+import { configure as configureTestingLibrary } from "@testing-library/dom";
 import React from "react";
 import { cleanup } from "@testing-library/react";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
@@ -44,6 +65,9 @@ if (typeof globalThis.React === "undefined") {
 const remoteTestsFlag =
   process.env.RUN_REMOTE_TESTS === "true" ? "true" : "false";
 const backendModeLabel = "REAL";
+
+// Aumentar timeout para utilidades async (findBy/waitFor) con API real
+configureTestingLibrary({ asyncUtilTimeout: 12_000 });
 
 const ensureLogFile = () => {
   if (isLogInitialised) return;

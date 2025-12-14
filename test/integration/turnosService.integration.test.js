@@ -5,7 +5,6 @@ import {
   deleteTurno,
   getTurnoById,
   getTurnos,
-  updateTurno,
   actualizarEstadoSlot,
 } from "../../src/services/turnosService";
 import { buildTurnoPayloadFromForm } from "../../src/utils/turnos/form";
@@ -123,7 +122,6 @@ describe.sequential("Servicios de turnos (API real)", () => {
       }
       registerCreated(created);
 
-      const comentarios = "Actualizado por test";
       const estado = "Solicitado";
 
       // Usar endpoint específico de cambio de estado para evitar validaciones estrictas

@@ -17,13 +17,6 @@ import { showToast } from "../utils/feedback/toasts";
 import { paginate } from "../utils/pagination";
 import { useEntregaReview } from "../hooks/useEntregaReview";
 
-import {
-  ensureModuleLabel,
-  labelToModule,
-  moduleToLabel,
-  coincideModulo,
-} from "../utils/moduleMap";
-
 export const EvaluarEntregas = ({ withWrapper = true }) => {
   // Agregamos loadEntregas para disparar la carga si la vista se monta directamente (ruta profunda)
   const { entregas, updateEntrega, loadEntregas } = useAppData();
@@ -31,7 +24,7 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
   const { isLoading } = useLoading();
   const ITEMS_PER_PAGE = 5;
   const [page, setPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState("Pendientes"); // "Pendientes" | specific reviewStatus | "Todos"
+  const [filterStatus] = useState("Pendientes"); // "Pendientes" | specific reviewStatus | "Todos"
   const hasLoadedRef = useRef(false);
 
   // Eliminado efecto vacío que causaba render redundante sin lógica
@@ -57,54 +50,7 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
     return anyEstado(estadoActual, ["Pendiente", "A revisar"]) || !estadoActual;
   };
 
-  const moduloEtiqueta = useMemo(() => {
-    if (!usuarioActual) return null;
-    const etiquetaDirecta = [
-      ensureModuleLabel(usuarioActual.modulo),
-      ensureModuleLabel(usuarioActual.module),
-      ensureModuleLabel(usuarioActual.moduleLabel), // <-- añadido: backend expone virtual moduleLabel
-      ensureModuleLabel(usuarioActual.moduloSlug),
-      ensureModuleLabel(usuarioActual.moduleCode),
-      ensureModuleLabel(usuarioActual.moduleNumber),
-    ].find(Boolean);
-    if (etiquetaDirecta) return etiquetaDirecta;
-
-    const desdeCohorte = [
-      usuarioActual.cohort,
-      usuarioActual.cohorte,
-      usuarioActual.cohortId,
-    ]
-      .map(moduleToLabel)
-      .find(Boolean);
-
-    return desdeCohorte ?? null;
-  }, [usuarioActual]);
-
-  const cohortAsignado = useMemo(() => {
-    if (!usuarioActual) return null;
-    const candidatos = [
-      usuarioActual.cohort,
-      usuarioActual.cohorte,
-      usuarioActual.cohortId,
-      usuarioActual.moduleCode,
-      usuarioActual.moduleNumber,
-    ];
-    for (const candidato of candidatos) {
-      if (candidato == null) continue;
-      const numeroDirecto = Number(String(candidato).trim());
-      if (Number.isFinite(numeroDirecto) && numeroDirecto > 0) {
-        return Math.trunc(numeroDirecto);
-      }
-      const numeroDesdeEtiqueta = labelToModule(candidato);
-      if (numeroDesdeEtiqueta != null) return numeroDesdeEtiqueta;
-    }
-    if (moduloEtiqueta) {
-      const numeroDesdeModulo = labelToModule(moduloEtiqueta);
-      if (numeroDesdeModulo != null) return numeroDesdeModulo;
-    }
-    return null;
-  }, [usuarioActual, moduloEtiqueta]);
-
+  
   // Filtrado por módulo delegado completamente al backend (permissionUtils). Se usa listado directo.
   const entregasFiltradas = useMemo(() => {
     const result = Array.isArray(entregas) ? entregas : [];
@@ -338,3 +284,9 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
     </Container>
   );
 };
+
+
+
+
+
+

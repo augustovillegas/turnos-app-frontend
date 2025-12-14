@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import toast, { Toaster } from "react-hot-toast";
 
 // Íconos pixelados estilo Win98

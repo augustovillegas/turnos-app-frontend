@@ -1,6 +1,6 @@
 // === Dashboard Profesor ===
 // Panel del docente: aprobar/rechazar turnos, gestionar usuarios y crear slots.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SideBar } from "../components/layout/SideBar";
 import { LayoutWrapper } from "../components/layout/LayoutWrapper";
@@ -106,12 +106,8 @@ export const DashboardProfesor = () => {
       return;
     (async () => {
       try {
-        const turnosParams =
-          cohortAsignado != null
-            ? { cohort: cohortAsignado }
-            : moduloEtiqueta
-              ? { modulo: moduloEtiqueta }
-              : {};
+        // El backend no siempre persiste metadata de m?dulo/cohorte; traemos todo y filtramos client-side.
+        const turnosParams = {};
         const usuariosParams = {
           rol: "alumno",
           ...(cohortAsignado != null
@@ -153,7 +149,6 @@ export const DashboardProfesor = () => {
         message: "¿Estás seguro de que deseas cerrar sesión?",
         onConfirm: () => {
           cerrarSesion();
-          showToast("Sesión cerrada correctamente", "info");
           navigate("/", { replace: true });
         },
       });

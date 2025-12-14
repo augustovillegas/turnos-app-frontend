@@ -1,5 +1,5 @@
 // === ErrorContext (Windows 98 look) ===
-// Provee una cola global de mensajes de error con estética Win98.
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -77,7 +77,7 @@ export const ErrorProvider = ({
             showToast(payload.message, "info");
             break;
         }
-      } catch (e) {
+      } catch {
         // Toast fallback error - silent fail
       }
 
@@ -188,3 +188,4 @@ export const ErrorViewport98 = ({ items, onDismiss }) => {
     </div>
   );
 };
+

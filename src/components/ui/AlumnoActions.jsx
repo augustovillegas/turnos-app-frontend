@@ -1,5 +1,5 @@
 import { DropdownActions } from "../ui/DropdownActions";
-import { normalizeEstado, isEstado, anyEstado } from "../../utils/turnos/normalizeEstado";
+import { isEstado, anyEstado } from "../../utils/turnos/normalizeEstado";
 
 export const AlumnoActions = ({
   item,
@@ -32,7 +32,9 @@ export const AlumnoActions = ({
         onClick: () => onCancelarTurno?.(item),
         disabled,
       });
-    } else if (anyEstado(item.estado, ["Aprobado", "Rechazado"])) {
+    }
+    // Siempre permitir "Ver detalle" si hay handler, sin duplicar
+    if (onVerDetalle && !options.some((o) => o.label === "Ver detalle")) {
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",
@@ -58,7 +60,9 @@ export const AlumnoActions = ({
         onClick: () => onCancelarEntrega?.(item),
         disabled,
       });
-    } else {
+    }
+    // Siempre permitir "Ver detalle" si hay handler, sin duplicar
+    if (onVerDetalle && !options.some((o) => o.label === "Ver detalle")) {
       options.push({
         label: "Ver detalle",
         icon: "/icons/eye.png",

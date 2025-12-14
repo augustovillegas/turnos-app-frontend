@@ -79,7 +79,9 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
           result.fecha = `${dd}/${mm}/${yyyy}`;
         }
       }
-    } catch {}
+    } catch {
+      // Ignorar si no puede derivar fecha
+    }
   }
   // Derivar HH:mm cuando sea posible (algunos backends lo esperan)
   try {
@@ -91,7 +93,9 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
     if (payload.end && !payload.endTime) {
       result.endTime = deriveHM(payload.end);
     }
-  } catch {}
+  } catch {
+    // Si falla el parseo, continuar sin comentario derivado
+  }
   maybeAssign("comentarios", payload.comentarios ?? payload.comment, true);
 
   const resolvedEstado =
@@ -142,7 +146,9 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
       if (minutes && result.duracion === undefined) {
         result.duracion = minutes;
       }
-    } catch {}
+    } catch {
+      // DerivaciИn de duraciИn fallida; continuar sin ajustar
+    }
   }
 
   return result;

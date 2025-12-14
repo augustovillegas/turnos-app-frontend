@@ -12,6 +12,7 @@ import { showToast } from "../utils/feedback/toasts";
 import { useAuth } from "../context/AuthContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
+import { useModal } from "../context/ModalContext";
 import { CreateUsers } from "./CreateUsers";
 import { SolicitudesTurnos } from "./SolicitudesTurnos";
 import { UsuariosPendientes } from "./UsuariosPendientes";
@@ -29,6 +30,7 @@ export const DashboardSuperadmin = () => {
   const { usuario: usuarioActual, cerrarSesion } = useAuth();
   const { isLoading } = useLoading();
   const { pushError } = useError();
+  const { showModal } = useModal();
 
   // --- Estado local: solo la pestaña activa ---
   const [active, setActive] = useState("usuarios");
@@ -60,9 +62,15 @@ export const DashboardSuperadmin = () => {
 
   const handleSidebarSelect = (id) => {
     if (id === "cerrar-sesion") {
-      cerrarSesion();
-      showToast("Sesión cerrada correctamente.", "info");
-      navigate("/", { replace: true });
+      showModal({
+        type: "warning",
+        title: "¿Cerrar sesión?",
+        message: "¿Estás seguro de que deseas cerrar sesión?",
+        onConfirm: () => {
+          cerrarSesion();
+          navigate("/", { replace: true });
+        },
+      });
       return;
     }
     setActive(id);

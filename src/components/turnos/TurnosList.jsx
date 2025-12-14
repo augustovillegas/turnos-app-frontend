@@ -14,14 +14,12 @@ import { useModal } from "../../context/ModalContext";
 import { showToast } from "../../utils/feedback/toasts";
 import { SuperadminActions } from "../ui/SuperadminActions";
 import { ProfesorActions } from "../ui/ProfesorActions";
-import { normalizeEstado } from "../../utils/turnos/normalizeEstado";
 import { formatDateForTable } from "../../utils/formatDateForTable";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
   // ARQUITECTURA: Recibe `role` como prop para renderizado condicional de acciones
   // (SuperadminActions vs ProfesorActions). El backend valida ownership/permisos.
-  // `normalizeEstado` asegura comparaciones case-insensitive para filtros de UI.
   const { turnos, loadTurnos, removeTurno } = useAppData();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
@@ -75,8 +73,6 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   );
   const turnosLoading = isLoading("turnos");
   const showLoader = turnosLoading;
-  const hasTurnos = turnosBuscados.length > 0;
-
   // --- Eliminacion con confirmacion estilo Win98 ---
   const handleConfirmarEliminacion = (turno) => {
     showModal({

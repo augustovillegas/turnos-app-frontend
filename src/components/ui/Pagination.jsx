@@ -37,7 +37,6 @@ export const Pagination = ({
   );
 
   const [page, setPage] = useState(initialPage);
-  const [inputPage, setInputPage] = useState("");
 
   const effectivePage = isControlled
     ? clampPage(parsedControlledPage, totalPages)
@@ -75,15 +74,6 @@ export const Pagination = ({
       onPageChange?.(nextPage);
       return nextPage;
     });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const target = Number(inputPage);
-    if (!isNaN(target)) {
-      handleGoToPage(target);
-      setInputPage("");
-    }
   };
 
   // ---- LÓGICA PARA EL CUADRO DE NÚMEROS (desktop y mobile) ----

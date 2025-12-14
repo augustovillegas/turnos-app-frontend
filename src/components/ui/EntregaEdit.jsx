@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { EntregaForm } from "../ui/EntregaForm";
 
 export const EntregaEdit = ({ entrega, onVolver }) => {
-  const { updateEntrega, entregasLoading } = useAppData();
+  const { updateEntrega } = useAppData();
   const { showModal } = useModal();
 
   const [formValues, setFormValues] = useState({

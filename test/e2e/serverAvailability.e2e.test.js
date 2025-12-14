@@ -1,5 +1,4 @@
 import axios from "axios";
-import process from "node:process";
 import { beforeAll, describe, expect, it } from "vitest";
 import { getApiBaseUrl, resolveAuthSession } from "../utils/realBackendSession";
 
@@ -66,7 +65,6 @@ describe("Disponibilidad real de la API de turnos", () => {
       const createResponse = await httpClient.post("/slots", payload);
       if (![200, 201].includes(createResponse.status)) {
         // Log de diagnostico para el backend real
-        // eslint-disable-next-line no-console
         console.error("[E2E][serverAvailability] Create slot status:", createResponse.status, createResponse.data);
       }
       expect([200, 201]).toContain(createResponse.status);

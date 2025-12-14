@@ -1,5 +1,6 @@
 // === App Data Context ===
 // Centraliza la cache local de turnos, entregas y usuarios junto a operaciones CRUD.
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -65,11 +66,9 @@ const extractId = (value) => {
 
 import {
   normalizeTurno,
-  normalizeTurnosCollection,
 } from "../utils/turnos/normalizeTurno";
 import {
   normalizeEntrega,
-  normalizeEntregasCollection,
 } from "../utils/entregas/normalizeEntrega";
 
 const normalizeItem = (item, type = "generic") => {
@@ -166,7 +165,23 @@ export const AppProvider = ({ children }) => {
         // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
         const esAlumno = usuario?.role === "alumno";
         const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
-        const normalized = normalizeCollection(remoteTurnos, "turno");
+        const parseDateSafe = (value) => {
+          if (!value) return 0;
+          const direct = new Date(value);
+          if (!Number.isNaN(direct.getTime())) return direct.getTime();
+          if (typeof value === "string" && value.includes("/")) {
+            const [dd, mm, yyyy] = value.split("/").map(Number);
+            if (dd && mm && yyyy) {
+              return new Date(yyyy, mm - 1, dd).getTime();
+            }
+          }
+          return 0;
+        };
+        const normalized = normalizeCollection(remoteTurnos, "turno").sort(
+          (a, b) =>
+            parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
+            parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
+        );
         setTurnos(normalized);
         return normalized;
       } catch (error) {

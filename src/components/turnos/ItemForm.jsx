@@ -1,3 +1,5 @@
+import { useForm, Controller } from "react-hook-form";
+import { useEffect } from "react";
 import { Button } from "../ui/Button";
 
 export const ItemForm = ({
@@ -9,17 +11,29 @@ export const ItemForm = ({
   estaCargando = false,
   alCancelar,
 }) => {
-  const manejarCambio = (evento) => {
-    const { name, value } = evento.target;
+  const { control, handleSubmit, watch, setValue } = useForm({
+    mode: "onChange",
+    defaultValues: valores,
+  });
+
+  const valoresActuales = watch();
+
+  useEffect(() => {
+    Object.keys(valores).forEach((key) => {
+      if (valoresActuales[key] !== valores[key]) {
+        setValue(key, valores[key]);
+      }
+    });
+  }, [valores, setValue, valoresActuales]);
+
+  const manejarCambio = (name) => (event) => {
+    const { value } = event.target;
     alCambiar(name, value);
   };
 
   return (
     <form
-      onSubmit={(evento) => {
-        evento.preventDefault();
-        alEnviar();
-      }}
+      onSubmit={handleSubmit(() => alEnviar())}
       className="space-y-4 rounded-md border-2 border-[#111827] bg-white p-4 dark:border-[#333] dark:bg-[#1E1E1E]"
     >
       <div className="grid gap-4 md:grid-cols-2">
@@ -27,18 +41,26 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Review *
           </label>
-          <select
+          <Controller
             name="review"
-            value={valores.review}
-            onChange={manejarCambio}
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
-          >
-            {[1, 2, 3, 4, 5].map((review) => (
-              <option key={review} value={review}>
-                Review {review}
-              </option>
-            ))}
-          </select>
+            control={control}
+            render={({ field }) => (
+              <select
+                {...field}
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("review")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              >
+                {[1, 2, 3, 4, 5].map((review) => (
+                  <option key={review} value={review}>
+                    Review {review}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
           {errores.review && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
               {errores.review}
@@ -50,12 +72,20 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Fecha *
           </label>
-          <input
-            type="date"
+          <Controller
             name="fecha"
-            value={valores.fecha}
-            onChange={manejarCambio}
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="date"
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("fecha")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              />
+            )}
           />
           {errores.fecha && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
@@ -68,12 +98,20 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Hora inicio *
           </label>
-          <input
-            type="time"
+          <Controller
             name="horaInicio"
-            value={valores.horaInicio}
-            onChange={manejarCambio}
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="time"
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("horaInicio")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              />
+            )}
           />
           {errores.horaInicio && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
@@ -86,12 +124,20 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Hora fin *
           </label>
-          <input
-            type="time"
+          <Controller
             name="horaFin"
-            value={valores.horaFin}
-            onChange={manejarCambio}
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="time"
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("horaFin")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              />
+            )}
           />
           {errores.horaFin && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
@@ -104,14 +150,22 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Número de sala (room) *
           </label>
-          <input
-            type="number"
+          <Controller
             name="sala"
-            value={valores.sala}
-            onChange={manejarCambio}
-            min={1}
-            placeholder="101"
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="number"
+                min={1}
+                placeholder="101"
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("sala")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              />
+            )}
           />
           {errores.sala && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
@@ -124,13 +178,21 @@ export const ItemForm = ({
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
             Enlace de Zoom *
           </label>
-          <input
-            type="url"
+          <Controller
             name="zoomLink"
-            value={valores.zoomLink}
-            onChange={manejarCambio}
-            placeholder="https://zoom.us/..."
-            className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="url"
+                placeholder="https://zoom.us/..."
+                onChange={(e) => {
+                  field.onChange(e);
+                  manejarCambio("zoomLink")(e);
+                }}
+                className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+              />
+            )}
           />
           {errores.zoomLink && (
             <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
@@ -144,12 +206,20 @@ export const ItemForm = ({
         <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
           Comentarios internos
         </label>
-        <textarea
+        <Controller
           name="comentarios"
-          value={valores.comentarios}
-          onChange={manejarCambio}
-          rows={3}
-          className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+          control={control}
+          render={({ field }) => (
+            <textarea
+              {...field}
+              rows={3}
+              onChange={(e) => {
+                field.onChange(e);
+                manejarCambio("comentarios")(e);
+              }}
+              className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+            />
+          )}
         />
       </div>
 

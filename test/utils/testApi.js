@@ -1,4 +1,4 @@
-import { getBackendClient, resolveAuthSession } from "./realBackendSession";
+import { getBackendClient, resolveAuthSession } from "./realBackendSession.js";
 
 // Cache breve por rol para evitar múltiples logins en los mismos tests
 const localSessionCache = new Map();
@@ -98,7 +98,9 @@ export const testApi = {
           options
         );
         created = res2.data;
-      } catch {}
+      } catch {
+        // Registro via /auth/register fallido; continuar con fallback
+      }
       if (!created || (!created.id && !created._id)) {
         try {
           const list = await this.listUsuarios(options);
@@ -106,7 +108,9 @@ export const testApi = {
             (u) => String(u.email || "").toLowerCase() === String(defaultPayload.email || "").toLowerCase()
           );
           if (found) created = found;
-        } catch {}
+        } catch {
+          // Si tampoco podemos listar usuarios, devolver created tal como estИ
+        }
       }
     }
     return created;
@@ -162,4 +166,3 @@ export const testApi = {
     return Array.isArray(response.data) ? response.data : [];
   },
 };
-

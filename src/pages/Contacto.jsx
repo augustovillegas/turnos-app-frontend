@@ -10,8 +10,6 @@ export default function Contacto() {
     if (enviando) return;
     setEnviando(true);
 
-    const data = Object.fromEntries(new FormData(e.currentTarget));
-
     // Simulación de envío
     await new Promise((r) => setTimeout(r, 800));
     showToast("¡Mensaje enviado! (provisorio)", "success");
@@ -234,3 +232,4 @@ export default function Contacto() {
     </main>
   );
 }
+

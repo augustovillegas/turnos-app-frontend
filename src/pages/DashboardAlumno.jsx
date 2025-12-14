@@ -11,7 +11,7 @@ import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { ensureModuleLabel, coincideModulo, labelToModule, moduleToLabel } from "../utils/moduleMap";
-import { normalizeEstado, isEstado, anyEstado } from "../utils/turnos/normalizeEstado";
+import { isEstado, anyEstado } from "../utils/turnos/normalizeEstado";
 import { useAlumnoTurnos } from "../hooks/useAlumnoTurnos";
 
 // Secciones modulares
@@ -297,7 +297,6 @@ export const DashboardAlumno = () => {
         message: "¿Estás seguro de que deseas cerrar sesión?",
         onConfirm: () => {
           cerrarSesion();
-          showToast("Sesión cerrada correctamente", "info");
           navigate("/", { replace: true });
         },
       });
@@ -377,7 +376,7 @@ export const DashboardAlumno = () => {
         ========================== */}
         {active === "Entregables" && (
           <Entregables
-            entregas={entregas} // Backend filtra via /submissions/:userId (solo propias del alumno)
+            entregas={entregasAlumno} // Backend filtra via /submissions/:userId (solo propias del alumno)
             onAgregarEntrega={handleAgregarEntrega}
             onCancelarEntrega={handleCancelarEntrega}
             entregasLoading={isEntregasSectionLoading}

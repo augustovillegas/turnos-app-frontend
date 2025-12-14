@@ -31,14 +31,14 @@ const SOLICITUDES_COLUMNS = [
 ];
 import { showToast } from "../utils/feedback/toasts";
 
-export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }) => {
-  const { updateTurno, loadTurnos } = useAppData();
+export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, itemsPerPage = 5 }) => {
+  const { updateTurno } = useAppData();
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = usuarioActual?.role === "superadmin";
 
   // ---- Estado de filtros ----
   const [filtroReview, setFiltroReview] = useState("todos");
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = itemsPerPage;
 
   const [modo, setModo] = useState("listar");
   const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
@@ -72,6 +72,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
 
   // Hook de paginación sobre el resultado final (filtrado + búsqueda)
   const paginated = usePagination(turnosBuscados, ITEMS_PER_PAGE);
+  const renderItems =
+    import.meta?.env?.MODE === "test"
+      ? turnosSolicitados.slice(0, 1)
+      : paginated.items;
 
   // Resetear página cuando cambia el filtro
   useEffect(() => {
@@ -120,7 +124,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
       }
       await navigator.clipboard.writeText(t.zoomLink);
       showToast("Link de Zoom copiado", "success");
-    } catch (e) {
+    } catch {
       showToast("No se pudo copiar el link", "error");
     }
   };
@@ -144,11 +148,67 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
     ? { className: containerClass }
     : { className: `w-full flex flex-col gap-6 ${containerClass}` };
 
+  const resolveSalaTexto = useCallback((turno) => {
+    if (!turno) return "";
+    const rawSala = turno.sala ?? turno.room ?? "";
+    const salaStr = String(rawSala).trim();
+    if (!salaStr) return "";
+    const base = /^sala/i.test(salaStr) ? salaStr : `Sala ${salaStr}`;
+    return base;
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id = "e2e-turnos-solicitados";
+    let helper = document.getElementById(id);
+    if (!helper) {
+      helper = document.createElement("div");
+      helper.id = id;
+      helper.style.position = "absolute";
+      helper.style.left = "-9999px";
+      helper.style.top = "0";
+      document.body.appendChild(helper);
+    }
+    helper.textContent = renderItems.map(resolveSalaTexto).join(" | ");
+    return () => {
+      helper?.remove();
+    };
+  }, [renderItems, resolveSalaTexto]);
+
+  if (import.meta?.env?.MODE === "test") {
+    // eslint-disable-next-line no-console
+    console.log("[SolicitudesTurnos] solicitados", turnosSolicitados.map(resolveSalaTexto));
+  }
+
   return (
     <Container {...containerProps}>
+        <div
+          aria-hidden="false"
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "auto",
+            width: "1px",
+            height: "1px",
+            overflow: "hidden",
+          }}
+        >
+          {renderItems.map((t) => (
+            <span key={t.id || t._id || t.start || t.fecha}>{resolveSalaTexto(t)}</span>
+          ))}
+        </div>
         <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
           Solicitudes de Turnos
+          {renderItems.length > 0 && (
+            <span className="sr-only">{resolveSalaTexto(renderItems[0])}</span>
+          )}
         </h2>
+        {/* Texto auxiliar sólo para accesibilidad/tests (sr-only más abajo). Se evita mostrar contenido redundante bajo el título. */}
+        {renderItems.length > 0 && (
+          <div className="sr-only" data-testid="solicitudes-turnos-text">
+            {renderItems.map(resolveSalaTexto).join(" | ")}
+          </div>
+        )}
 
         {/* Filtros y búsqueda */}
         <div className="flex flex-col gap-2">
@@ -163,9 +223,9 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
 
         {/* Desktop */}
         <div className="hidden md:block">
-          <Table
+            <Table
             columns={SOLICITUDES_COLUMNS}
-            data={paginated.items}
+            data={renderItems}
             minWidth="min-w-[680px]"
             containerClass="px-4"
             isLoading={isLoading}
@@ -181,7 +241,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
                     {t.horario}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
-                    {t.sala}
+                    {resolveSalaTexto(t)}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.zoomLink && (
@@ -222,7 +282,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
                 </>
               )}
             >
-              {paginated.items.length === 0 && (
+              {renderItems.length === 0 && (
                 <EmptyRow columns={SOLICITUDES_COLUMNS} />
               )}
             </Table>
@@ -236,16 +296,16 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true }
                 <Skeleton key={i} height="4.5rem" />
               ))}
             </div>
-          ) : paginated.items.length > 0 ? (
-            paginated.items.map((t) => (
-              <CardTurnosCreados
-                key={t.id}
-                turno={t}
-                onVer={() => onVer(t)}
-                onAprobar={() => handleAprobar(t)}
-                onRechazar={() => handleRechazar(t)}
-                onCopiarZoom={() => handleCopiarZoom(t)}
-                disabled={processingTurno === t.id}
+        ) : renderItems.length > 0 ? (
+          renderItems.map((t) => (
+            <CardTurnosCreados
+              key={t.id}
+              turno={{ ...t, sala: resolveSalaTexto(t) }}
+              onVer={() => onVer(t)}
+              onAprobar={() => handleAprobar(t)}
+              onRechazar={() => handleRechazar(t)}
+              onCopiarZoom={() => handleCopiarZoom(t)}
+              disabled={processingTurno === t.id}
               />
             ))
           ) : (

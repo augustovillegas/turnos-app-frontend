@@ -10,9 +10,6 @@ export const SearchBar = ({
   onSearch,
   fields = [],
   placeholder = "Buscar...",
-  className = "",
-  inputClassName = "",
-  fluid = false,
 }) => {
   const [query, setQuery] = useState("");
   const latestOnSearch = useRef(onSearch);

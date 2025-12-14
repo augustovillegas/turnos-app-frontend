@@ -1,5 +1,5 @@
 // === Auth Context ===
-// Gestiona sesión básica con token/usuario almacenado en localStorage.
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
 
@@ -103,3 +103,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+

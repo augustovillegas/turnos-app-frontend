@@ -44,10 +44,8 @@ export const MisTurnos = ({
 
   const paginationData = useMemo(
     () => paginate(turnosBuscados, pageMisTurnos, ITEMS_PER_PAGE),
-    [turnosBuscados, pageMisTurnos]
+    [turnosBuscados, pageMisTurnos, ITEMS_PER_PAGE]
   );
-
-  const hasTurnos = paginationData.items.length > 0;
 
   const onVerDetalle = (turno) => {
     setTurnoSeleccionado(turno);

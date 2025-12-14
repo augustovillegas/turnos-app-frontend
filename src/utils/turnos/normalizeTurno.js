@@ -5,6 +5,14 @@ export const normalizeTurno = (raw = {}) => {
   const estadoDerivado = raw.estado ?? raw.status ?? "Disponible";
   const resolvedId = raw.id ?? raw._id ?? raw.$id ?? null;
   const temporalId = !resolvedId ? `temp-${crypto?.randomUUID?.() || Date.now()}` : resolvedId;
+  const rawSala = raw.sala ?? raw.room ?? "";
+  const salaText = rawSala != null ? String(rawSala).trim() : "";
+  const salaDisplay = salaText ? (/^sala/i.test(salaText) ? salaText : `Sala ${salaText}`) : "";
+  const salaNumeric = salaText ? Number(salaText.replace(/^sala\s*/i, "")) : NaN;
+  const roomValue =
+    raw.room ?? (Number.isFinite(salaNumeric) ? salaNumeric : raw.sala ?? salaText ?? "");
+  const salaResolvedBase = salaDisplay || salaText || (resolvedId ? `Sala ${resolvedId}` : "");
+  const salaResolved = salaResolvedBase;
 
     // Canonicalización de reviewStatus
     const rawReviewStatus = raw.reviewStatus ?? raw.review_state ?? raw.reviewStatusTexto ?? raw.reviewEstado ?? raw.reviewState ?? null;
@@ -42,13 +50,14 @@ export const normalizeTurno = (raw = {}) => {
     estado: estadoDerivado,
     status: estadoDerivado,
     fecha: raw.fecha ?? raw.date ?? raw.start ?? null,
-      reviewStatus: reviewStatusCanon,
+    sala: salaResolved,
+    reviewStatus: reviewStatusCanon,
     horario: raw.horario ?? raw.startTime ?? null,
     duracion: raw.duracion ?? raw.duration ?? null,
     comentarios: raw.comentarios ?? raw.comment ?? "",
     // Campos opcionales inicializados para evitar renders tardíos o formato inconsistente
     zoomLink: raw.zoomLink ?? "",
-    room: raw.room ?? raw.sala ?? "", // soporte alias posible
+    room: roomValue ?? "", // soporte alias posible
     reviewNumber: raw.reviewNumber ?? raw.review ?? null,
   };
 };

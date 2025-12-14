@@ -98,13 +98,18 @@ export const obtenerValoresFormularioDesdeTurno = (turno) => {
   const [horaInicio = "", horaFin = ""] = (turno.horario || "").split(" - ");
   const fechaResultante =
     turno.start || turno.fecha ? fechaFormateada : fechaHoy;
+  const salaSource = turno.room ?? turno.sala ?? "";
+  const salaForForm =
+    typeof salaSource === "string" && /^sala/i.test(salaSource)
+      ? salaSource.replace(/^sala\s*/i, "")
+      : salaSource;
 
   return {
     review: String(turno.review ?? 1),
     fecha: fechaResultante,
     horaInicio,
     horaFin,
-    sala: String(turno.sala ?? turno.room ?? ""),
+    sala: String(salaForForm ?? ""),
     zoomLink: turno.zoomLink ?? "",
     comentarios: turno.comentarios ?? "",
   };
@@ -143,4 +148,3 @@ export const validarFormularioTurno = (valores) => {
 export const buildTurnoPayloadFromForm = construirPayloadTurnoDesdeFormulario;
 export const formValuesFromTurno = obtenerValoresFormularioDesdeTurno;
 export const validateTurnoForm = validarFormularioTurno;
-

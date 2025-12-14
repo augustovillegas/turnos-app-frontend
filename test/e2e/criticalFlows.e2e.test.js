@@ -4,7 +4,6 @@
 
 import "dotenv/config";
 import axios from "axios";
-import process from "node:process";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { getApiBaseUrl, resolveAuthSession } from "../utils/realBackendSession";
 
@@ -256,12 +255,7 @@ describe("Flujos Críticos: Rol Profesor", () => {
         return;
       }
       const slotId = solicitados[0].id;
-      const updatePayload = {
-        ...solicitados[0],
-        estado: "Aprobado",
-      };
-
-      // Usar endpoint específico de cambio de estado para evitar validaciones adicionales
+            // Usar endpoint específico de cambio de estado para evitar validaciones adicionales
       const response = await profesorClient.patch(`/slots/${slotId}/estado`, { estado: "Aprobado" });
 
       if (![200, 201].includes(response.status)) {
@@ -288,11 +282,9 @@ describe("Flujos Críticos: Rol Profesor", () => {
 
       const entregaId = pendientes[0].id;
       const updatePayload = {
-        ...pendientes[0],
+        estado: "Aprobado",
         reviewStatus: "Aprobado",
-        comentarios: "Aprobado en test E2E",
       };
-
       const response = await profesorClient.put(`/entregas/${entregaId}`, updatePayload);
 
       if (![200, 201].includes(response.status)) {
@@ -393,12 +385,7 @@ describe("Flujos Críticos: Rol Superadmin", () => {
         }
       }
       const original = disponibles[0];
-      const updatePayload = {
-        ...original,
-        estado: "Solicitado",
-      };
-
-      // Minimizar payload enviando solo cambio de estado
+            // Minimizar payload enviando solo cambio de estado
       const response = await superadminClient.patch(`/slots/${original.id}/estado`, { estado: "Solicitado" });
 
       if ([200, 201].includes(response.status)) {
@@ -445,3 +432,4 @@ describe("Validaciones Generales", () => {
     25_000
   );
 });
+

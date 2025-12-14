@@ -19,7 +19,7 @@ import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
 const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
 
 export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = true }) => {
-  const { approveUsuario, updateUsuarioEstado, loadUsuarios } = useAppData();
+  const { approveUsuario, updateUsuarioEstado } = useAppData();
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = usuarioActual?.role === "superadmin";
 

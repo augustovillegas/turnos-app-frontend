@@ -76,23 +76,46 @@ export const coincideModulo = (obj, moduloEtiqueta, cohortAsignado) => {
   if (!obj || typeof obj !== "object") return false;
   if (!moduloEtiqueta && cohortAsignado == null) return true;
 
+  const normalizeScalar = (valor) => {
+    if (valor == null) return null;
+    const texto = String(valor).trim();
+    return texto.length ? texto : null;
+  };
+
   const campos = [
-    obj?.modulo,
-    obj?.module,
-    obj?.moduloSlug,
-    obj?.moduleCode,
-    obj?.moduleNumber,
-    obj?.cohort,
-    obj?.cohorte,
-    obj?.cohortId,
+    normalizeScalar(obj?.modulo),
+    normalizeScalar(obj?.module),
+    normalizeScalar(obj?.moduloSlug),
+    normalizeScalar(obj?.moduleCode),
+    normalizeScalar(obj?.moduleNumber),
+    normalizeScalar(obj?.cohort),
+    normalizeScalar(obj?.cohorte),
+    normalizeScalar(obj?.cohortId),
     obj?.moduloId,
-    obj?.datos?.modulo,
-    obj?.datos?.module,
-    obj?.datos?.moduloSlug,
-    obj?.datos?.moduleCode,
-    obj?.datos?.moduleNumber,
-    obj?.datos?.cohort,
+    normalizeScalar(obj?.datos?.modulo),
+    normalizeScalar(obj?.datos?.module),
+    normalizeScalar(obj?.datos?.moduloSlug),
+    normalizeScalar(obj?.datos?.moduleCode),
+    normalizeScalar(obj?.datos?.moduleNumber),
+    normalizeScalar(obj?.datos?.cohort),
   ];
+
+  const cohortes = [
+    normalizeScalar(obj?.cohort),
+    normalizeScalar(obj?.cohorte),
+    normalizeScalar(obj?.cohortId),
+    normalizeScalar(obj?.datos?.cohort),
+  ];
+
+  const hasModuleMeta = campos.some((valor) => valor != null);
+  const hasCohortMeta = cohortes.some((valor) => {
+    if (valor == null) return false;
+    const numero = Number(valor);
+    if (Number.isFinite(numero)) return numero > 0;
+    const normalizado = labelToModule(valor);
+    return normalizado != null;
+  });
+  const hasMetaInfo = hasModuleMeta || hasCohortMeta;
 
   // Verificar coincidencia por etiqueta de módulo
   if (moduloEtiqueta && campos.some((valor) => matchesModule(valor, moduloEtiqueta))) {
@@ -101,22 +124,20 @@ export const coincideModulo = (obj, moduloEtiqueta, cohortAsignado) => {
 
   // Verificar coincidencia por número de cohorte
   if (cohortAsignado != null) {
-    const cohortes = [
-      obj?.cohort,
-      obj?.cohorte,
-      obj?.cohortId,
-      obj?.datos?.cohort,
-    ];
-    return cohortes.some((valor) => {
+    const matchesCohort = cohortes.some((valor) => {
       if (valor == null) return false;
-      const numero = Number(String(valor).trim());
-      if (Number.isFinite(numero)) {
+      const numero = Number(valor);
+      if (Number.isFinite(numero) && numero > 0) {
         return Math.trunc(numero) === cohortAsignado;
       }
       const normalizado = labelToModule(valor);
       return normalizado != null && normalizado === cohortAsignado;
     });
+    if (matchesCohort) return true;
   }
+
+  // Si el slot no trae metadatos de modulo/cohorte, no filtrar para evitar descartes
+  if (!hasMetaInfo) return true;
 
   return false;
 };

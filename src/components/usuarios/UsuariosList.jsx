@@ -16,7 +16,6 @@ import { EmptyRow } from "../ui/EmptyRow";
 import { showToast } from "../../utils/feedback/toasts";
 import { mapUsuario } from "../../utils/usuarios/helpers";
 import { paginate } from "../../utils/pagination";
-import { ensureModuleLabel } from "../../utils/moduleMap";
 
 const USER_TABLE_COLUMNS = ["Nombre", "Tipo", "Email", "Cohorte", "Modulo", "Acciones"];
 const ITEMS_PER_PAGE = 8;
@@ -128,7 +127,10 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
   return (
     <div className="w-full flex flex-col gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]">
+            <h2
+              data-testid="create-users-heading"
+              className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] dark:text-[#93C5FD]"
+            >
             Gestión de Usuarios
           </h2>
           <Button onClick={onCrear} variant="primary" className="w-full sm:w-auto">

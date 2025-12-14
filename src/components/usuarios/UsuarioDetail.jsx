@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
-import { showToast } from "../../utils/feedback/toasts";
 import { ensureModuleLabel, labelToModule } from "../../utils/moduleMap";
 
 export const UsuarioDetail = ({ usuario, onVolver }) => {
