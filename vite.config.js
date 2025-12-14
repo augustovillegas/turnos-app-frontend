@@ -88,10 +88,10 @@ export default defineConfig({
     sequence: {
       concurrent: false,
     },
-    pool: 'forks',
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        singleFork: false,
+      threads: {
+        singleThread: false,
         isolate: true,
       },
     },
