@@ -5,6 +5,7 @@ import { ItemForm } from "../turnos/ItemForm";
 import { useAppData } from "../../context/AppContext";
 import { useLoading } from "../../context/LoadingContext";
 import { useModal } from "../../context/ModalContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   buildTurnoPayloadFromForm,
   formValuesFromTurno,
@@ -19,6 +20,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
   const { isLoading } = useLoading();
   const turnosLoading = isLoading("turnos");
   const { showModal } = useModal();
+  const { usuario: sessionUser } = useAuth();
   const [turnoActual, establecerTurnoActual] = useState(turno ?? null);
   const [valoresFormulario, establecerValoresFormulario] = useState(() =>
     formValuesFromTurno(turno ?? null)
@@ -107,9 +109,13 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
 
   const persistirCambios = async () => {
     try {
+      const creadorInfo = {
+        id: sessionUser?.id || sessionUser?._id,
+        nombre: sessionUser?.name || sessionUser?.nombre || "Sistema",
+      };
       await updateTurno(
         identificadorEfectivo,
-        buildTurnoPayloadFromForm(valoresFormulario)
+        buildTurnoPayloadFromForm(valoresFormulario, creadorInfo, false)
       );
       showToast("Cambios guardados. El turno se actualizó correctamente.");
       onVolver?.();

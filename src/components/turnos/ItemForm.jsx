@@ -11,20 +11,15 @@ export const ItemForm = ({
   estaCargando = false,
   alCancelar,
 }) => {
-  const { control, handleSubmit, watch, setValue } = useForm({
+  const { control, handleSubmit, reset } = useForm({
     mode: "onChange",
     defaultValues: valores,
   });
 
-  const valoresActuales = watch();
-
+  // Reset form cuando cambien los valores externos (ej: turno cargado)
   useEffect(() => {
-    Object.keys(valores).forEach((key) => {
-      if (valoresActuales[key] !== valores[key]) {
-        setValue(key, valores[key]);
-      }
-    });
-  }, [valores, setValue, valoresActuales]);
+    reset(valores);
+  }, [valores, reset]);
 
   const manejarCambio = (name) => (event) => {
     const { value } = event.target;

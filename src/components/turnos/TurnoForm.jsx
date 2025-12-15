@@ -44,7 +44,7 @@ export const TurnoForm = ({ onVolver }) => {
         id: sessionUser?.id || sessionUser?._id,
         nombre: sessionUser?.name || sessionUser?.nombre || "Sistema",
       };
-      await createTurno(buildTurnoPayloadFromForm(valoresFormulario, creadorInfo));
+      await createTurno(buildTurnoPayloadFromForm(valoresFormulario, creadorInfo, true));
       showToast("Turno creado correctamente.");
       onVolver?.();
     } catch (error) {

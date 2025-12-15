@@ -90,7 +90,7 @@ const RequestsPanelComponent = () => {
         review: turno.review,
         comentarios: turno.comentarios || "",
         estado: "Disponible",
-      });
+      }, {}, false);
       await updateTurno(turno.id, payload);
       showToast("Solicitud cancelada. El turno volvió a estar disponible.");
     } catch (error) {

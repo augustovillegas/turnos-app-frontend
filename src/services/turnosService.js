@@ -52,16 +52,19 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
     maybeAssign("fecha", payload.fecha);
   }
   maybeAssign("horario", payload.horario);
-  maybeAssign("sala", payload.sala);
+  // Backend espera 'sala' como Number
+  if (payload.sala !== undefined) {
+    const salaText = String(payload.sala).trim();
+    const digits = salaText.replace(/[^0-9]/g, "");
+    const numSala = Number(digits);
+    result.sala = Number.isFinite(numSala) && numSala > 0 ? numSala : payload.sala;
+  } else if (includeDefaults) {
+    result.sala = 0;
+  }
   // Mapear 'room' numerico requerido por backend (ReviewSlot)
   if (payload.room !== undefined) {
     const roomNum = Number(payload.room);
     result.room = Number.isNaN(roomNum) ? payload.room : roomNum;
-  } else if (payload.sala !== undefined) {
-    const salaNum = Number(payload.sala);
-    if (!Number.isNaN(salaNum)) {
-      result.room = salaNum;
-    }
   }
   maybeAssign("zoomLink", payload.zoomLink?.trim?.() ?? payload.zoomLink, true);
   maybeAssign("start", payload.start);
@@ -150,6 +153,7 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
       // DerivaciИn de duraciИn fallida; continuar sin ajustar
     }
   }
+
 
   return result;
 };

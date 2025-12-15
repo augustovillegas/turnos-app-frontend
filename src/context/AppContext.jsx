@@ -466,6 +466,80 @@ export const AppProvider = ({ children }) => {
     [setUsuarios, start, stop]
   );
 
+  const createUsuarioRemoto = useCallback(
+    async (payload = {}) => {
+      start("usuarios-create");
+      try {
+        const creado = await apiCreateUsuario(payload);
+        const normalizado = normalizeUsuario(creado);
+        setUsuarios((prev) => {
+          const base = normalizeUsuariosCollection(prev);
+          return [...base, normalizado];
+        });
+        showToast("Usuario creado en servidor", "success");
+        await loadUsuarios();
+        return normalizado;
+      } catch (error) {
+        console.error("Error al crear usuario remoto", error);
+        notifyError("No se pudo crear el usuario.", error, "Error creaciÇün usuario");
+        throw error;
+      } finally {
+        stop("usuarios-create");
+      }
+    },
+    [loadUsuarios, notifyError, setUsuarios, start, stop]
+  );
+
+  const updateUsuarioRemoto = useCallback(
+    async (id, payload = {}) => {
+      start("usuarios-update");
+      try {
+        const actualizado = await apiUpdateUsuario(id, payload);
+        const normalizado = normalizeUsuario(actualizado);
+        setUsuarios((prev) => {
+          const base = normalizeUsuariosCollection(prev);
+          return base.map((usuario) =>
+            String(usuario.id) === String(normalizado.id)
+              ? normalizado
+              : usuario
+          );
+        });
+        showToast("Usuario actualizado", "success");
+        await loadUsuarios();
+        return normalizado;
+      } catch (error) {
+        console.error("Error al actualizar usuario remoto", error);
+        notifyError("No se pudo actualizar el usuario.", error, "Error actualizaciÇün usuario");
+        throw error;
+      } finally {
+        stop("usuarios-update");
+      }
+    },
+    [loadUsuarios, notifyError, setUsuarios, start, stop]
+  );
+
+  const deleteUsuarioRemoto = useCallback(
+    async (id) => {
+      start("usuarios-delete");
+      try {
+        await apiDeleteUsuario(id);
+        setUsuarios((prev) => {
+          const base = normalizeUsuariosCollection(prev);
+          return base.filter((u) => String(u.id) !== String(id));
+        });
+        showToast("Usuario eliminado en servidor", "success");
+        await loadUsuarios();
+      } catch (error) {
+        console.error("Error al eliminar usuario remoto", error);
+        notifyError("No se pudo eliminar el usuario.", error, "Error eliminaciÇün usuario");
+        throw error;
+      } finally {
+        stop("usuarios-delete");
+      }
+    },
+    [loadUsuarios, notifyError, setUsuarios, start, stop]
+  );
+
   // --- CRUD de turnos disponible para dashboards ---
   const createTurno = useCallback(
     async (payload) => {
@@ -501,8 +575,89 @@ export const AppProvider = ({ children }) => {
         const existente = currentList.find(
           (turno) => String(turno.id) === String(id)
         );
-        const requestPayload = existente ? { ...existente, ...payload } : payload;
-        const actualizado = await apiUpdateTurno(id, requestPayload);
+
+        // Mezcla preservando valores existentes para campos requeridos
+        const mergeField = (field) => {
+          const incoming = payload?.[field];
+          if (incoming === undefined) return existente?.[field];
+          if (typeof incoming === "string") {
+            const trimmed = incoming.trim();
+            return trimmed === "" ? existente?.[field] : trimmed;
+          }
+          return incoming;
+        };
+
+        const requestPayload = existente
+          ? {
+              ...existente,
+              ...payload,
+              titulo: mergeField("titulo"),
+              descripcion: mergeField("descripcion"),
+              modulo: mergeField("modulo"),
+              comentarios: mergeField("comentarios"),
+              zoomLink: mergeField("zoomLink"),
+            }
+          : payload;
+
+        // PRESERVAR CAMPOS ACADÉMICOS: incluir siempre titulo/modulo/descripcion
+        // Si el payload no los trae o están vacíos, usar los del turno existente.
+        const cleanedPayload = { ...requestPayload };
+        const ensureField = (field) => {
+          const incoming = cleanedPayload?.[field];
+          if (incoming === undefined || (typeof incoming === "string" && incoming.trim() === "")) {
+            cleanedPayload[field] = existente?.[field] ?? cleanedPayload[field];
+          }
+        };
+        ensureField("titulo");
+        ensureField("modulo");
+        ensureField("descripcion");
+        // Asegurar autoría correcta: si no viene profesorId, preservar el existente
+        if (
+          cleanedPayload.profesorId === undefined ||
+          cleanedPayload.profesorId === null ||
+          (typeof cleanedPayload.profesorId === "string" && cleanedPayload.profesorId.trim() === "")
+        ) {
+          cleanedPayload.profesorId = existente?.profesorId ?? cleanedPayload.profesorId;
+        }
+        // Compatibilidad: algunos backends usan createdBy
+        if (
+          cleanedPayload.createdBy === undefined ||
+          cleanedPayload.createdBy === null ||
+          (typeof cleanedPayload.createdBy === "string" && cleanedPayload.createdBy.trim() === "")
+        ) {
+          cleanedPayload.createdBy = cleanedPayload.profesorId ?? existente?.createdBy ?? existente?.profesorId ?? cleanedPayload.createdBy;
+        }
+        // Normalizar room/sala: enviar room numérico siempre
+        const salaVal = cleanedPayload.sala ?? existente?.sala ?? existente?.room;
+        const salaNum = Number(salaVal);
+        if (!Number.isNaN(salaNum) && salaNum > 0) {
+          cleanedPayload.sala = salaNum; // Number per backend schema
+          cleanedPayload.room = salaNum; // explicit numeric per schema
+        } else if (typeof salaVal === "string" && salaVal.trim() !== "") {
+          const num = Number(salaVal.replace(/[^0-9]/g, ""));
+          if (!Number.isNaN(num) && num > 0) {
+            cleanedPayload.sala = num;
+            cleanedPayload.room = num;
+          }
+        }
+        // Asegurar reviewNumber alias
+        if (cleanedPayload.review !== undefined && cleanedPayload.reviewNumber === undefined) {
+          cleanedPayload.reviewNumber = cleanedPayload.review;
+        }
+        // Asegurar date derivado de start/end si falta
+        try {
+          const iso = cleanedPayload.start ?? cleanedPayload.end ?? existente?.start ?? existente?.end;
+          if (iso && !cleanedPayload.date) {
+            const isoPart = new Date(iso).toISOString().slice(0, 10);
+            cleanedPayload.date = isoPart;
+            const [yyyy, mm, dd] = isoPart.split("-");
+            if (yyyy && mm && dd && !cleanedPayload.fecha) {
+              cleanedPayload.fecha = `${dd}/${mm}/${yyyy}`;
+            }
+          }
+        } catch {}
+
+        const actualizado = await apiUpdateTurno(id, cleanedPayload);
         const normalized = normalizeItem(actualizado, "turno");
         const targetId = normalized?.id ?? id;
         const nextTurno = targetId != null
@@ -646,6 +801,18 @@ export const AppProvider = ({ children }) => {
     }
   }, [token, usuario, setTurnos, setEntregas, setUsuarios]);
 
+  const findUsuarioById = useCallback(
+    async (id) => {
+      const cached = usuariosRef.current.find(
+        (user) => String(user.id) === String(id)
+      );
+      if (cached) return cached;
+      const listado = await loadUsuarios();
+      return listado.find((user) => String(user.id) === String(id)) ?? null;
+    },
+    [loadUsuarios]
+  );
+
   // --- Métricas agregadas para paneles y badges ---
   const { totalTurnosSolicitados, totalEntregas, totalUsuarios } = useMemo(
     () => ({
@@ -668,6 +835,7 @@ export const AppProvider = ({ children }) => {
         totalTurnosSolicitados,
         totalEntregas,
         totalUsuarios,
+        findUsuarioById,
         loadTurnos,
         loadEntregas,
         loadUsuarios,
@@ -676,6 +844,8 @@ export const AppProvider = ({ children }) => {
         removeEntrega,
         approveUsuario: approveUsuarioRemoto,
         updateUsuarioEstado: updateUsuarioEstadoRemoto,
+        updateUsuario: updateUsuarioRemoto,
+        updateUsuarioRemoto,
         createTurno,
         updateTurno,
         updateTurnoEstado,
@@ -739,69 +909,9 @@ export const AppProvider = ({ children }) => {
           }
         },
         // === Operaciones remotas (API) ===
-        createUsuarioRemoto: async (payload = {}) => {
-          start("usuarios-create");
-          try {
-            const creado = await apiCreateUsuario(payload);
-            const normalizado = normalizeUsuario(creado);
-            setUsuarios((prev) => {
-              const base = normalizeUsuariosCollection(prev);
-              return [...base, normalizado];
-            });
-            showToast("Usuario creado en servidor", "success");
-            // Reconciliar para obtener datos finales
-            await loadUsuarios();
-            return normalizado;
-          } catch (error) {
-            console.error("Error al crear usuario remoto", error);
-            notifyError("No se pudo crear el usuario.", error, "Error creación usuario");
-            throw error;
-          } finally {
-            stop("usuarios-create");
-          }
-        },
-        updateUsuarioRemoto: async (id, payload = {}) => {
-          start("usuarios-update");
-          try {
-            const actualizado = await apiUpdateUsuario(id, payload);
-            const normalizado = normalizeUsuario(actualizado);
-            setUsuarios((prev) => {
-              const base = normalizeUsuariosCollection(prev);
-              return base.map((usuario) =>
-                String(usuario.id) === String(normalizado.id)
-                  ? normalizado
-                  : usuario
-              );
-            });
-            showToast("Usuario actualizado", "success");
-            await loadUsuarios();
-            return normalizado;
-          } catch (error) {
-            console.error("Error al actualizar usuario remoto", error);
-            notifyError("No se pudo actualizar el usuario.", error, "Error actualización usuario");
-            throw error;
-          } finally {
-            stop("usuarios-update");
-          }
-        },
-        deleteUsuarioRemoto: async (id) => {
-          start("usuarios-delete");
-          try {
-            await apiDeleteUsuario(id);
-            setUsuarios((prev) => {
-              const base = normalizeUsuariosCollection(prev);
-              return base.filter((u) => String(u.id) !== String(id));
-            });
-            showToast("Usuario eliminado en servidor", "success");
-            await loadUsuarios();
-          } catch (error) {
-            console.error("Error al eliminar usuario remoto", error);
-            notifyError("No se pudo eliminar el usuario.", error, "Error eliminación usuario");
-            throw error;
-          } finally {
-            stop("usuarios-delete");
-          }
-        },
+        createUsuarioRemoto,
+        updateUsuarioRemoto,
+        deleteUsuarioRemoto,
       }}
     >
       {children}

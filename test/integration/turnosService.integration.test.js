@@ -77,7 +77,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
     "crea un turno y lo puede recuperar",
     async () => {
       const formValues = buildFormValues();
-      const payload = buildTurnoPayloadFromForm(formValues);
+      const payload = buildTurnoPayloadFromForm(formValues, {}, true);
 
       expect(payload).toMatchObject({
         review: Number(formValues.review),
@@ -112,7 +112,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
   it(
     "actualiza un turno recien creado",
     async () => {
-      const payload = buildTurnoPayloadFromForm(buildFormValues());
+      const payload = buildTurnoPayloadFromForm(buildFormValues(), {}, true);
       let created;
       try {
         created = await createTurno(payload);
@@ -150,7 +150,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
   it(
     "elimina un turno y la busqueda posterior falla",
     async () => {
-      const payload = buildTurnoPayloadFromForm(buildFormValues());
+      const payload = buildTurnoPayloadFromForm(buildFormValues(), {}, true);
       let turno;
       try {
         turno = await createTurno(payload);
@@ -209,7 +209,7 @@ describe.sequential("Servicios de turnos (API real)", () => {
   it(
     "devuelve listado de turnos incluyendo los nuevos",
     async () => {
-      const payload = buildTurnoPayloadFromForm(buildFormValues());
+      const payload = buildTurnoPayloadFromForm(buildFormValues(), {}, true);
       let turno;
       try {
         turno = await createTurno(payload);

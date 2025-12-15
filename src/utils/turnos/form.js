@@ -27,7 +27,7 @@ const normalizarFecha = (valor) => {
   return valor;
 };
 
-export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}) => {
+export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, isCreating = true) => {
   const inicio = construirFechaIso(valores.fecha, valores.horaInicio);
   const fin = construirFechaIso(valores.fecha, valores.horaFin);
   const fechaNormalizada = normalizarFecha(valores.fecha);
@@ -35,6 +35,13 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}) 
   const fechaDDMMYYYY = yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : fechaNormalizada;
   const toHM = (iso) => new Date(iso).toISOString().slice(11, 16);
   const duracion = Math.max(0, Math.round((new Date(fin) - new Date(inicio)) / 60000));
+  const estadoActual = valores.estado ?? valores.status;
+  const profesorEfectivo =
+    valores.profesorId ??
+    valores.profesor ??
+    valores.createdBy ??
+    creadorInfo?.id ??
+    null;
 
   const numericSala = (() => {
     const raw = valores.sala.trim();
@@ -42,7 +49,7 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}) 
     return Number.isFinite(n) && n > 0 ? n : Math.floor(Date.now() / 60000);
   })();
 
-  return {
+  const payload = {
     review: Number(valores.review),
     reviewNumber: Number(valores.review),
     fecha: fechaDDMMYYYY,
@@ -51,20 +58,34 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}) 
     sala: numericSala,
     room: numericSala,
     zoomLink: valores.zoomLink.trim(),
-    estado: valores.estado || "Disponible",
     start: inicio,
     end: fin,
     dateISO: inicio.slice(0, 10),
     startTime: toHM(inicio),
     endTime: toHM(fin),
     duracion,
-    titulo: valores.titulo?.trim?.() || "Turno Test",
-    descripcion: valores.descripcion?.trim?.() || "Generado por pruebas",
-    modulo: valores.modulo?.trim?.() || "HTML-CSS",
-    comentarios: valores.comentarios?.trim() || "",
     creador: creadorInfo.nombre || "Sistema",
     creadorId: creadorInfo.id || null,
+    profesorId: profesorEfectivo,
   };
+
+  // En creación, usar defaults; en edición, preservar valores existentes
+  if (isCreating) {
+    payload.titulo = valores.titulo?.trim?.() || "Turno Test";
+    payload.descripcion = valores.descripcion?.trim?.() || "Generado por pruebas";
+    payload.modulo = valores.modulo?.trim?.() || "HTML-CSS";
+    payload.comentarios = valores.comentarios?.trim?.() || "";
+    payload.estado = estadoActual || "Disponible";
+  } else {
+    // En modo edición, solo incluir comentarios que el formulario controla.
+    // titulo, descripcion, modulo NO se envían para preservar los valores existentes en el backend.
+    payload.comentarios = valores.comentarios?.trim?.() ?? "";
+    // NO enviar estado, titulo, descripcion, modulo aquí
+    // Los cambios de estado se hacen por PATCH /slots/:id/estado
+    // Los campos académicos se preservan automáticamente en el backend
+  }
+
+  return payload;
 };
 
 export const obtenerValoresFormularioDesdeTurno = (turno) => {
@@ -82,6 +103,10 @@ export const obtenerValoresFormularioDesdeTurno = (turno) => {
       sala: "",
       zoomLink: "",
       comentarios: "",
+      titulo: "",
+      descripcion: "",
+      modulo: "",
+      estado: "Disponible",
     };
   }
 
@@ -112,6 +137,8 @@ export const obtenerValoresFormularioDesdeTurno = (turno) => {
     sala: String(salaForForm ?? ""),
     zoomLink: turno.zoomLink ?? "",
     comentarios: turno.comentarios ?? "",
+    estado: turno.estado ?? turno.status ?? "Disponible",
+    // NO incluir titulo, modulo, descripcion para evitar sobrescrituras accidentales
   };
 };
 
