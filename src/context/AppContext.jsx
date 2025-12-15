@@ -554,7 +554,11 @@ export const AppProvider = ({ children }) => {
       start("turnos");
       try {
         // Forzar envío de módulo según el usuario/profesor autenticado
-        const moduloResuelto =
+        // Para superadmin sin módulo asignado, usar fallback válido del enum backend
+        const VALID_MODULES = ["HTML-CSS", "JAVASCRIPT", "FRONTEND - REACT", "BACKEND - NODE"];
+        const FALLBACK_MODULE = "HTML-CSS";
+        
+        const moduloCandidato =
           payload?.modulo ??
           payload?.module ??
           usuario?.modulo ??
@@ -563,11 +567,21 @@ export const AppProvider = ({ children }) => {
           usuario?.moduloLabel ??
           null;
 
+        // Validar que el módulo sea uno de los valores del enum, si no usar fallback
+        const moduloNormalizado = String(moduloCandidato ?? "").trim().toUpperCase();
+        const moduloValido = VALID_MODULES.find(
+          (m) => m.toUpperCase() === moduloNormalizado
+        );
+        const moduloResuelto = moduloValido ?? FALLBACK_MODULE;
+
         const payloadConModulo = {
           ...payload,
           modulo: payload?.modulo ?? moduloResuelto,
           module: payload?.module ?? moduloResuelto,
         };
+
+        console.log("[AppContext] createTurno - módulo resuelto:", moduloResuelto);
+        console.log("[AppContext] createTurno - payload enviado:", payloadConModulo);
 
         const nuevo = await apiCreateTurno(payloadConModulo);
         const normalized = normalizeItem(nuevo);

@@ -71,14 +71,23 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, 
 
   // En creación, usar defaults; en edición, preservar valores existentes
   if (isCreating) {
-    payload.titulo = valores.titulo?.trim?.() || "Turno Test";
-    payload.descripcion = valores.descripcion?.trim?.() || "Generado por pruebas";
-    payload.modulo =
+    const VALID_MODULES = ["HTML-CSS", "JAVASCRIPT", "FRONTEND - REACT", "BACKEND - NODE"];
+    const FALLBACK_MODULE = "HTML-CSS";
+    
+    const moduloCandidato =
       valores.modulo?.trim?.() ||
       valores.moduleLabel?.trim?.() ||
       valores.module?.trim?.() ||
       valores.moduloLabel?.trim?.() ||
-      "HTML-CSS";
+      FALLBACK_MODULE;
+    
+    // Validar que sea un valor del enum
+    const moduloNormalizado = String(moduloCandidato).trim().toUpperCase();
+    const moduloValido = VALID_MODULES.find((m) => m.toUpperCase() === moduloNormalizado);
+    
+    payload.titulo = valores.titulo?.trim?.() || "Turno Test";
+    payload.descripcion = valores.descripcion?.trim?.() || "Generado por pruebas";
+    payload.modulo = moduloValido ?? FALLBACK_MODULE;
     payload.comentarios = valores.comentarios?.trim?.() || "";
     payload.estado = estadoActual || "Disponible";
   } else {

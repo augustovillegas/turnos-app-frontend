@@ -1,6 +1,14 @@
 import { useForm, Controller } from "react-hook-form";
 import { useEffect } from "react";
 import { Button } from "../ui/Button";
+import { useAuth } from "../../context/AuthContext";
+
+const MODULOS_DISPONIBLES = [
+  { value: "HTML-CSS", label: "HTML-CSS" },
+  { value: "JAVASCRIPT", label: "JAVASCRIPT" },
+  { value: "FRONTEND - REACT", label: "FRONTEND - REACT" },
+  { value: "BACKEND - NODE", label: "BACKEND - NODE" },
+];
 
 export const ItemForm = ({
   valores,
@@ -11,6 +19,8 @@ export const ItemForm = ({
   estaCargando = false,
   alCancelar,
 }) => {
+  const { usuario: sessionUser } = useAuth();
+  const esSuperadmin = sessionUser?.role === "superadmin" || sessionUser?.rol === "superadmin";
   const { control, handleSubmit, reset } = useForm({
     mode: "onChange",
     defaultValues: valores,
@@ -195,6 +205,39 @@ export const ItemForm = ({
             </p>
           )}
         </div>
+
+        {esSuperadmin && (
+          <div>
+            <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
+              Módulo *
+            </label>
+            <Controller
+              name="modulo"
+              control={control}
+              render={({ field }) => (
+                <select
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    manejarCambio("modulo")(e);
+                  }}
+                  className="w-full rounded border px-2 py-1 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                >
+                  {MODULOS_DISPONIBLES.map((modulo) => (
+                    <option key={modulo.value} value={modulo.value}>
+                      {modulo.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            />
+            {errores.modulo && (
+              <p className="mt-1 text-xs font-semibold text-[#B91C1C]">
+                {errores.modulo}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div>

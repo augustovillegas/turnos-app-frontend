@@ -24,7 +24,11 @@ export const TurnoForm = ({ onVolver }) => {
   const [valoresFormulario, establecerValoresFormulario] = useState(() => {
     const valores = formValuesFromTurno(null);
     // Establecer el módulo del profesor actual al crear un nuevo turno
-    if (sessionUser?.moduleLabel) {
+    // Para superadmin, usar el primer módulo por defecto (será editable en el form)
+    const roleCheck = sessionUser?.role ?? sessionUser?.rol;
+    if (roleCheck === "superadmin") {
+      valores.modulo = "HTML-CSS"; // Default para superadmin (editable en form)
+    } else if (sessionUser?.moduleLabel) {
       valores.modulo = sessionUser.moduleLabel;
     }
     return valores;
@@ -34,11 +38,14 @@ export const TurnoForm = ({ onVolver }) => {
   // Si el usuario se carga después del primer render, actualizar el módulo por defecto
   useEffect(() => {
     if (!sessionUser?.moduleLabel) return;
+    const roleCheck = sessionUser?.role ?? sessionUser?.rol;
+    // Solo actualizar automáticamente para profesores, no para superadmin (que lo edita manualmente)
+    if (roleCheck === "superadmin") return;
     establecerValoresFormulario((prev) => {
       if (prev.modulo?.trim()) return prev;
       return { ...prev, modulo: sessionUser.moduleLabel };
     });
-  }, [sessionUser?.moduleLabel]);
+  }, [sessionUser?.moduleLabel, sessionUser?.role, sessionUser?.rol]);
 
   const manejarCambioCampo = (nombre, valor) => {
     establecerValoresFormulario((previos) => ({ ...previos, [nombre]: valor }));
