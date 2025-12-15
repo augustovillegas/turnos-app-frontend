@@ -42,7 +42,7 @@ export const DashboardProfesor = () => {
     const etiquetaDirecta = [
       ensureModuleLabel(usuarioActual.modulo),
       ensureModuleLabel(usuarioActual.module),
-      ensureModuleLabel(usuarioActual.moduleLabel), // <-- añadido: usar virtual del backend
+      ensureModuleLabel(usuarioActual.moduleLabel),
       ensureModuleLabel(usuarioActual.moduloSlug),
       ensureModuleLabel(usuarioActual.moduleCode),
       ensureModuleLabel(usuarioActual.moduleNumber),
@@ -87,7 +87,21 @@ export const DashboardProfesor = () => {
 
   // === Filtrado de datos por módulo ===
   const turnosDelModulo = useMemo(
-    () => (turnos || []).filter((obj) => coincideModulo(obj, moduloEtiqueta, cohortAsignado)),
+    () => {
+      if (!turnos || turnos.length === 0) return [];
+      // Si hay módulo definido, filtrar turnos que coincidan
+      if (moduloEtiqueta) {
+        return turnos.filter((turno) => {
+          // Comparar con múltiples formas posibles del módulo
+          const turnoModulo = String(turno.modulo ?? "").trim().toUpperCase();
+          const targetModulo = String(moduloEtiqueta).trim().toUpperCase();
+          return turnoModulo === targetModulo || 
+                 // También aceptar si tiene el número del módulo
+                 (cohortAsignado && turno.modulo === cohortAsignado);
+        });
+      }
+      return turnos;
+    },
     [turnos, moduloEtiqueta, cohortAsignado]
   );
 
@@ -106,7 +120,8 @@ export const DashboardProfesor = () => {
       return;
     (async () => {
       try {
-        // El backend no siempre persiste metadata de m?dulo/cohorte; traemos todo y filtramos client-side.
+        // Backend filtra automáticamente por módulo del usuario autenticado
+        // Los turnos ahora se crean con el modulo correcto del profesor
         const turnosParams = {};
         const usuariosParams = {
           rol: "alumno",

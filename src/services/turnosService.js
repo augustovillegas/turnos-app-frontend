@@ -46,6 +46,8 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
   };
 
   // Backend almacena 'fecha' como DD/MM/YYYY; acepta 'date' en payload.
+  // Conservar 'date' si viene explícito para evitar desfases de zona horaria con start/end.
+  maybeAssign("date", payload.date);
   if (payload.date && !payload.fecha) {
     result.fecha = payload.date;
   } else {
@@ -120,8 +122,14 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
     result.duracion = duracionValue;
   }
 
-  if (payload.modulo !== undefined || payload.module !== undefined) {
-    result.modulo = payload.modulo ?? payload.module ?? "";
+  // Alias de módulo: aceptar moduleLabel/moduloLabel además de modulo/module
+  const resolvedModulo = payload.modulo ?? payload.module;
+  if (resolvedModulo !== undefined) {
+    result.modulo = resolvedModulo;
+    result.module = resolvedModulo; // enviar alias directo por si el backend mapea ambos
+  } else if (includeDefaults) {
+    result.modulo = "";
+    result.module = "";
   }
 
   if (
@@ -163,21 +171,8 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
  * @param {Object} params
  * @returns {Promise<Array>}
  */
-export const getTurnos = (params = {}) => {
-  const url = `${apiClient.defaults.baseURL || ''}${RESOURCE}`;
-  const queryString = new URLSearchParams(params).toString();
-  const fullUrl = queryString ? `${url}?${queryString}` : url;
-  console.log('📡 getTurnos - calling:', fullUrl, 'baseURL:', apiClient.defaults.baseURL, 'RESOURCE:', RESOURCE, 'params:', params);
-  return apiClient.get(RESOURCE, { params })
-    .then((response) => {
-      console.log('📡 getTurnos - backend response:', response.data, 'status:', response.status);
-      return response.data ?? [];
-    })
-    .catch((error) => {
-      console.error('📡 getTurnos - ERROR:', error?.message, 'status:', error?.response?.status, 'data:', error?.response?.data, 'Full error:', error);
-      throw error;
-    });
-};
+export const getTurnos = (params = {}) =>
+  apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
 
 // Alias para compatibilidad (antes en slotsService)
 export const getSlots = getTurnos;
@@ -195,10 +190,12 @@ export const getTurnoById = (id) =>
  * @param {Object} payload
  * @returns {Promise<Object>}
  */
-export const createTurno = (payload) =>
-  apiClient
-    .post(RESOURCE, mapTurnoPayload(payload, { includeDefaults: true }))
-    .then((response) => response.data);
+export const createTurno = (payload) => {
+  const mapped = mapTurnoPayload(payload, { includeDefaults: true });
+  console.log("[turnosService] createTurno input:", payload);
+  console.log("[turnosService] createTurno mapped:", mapped);
+  return apiClient.post(RESOURCE, mapped).then((response) => response.data);
+};
 
 /**
  * Actualiza un turno.

@@ -168,20 +168,18 @@ export const DashboardAlumno = () => {
   useEffect(() => {
     if (hasLoadedRef.current) return; // evita recarga múltiple si cambian dependencias estructurales
     if (!usuarioActual || !token || usuarioActual.role !== "alumno") return;
-    const filtrosTurnos = {};
-    if (cohortAlumno != null) filtrosTurnos.cohort = cohortAlumno;
-    if (moduloAlumno) filtrosTurnos.modulo = moduloAlumno;
+    // Backend filtra automáticamente por módulo del usuario; no enviar parámetros
     hasLoadedRef.current = true;
     (async () => {
       try {
-        await Promise.all([loadTurnos(filtrosTurnos), loadEntregas()]);
+        await Promise.all([loadTurnos({}), loadEntregas()]);
       } catch (error) {
         pushError?.("Error al cargar datos del alumno", {
           description: error?.message ?? "Fallo al recuperar información.",
         });
       }
     })();
-  }, [usuarioActual, token, cohortAlumno, moduloAlumno, loadTurnos, loadEntregas, pushError]);
+  }, [usuarioActual, token, loadTurnos, loadEntregas, pushError]);
 
   // --- Manejo de turnos --- (extraído a useAlumnoTurnos)
 

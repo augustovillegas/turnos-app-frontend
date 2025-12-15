@@ -73,12 +73,24 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, 
   if (isCreating) {
     payload.titulo = valores.titulo?.trim?.() || "Turno Test";
     payload.descripcion = valores.descripcion?.trim?.() || "Generado por pruebas";
-    payload.modulo = valores.modulo?.trim?.() || "HTML-CSS";
+    payload.modulo =
+      valores.modulo?.trim?.() ||
+      valores.moduleLabel?.trim?.() ||
+      valores.module?.trim?.() ||
+      valores.moduloLabel?.trim?.() ||
+      "HTML-CSS";
     payload.comentarios = valores.comentarios?.trim?.() || "";
     payload.estado = estadoActual || "Disponible";
   } else {
+    // En modo edición, propagar módulo si viene del formulario o de aliases para cumplir el backend
+    payload.modulo =
+      valores.modulo?.trim?.() ||
+      valores.moduleLabel?.trim?.() ||
+      valores.module?.trim?.() ||
+      valores.moduloLabel?.trim?.() ||
+      undefined;
     // En modo edición, solo incluir comentarios que el formulario controla.
-    // titulo, descripcion, modulo NO se envían para preservar los valores existentes en el backend.
+    // titulo y descripcion NO se envían para preservar los valores existentes en el backend.
     payload.comentarios = valores.comentarios?.trim?.() ?? "";
     // NO enviar estado, titulo, descripcion, modulo aquí
     // Los cambios de estado se hacen por PATCH /slots/:id/estado

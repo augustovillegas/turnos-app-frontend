@@ -34,11 +34,9 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   const { isLoading } = useLoading();
 
   useEffect(() => {
-    const loggedRole = String(sessionUser?.role ?? sessionUser?.rol ?? "").toLowerCase();
-    const isSuperadmin = loggedRole === "superadmin" || role === "superadmin";
-    const params = isSuperadmin ? { review: 0 } : {};
-    loadTurnos(params);
-  }, [loadTurnos, role, sessionUser]);
+    // Backend filtra automáticamente por módulo; no enviar parámetros especiales
+    loadTurnos({});
+  }, [loadTurnos]);
 
   // --- Derivacion filtrada según review seleccionado ---
   const turnosFiltrados = useMemo(() => {

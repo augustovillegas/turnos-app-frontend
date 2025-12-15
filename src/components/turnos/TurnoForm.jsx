@@ -1,6 +1,6 @@
 // === Turno Form ===
 // Formulario para crear nuevos turnos desde cualquier dashboard autorizado.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ItemForm } from "../turnos/ItemForm";
 import { useAppData } from "../../context/AppContext";
 import { useLoading } from "../../context/LoadingContext";
@@ -21,10 +21,24 @@ export const TurnoForm = ({ onVolver }) => {
   const { isLoading } = useLoading();
   const { usuario: sessionUser } = useAuth();
   const turnosLoading = isLoading("turnos");
-  const [valoresFormulario, establecerValoresFormulario] = useState(() =>
-    formValuesFromTurno(null)
-  );
+  const [valoresFormulario, establecerValoresFormulario] = useState(() => {
+    const valores = formValuesFromTurno(null);
+    // Establecer el módulo del profesor actual al crear un nuevo turno
+    if (sessionUser?.moduleLabel) {
+      valores.modulo = sessionUser.moduleLabel;
+    }
+    return valores;
+  });
   const [erroresFormulario, establecerErroresFormulario] = useState({});
+
+  // Si el usuario se carga después del primer render, actualizar el módulo por defecto
+  useEffect(() => {
+    if (!sessionUser?.moduleLabel) return;
+    establecerValoresFormulario((prev) => {
+      if (prev.modulo?.trim()) return prev;
+      return { ...prev, modulo: sessionUser.moduleLabel };
+    });
+  }, [sessionUser?.moduleLabel]);
 
   const manejarCambioCampo = (nombre, valor) => {
     establecerValoresFormulario((previos) => ({ ...previos, [nombre]: valor }));
@@ -32,7 +46,20 @@ export const TurnoForm = ({ onVolver }) => {
   };
 
   const manejarEnvio = async () => {
-    const erroresDetectados = validateTurnoForm(valoresFormulario);
+    const moduloFallback =
+      valoresFormulario.modulo?.trim() ||
+      sessionUser?.moduleLabel ||
+      sessionUser?.modulo ||
+      sessionUser?.module ||
+      sessionUser?.moduleNumber ||
+      "";
+
+    const valoresConModulo = {
+      ...valoresFormulario,
+      modulo: moduloFallback,
+    };
+
+    const erroresDetectados = validateTurnoForm(valoresConModulo);
     if (Object.keys(erroresDetectados).length > 0) {
       establecerErroresFormulario(erroresDetectados);
       showToast("Revisa los datos del formulario.", "warning");
@@ -44,7 +71,7 @@ export const TurnoForm = ({ onVolver }) => {
         id: sessionUser?.id || sessionUser?._id,
         nombre: sessionUser?.name || sessionUser?.nombre || "Sistema",
       };
-      await createTurno(buildTurnoPayloadFromForm(valoresFormulario, creadorInfo, true));
+      await createTurno(buildTurnoPayloadFromForm(valoresConModulo, creadorInfo, true));
       showToast("Turno creado correctamente.");
       onVolver?.();
     } catch (error) {

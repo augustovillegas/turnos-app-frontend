@@ -163,7 +163,6 @@ export const AppProvider = ({ children }) => {
       }
       start("turnos");
       try {
-        console.log('🔍 loadTurnos - params:', params, 'usuario.role:', usuario?.role, 'token:', !!token);
         const parseDateSafe = (value) => {
           if (!value) return 0;
           const direct = new Date(value);
@@ -176,38 +175,17 @@ export const AppProvider = ({ children }) => {
           }
           return 0;
         };
-
         // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
         const esAlumno = usuario?.role === "alumno";
         const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
-        console.log('🔍 loadTurnos - remoteTurnos recibidos:', remoteTurnos?.length, 'items', 'esAlumno:', esAlumno);
-
-        // Fallback: si superadmin/profesor pidió review:0 y vino vacío, reintentar sin filtros
-        if (!esAlumno && params?.review === 0 && Array.isArray(remoteTurnos) && remoteTurnos.length === 0) {
-          console.warn('🔄 loadTurnos - respuesta vacía con review:0, reintentando sin filtros');
-          const retryTurnos = await getTurnos({});
-          console.log('🔄 loadTurnos - retry sin filtros obtuvo:', retryTurnos?.length, 'items');
-          if (Array.isArray(retryTurnos) && retryTurnos.length > 0) {
-            const normalizedRetry = normalizeCollection(retryTurnos, "turno").sort(
-              (a, b) =>
-                parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
-                parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
-            );
-            setTurnos(normalizedRetry);
-            turnosRef.current = normalizedRetry;
-            return normalizedRetry;
-          }
-        }
         const normalized = normalizeCollection(remoteTurnos, "turno").sort(
           (a, b) =>
             parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
             parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
         );
-        console.log('🔍 loadTurnos - después de normalizar:', normalized?.length, 'items');
         setTurnos(normalized);
         return normalized;
       } catch (error) {
-        console.error('🔴 loadTurnos - CATCH ERROR:', error?.message, 'Full error:', error);
         notifyError("No se pudieron cargar los turnos.", error, "Error al cargar turnos");
         return turnosRef.current;
       } finally {
@@ -575,7 +553,23 @@ export const AppProvider = ({ children }) => {
     async (payload) => {
       start("turnos");
       try {
-        const nuevo = await apiCreateTurno(payload);
+        // Forzar envío de módulo según el usuario/profesor autenticado
+        const moduloResuelto =
+          payload?.modulo ??
+          payload?.module ??
+          usuario?.modulo ??
+          usuario?.module ??
+          usuario?.moduleLabel ??
+          usuario?.moduloLabel ??
+          null;
+
+        const payloadConModulo = {
+          ...payload,
+          modulo: payload?.modulo ?? moduloResuelto,
+          module: payload?.module ?? moduloResuelto,
+        };
+
+        const nuevo = await apiCreateTurno(payloadConModulo);
         const normalized = normalizeItem(nuevo);
         if (!normalized) {
           throw new Error("Respuesta inválida al crear turno.");

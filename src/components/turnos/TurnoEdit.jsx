@@ -82,7 +82,20 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
   };
 
   const manejarEnvio = () => {
-    const erroresDetectados = validateTurnoForm(valoresFormulario);
+    const moduloFallback =
+      valoresFormulario.modulo?.trim() ||
+      sessionUser?.moduleLabel ||
+      sessionUser?.modulo ||
+      sessionUser?.module ||
+      sessionUser?.moduleNumber ||
+      "";
+
+    const valoresConModulo = {
+      ...valoresFormulario,
+      modulo: moduloFallback,
+    };
+
+    const erroresDetectados = validateTurnoForm(valoresConModulo);
     if (Object.keys(erroresDetectados).length > 0) {
       establecerErroresFormulario(erroresDetectados);
       showToast(
@@ -102,12 +115,12 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
       title: "Guardar cambios",
       message: "¿Confirmás los cambios realizados en este turno?",
       onConfirm: () => {
-        void persistirCambios();
+        void persistirCambios(valoresConModulo);
       },
     });
   };
 
-  const persistirCambios = async () => {
+  const persistirCambios = async (valoresActuales) => {
     try {
       const creadorInfo = {
         id: sessionUser?.id || sessionUser?._id,
@@ -115,7 +128,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
       };
       await updateTurno(
         identificadorEfectivo,
-        buildTurnoPayloadFromForm(valoresFormulario, creadorInfo, false)
+        buildTurnoPayloadFromForm(valoresActuales, creadorInfo, false)
       );
       showToast("Cambios guardados. El turno se actualizó correctamente.");
       onVolver?.();
