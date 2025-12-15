@@ -39,10 +39,16 @@ export const mapUsuario = (entry) => {
     nombre: normalized.nombre ?? normalized.name ?? "",
     email: normalized.email ?? "",
     identificador: normalized.identificador ?? "",
-    cohorte:
-      normalized.cohorte ??
-      normalized.cohort ??
-      String(DEFAULT_COHORT),
+    // Mostrar cohorte real si existe; fallback a DEFAULT_COHORT solo en UI cuando sea null
+    cohorte: (() => {
+      const value = normalized.cohorte ?? normalized.cohort;
+      // Si tiene un valor real (incluso 0), devolverlo como string
+      if (value != null) {
+        return String(value);
+      }
+      // Si es null/undefined, devolver null para que UsuariosList aplique fallback "1"
+      return null;
+    })(),
     modulo:
       ensureModuleLabel(normalized.modulo ?? normalized.module) ??
       DEFAULT_MODULE,

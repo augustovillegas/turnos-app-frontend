@@ -313,6 +313,7 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
       email,
       rol: targetRole,
       cohort: cohortNumber,
+      cohorte: cohortNumber,
       modulo: moduloLabel,
       ...(identificador ? { identificador } : {}),
     };
@@ -328,7 +329,9 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
     try {
       setFormErrors({});
-      await updateUsuario(identificadorEfectivo, payload);
+      const response = await updateUsuario(identificadorEfectivo, payload);
+      console.log('🔍 Respuesta del backend después de actualizar:', response);
+      console.log('🔍 Cohorte en respuesta:', response?.cohorte, response?.cohort);
       showToast("Cambios guardados. Usuario actualizado correctamente.", "success");
       await loadUsuarios?.();
       onVolver?.();

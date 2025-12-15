@@ -16,6 +16,7 @@ import { EmptyRow } from "../ui/EmptyRow";
 import { showToast } from "../../utils/feedback/toasts";
 import { mapUsuario } from "../../utils/usuarios/helpers";
 import { paginate } from "../../utils/pagination";
+import { ensureModuleLabel } from "../../utils/moduleMap";
 
 const USER_TABLE_COLUMNS = ["Nombre", "Tipo", "Email", "Cohorte", "Modulo", "Acciones"];
 const ITEMS_PER_PAGE = 8;
@@ -160,7 +161,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
                   {ROLE_LABELS[persona.tipo] ?? persona.tipo}
                 </td>
                 <td className="border p-2 dark:border-[#333]">{persona.email}</td>
-                <td className="border p-2 dark:border-[#333]">{persona.cohorte}</td>
+                <td className="border p-2 dark:border-[#333]">{persona.cohorte ?? "1"}</td>
                 <td className="border p-2 dark:border-[#333]">{persona.modulo}</td>
                 <td className="border p-2 dark:border-[#333] text-right">
                   <div className="flex justify-center">

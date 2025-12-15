@@ -20,8 +20,30 @@ export const normalizeUsuario = (raw = {}) => {
     rol: raw.rol ?? raw.role ?? "alumno",
     estado: estadoDerivado,
     status: estadoDerivado,
-    cohort: raw.cohort ?? raw.cohorte ?? raw.cohortId ?? raw.datos?.cohort ?? null,
-    modulo: raw.modulo ?? raw.module ?? raw.moduloSlug ?? raw.datos?.modulo ?? null,
+    cohort:
+      raw.cohort ??
+      raw.cohorte ??
+      raw.cohortId ??
+      raw.datos?.cohort ??
+      raw.datos?.cohorte ??
+      null,
+    cohorte:
+      raw.cohorte ??
+      raw.cohort ??
+      raw.cohortId ??
+      raw.datos?.cohorte ??
+      raw.datos?.cohort ??
+      null,
+    modulo:
+      raw.modulo ??
+      raw.module ??
+      raw.moduleLabel ??
+      raw.moduloSlug ??
+      raw.moduleCode ??
+      raw.moduleNumber ??
+      raw.datos?.modulo ??
+      raw.datos?.module ??
+      null,
   };
 };
 

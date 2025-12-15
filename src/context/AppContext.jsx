@@ -163,9 +163,7 @@ export const AppProvider = ({ children }) => {
       }
       start("turnos");
       try {
-        // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
-        const esAlumno = usuario?.role === "alumno";
-        const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
+        console.log('🔍 loadTurnos - params:', params, 'usuario.role:', usuario?.role, 'token:', !!token);
         const parseDateSafe = (value) => {
           if (!value) return 0;
           const direct = new Date(value);
@@ -178,14 +176,38 @@ export const AppProvider = ({ children }) => {
           }
           return 0;
         };
+
+        // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
+        const esAlumno = usuario?.role === "alumno";
+        const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
+        console.log('🔍 loadTurnos - remoteTurnos recibidos:', remoteTurnos?.length, 'items', 'esAlumno:', esAlumno);
+
+        // Fallback: si superadmin/profesor pidió review:0 y vino vacío, reintentar sin filtros
+        if (!esAlumno && params?.review === 0 && Array.isArray(remoteTurnos) && remoteTurnos.length === 0) {
+          console.warn('🔄 loadTurnos - respuesta vacía con review:0, reintentando sin filtros');
+          const retryTurnos = await getTurnos({});
+          console.log('🔄 loadTurnos - retry sin filtros obtuvo:', retryTurnos?.length, 'items');
+          if (Array.isArray(retryTurnos) && retryTurnos.length > 0) {
+            const normalizedRetry = normalizeCollection(retryTurnos, "turno").sort(
+              (a, b) =>
+                parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
+                parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
+            );
+            setTurnos(normalizedRetry);
+            turnosRef.current = normalizedRetry;
+            return normalizedRetry;
+          }
+        }
         const normalized = normalizeCollection(remoteTurnos, "turno").sort(
           (a, b) =>
             parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
             parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
         );
+        console.log('🔍 loadTurnos - después de normalizar:', normalized?.length, 'items');
         setTurnos(normalized);
         return normalized;
       } catch (error) {
+        console.error('🔴 loadTurnos - CATCH ERROR:', error?.message, 'Full error:', error);
         notifyError("No se pudieron cargar los turnos.", error, "Error al cargar turnos");
         return turnosRef.current;
       } finally {
@@ -496,6 +518,14 @@ export const AppProvider = ({ children }) => {
       try {
         const actualizado = await apiUpdateUsuario(id, payload);
         const normalizado = normalizeUsuario(actualizado);
+        
+        // WORKAROUND: Si el backend no devuelve cohorte pero se envió, persistir localmente
+        const cohortDelPayload = payload.cohorte ?? payload.cohort;
+        if (cohortDelPayload != null && (normalizado.cohorte == null && normalizado.cohort == null)) {
+          normalizado.cohorte = cohortDelPayload;
+          normalizado.cohort = cohortDelPayload;
+        }
+        
         setUsuarios((prev) => {
           const base = normalizeUsuariosCollection(prev);
           return base.map((usuario) =>
@@ -509,7 +539,7 @@ export const AppProvider = ({ children }) => {
         return normalizado;
       } catch (error) {
         console.error("Error al actualizar usuario remoto", error);
-        notifyError("No se pudo actualizar el usuario.", error, "Error actualizaciÇün usuario");
+        notifyError("No se pudo actualizar el usuario.", error, "Error actualización usuario");
         throw error;
       } finally {
         stop("usuarios-update");

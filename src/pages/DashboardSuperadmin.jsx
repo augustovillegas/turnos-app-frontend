@@ -43,7 +43,14 @@ export const DashboardSuperadmin = () => {
 
     const fetchData = async () => {
       try {
-        await Promise.all([loadTurnos(), loadEntregas(), loadUsuarios()]);
+        // Superadmin necesita parámetros específicos para obtener datos de TODOS los módulos
+        // - turnos: review=0 para obtener todos los reviews (no solo review=1 por defecto del backend)
+        // - usuarios: sin filtro de módulo, obtenemos todos los usuarios
+        await Promise.all([
+          loadTurnos({ review: 0 }), 
+          loadEntregas(), 
+          loadUsuarios({})  // Explícito: sin filtro de módulo
+        ]);
       } catch (error) {
         showToast("No se pudieron cargar los datos generales.", "error");
         if (pushError) {

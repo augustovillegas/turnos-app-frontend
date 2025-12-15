@@ -163,8 +163,21 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
  * @param {Object} params
  * @returns {Promise<Array>}
  */
-export const getTurnos = (params = {}) =>
-  apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
+export const getTurnos = (params = {}) => {
+  const url = `${apiClient.defaults.baseURL || ''}${RESOURCE}`;
+  const queryString = new URLSearchParams(params).toString();
+  const fullUrl = queryString ? `${url}?${queryString}` : url;
+  console.log('📡 getTurnos - calling:', fullUrl, 'baseURL:', apiClient.defaults.baseURL, 'RESOURCE:', RESOURCE, 'params:', params);
+  return apiClient.get(RESOURCE, { params })
+    .then((response) => {
+      console.log('📡 getTurnos - backend response:', response.data, 'status:', response.status);
+      return response.data ?? [];
+    })
+    .catch((error) => {
+      console.error('📡 getTurnos - ERROR:', error?.message, 'status:', error?.response?.status, 'data:', error?.response?.data, 'Full error:', error);
+      throw error;
+    });
+};
 
 // Alias para compatibilidad (antes en slotsService)
 export const getSlots = getTurnos;

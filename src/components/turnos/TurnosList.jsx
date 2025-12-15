@@ -16,12 +16,15 @@ import { SuperadminActions } from "../ui/SuperadminActions";
 import { ProfesorActions } from "../ui/ProfesorActions";
 import { formatDateForTable } from "../../utils/formatDateForTable";
 import { useApproval } from "../../hooks/useApproval";
+import { useAuth } from "../../context/AuthContext";
+import { ensureModuleLabel } from "../../utils/moduleMap";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
   // ARQUITECTURA: Recibe `role` como prop para renderizado condicional de acciones
   // (SuperadminActions vs ProfesorActions). El backend valida ownership/permisos.
   const { turnos, loadTurnos, removeTurno, updateTurnoEstado } = useAppData();
+  const { usuario: sessionUser } = useAuth();
   const [filtroReview, setFiltroReview] = useState("todos");
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -31,8 +34,11 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   const { isLoading } = useLoading();
 
   useEffect(() => {
-    loadTurnos();
-  }, [loadTurnos]);
+    const loggedRole = String(sessionUser?.role ?? sessionUser?.rol ?? "").toLowerCase();
+    const isSuperadmin = loggedRole === "superadmin" || role === "superadmin";
+    const params = isSuperadmin ? { review: 0 } : {};
+    loadTurnos(params);
+  }, [loadTurnos, role, sessionUser]);
 
   // --- Derivacion filtrada según review seleccionado ---
   const turnosFiltrados = useMemo(() => {
