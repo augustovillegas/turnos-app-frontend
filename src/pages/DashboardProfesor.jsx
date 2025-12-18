@@ -19,13 +19,14 @@ import { Configuracion } from "./Configuracion";
 import { SolicitudesTurnos } from "./SolicitudesTurnos";
 import { UsuariosPendientes } from "./UsuariosPendientes";
 import { CreateUsers } from "./CreateUsers";
+import { DashboardKpiSection } from "../components/metrics/DashboardKpiSection";
 
 const ITEMS_PER_PAGE = 5;
 
 export const DashboardProfesor = () => {
   // === Contextos globales ===
   const appData = useAppData();
-  const { turnos = [], usuarios = [], loadTurnos, loadEntregas, loadUsuarios } =
+  const { turnos = [], usuarios = [], entregas = [], loadTurnos, loadEntregas, loadUsuarios } =
     appData || {};
   const { usuario: usuarioActual, token, cerrarSesion } = useAuth();
   const { pushError } = useError();
@@ -42,6 +43,13 @@ export const DashboardProfesor = () => {
     if (!usuarioActual) return null;
     return ensureModuleLabel(usuarioActual.modulo);
   }, [usuarioActual]);
+  const alcanceProfesor = useMemo(
+    () => ({
+      modulo: moduloEtiqueta,
+      cohorte: usuarioActual?.cohorte ?? usuarioActual?.cohort ?? null,
+    }),
+    [moduloEtiqueta, usuarioActual]
+  );
 
 
   // === Filtrado de datos por módulo ===
@@ -137,7 +145,7 @@ export const DashboardProfesor = () => {
             id: "usuarios",
             label: "Usuarios Pendientes",
             icon: "/icons/users-2.png",
-          },          
+          },         
           {
             id: "evaluar-entregas",
             label: "Evaluar Entregables",
@@ -148,10 +156,15 @@ export const DashboardProfesor = () => {
             label: "Crear Turnos",
             icon: "/icons/time_and_date-2.png",
           },
-           {
+          {
             id: "cargar-usuarios",
             label: "Cargar Usuarios",
             icon: "/icons/address_book_pad_users.png",
+          },
+          {
+            id: "metricas",
+            label: "Métricas",
+            icon: "/icons/chart1-4.png",
           },
         ]}
         active={active}
@@ -183,6 +196,20 @@ export const DashboardProfesor = () => {
             usuarios={usuariosPendientesDelModulo}
             isLoading={isLoading("usuarios")}
             itemsPerPage={ITEMS_PER_PAGE}
+            withWrapper={false}
+          />
+        )}
+
+        {/* =========================
+          SECCIÓN: MÉTRICAS
+        ========================== */}
+        {active === "metricas" && (
+          <DashboardKpiSection
+            role="profesor"
+            usuarios={usuariosDelModulo}
+            turnos={turnosDelModulo}
+            entregas={entregas}
+            scope={alcanceProfesor}
             withWrapper={false}
           />
         )}

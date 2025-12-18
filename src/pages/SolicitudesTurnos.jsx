@@ -16,6 +16,7 @@ import { usePagination } from "../hooks/usePagination";
 import { ensureModuleLabel } from "../utils/moduleMap";
 import { useApproval } from "../hooks/useApproval";
 import { showToast } from "../utils/feedback/toasts";
+import { useModal } from "../context/ModalContext";
 
 const TurnoDetail = lazy(() =>
   import("../components/turnos/TurnoDetail").then((mod) => ({ default: mod.TurnoDetail }))
@@ -43,8 +44,9 @@ export const SolicitudesTurnos = ({
   withWrapper = true,
   itemsPerPage = 5,
 }) => {
-  const { updateTurnoEstado, findUsuarioById } = useAppData();
+  const { updateTurnoEstado, findUsuarioById, removeTurno } = useAppData();
   const { usuario: usuarioActual } = useAuth();
+  const { showModal } = useModal();
   const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
   const ITEMS_PER_PAGE = itemsPerPage;
@@ -75,6 +77,7 @@ export const SolicitudesTurnos = ({
   // Estado para resultados (filtrado + búsqueda) a partir de PanelFiltro
   const [turnosBuscados, setTurnosBuscados] = useState(turnosSolicitados);
   const [solicitantesMap, setSolicitantesMap] = useState({});
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     setTurnosBuscados(turnosSolicitados);
@@ -122,6 +125,32 @@ export const SolicitudesTurnos = ({
       showToast("No se pudo copiar el link", "error");
     }
   };
+
+  const handleEliminar = useCallback(
+    (turno) => {
+      if (!turno?.id) return;
+      showModal({
+        type: "warning",
+        title: "Eliminar turno",
+        message: "¿Confirmas eliminar este turno? Esta acción no se puede deshacer.",
+        confirmText: "Eliminar",
+        cancelText: "Cancelar",
+        onConfirm: async () => {
+          setDeletingId(turno.id);
+          try {
+            await removeTurno?.(turno.id);
+            showToast("Turno eliminado", "success");
+          } catch (error) {
+            console.error("Error eliminando turno", error);
+            showToast("No se pudo eliminar el turno", "error");
+          } finally {
+            setDeletingId(null);
+          }
+        },
+      });
+    },
+    [removeTurno, showModal]
+  );
 
   // Prefetch de nombres de solicitantes (alumno) vía usuarios
   useEffect(() => {
@@ -333,8 +362,9 @@ export const SolicitudesTurnos = ({
                         onRechazar={handleRechazar}
                         onVer={onVer}
                         onEditar={onEditar}
+                        onEliminar={handleEliminar}
                         onCopiarZoom={handleCopiarZoom}
-                        disabled={processingTurno === t.id}
+                        disabled={processingTurno === t.id || deletingId === t.id}
                       />
                     ) : (
                       <ProfesorActions
@@ -343,8 +373,9 @@ export const SolicitudesTurnos = ({
                         onRechazar={handleRechazar}
                         onVer={onVer}
                         onEditar={onEditar}
+                        onEliminar={handleEliminar}
                         onCopiarZoom={handleCopiarZoom}
-                        disabled={processingTurno === t.id}
+                        disabled={processingTurno === t.id || deletingId === t.id}
                       />
                     )}
                   </td>
@@ -372,10 +403,11 @@ export const SolicitudesTurnos = ({
               turno={{ ...t, sala: resolveSalaTexto(t) }}
               onVer={() => onVer(t)}
               onEditar={() => onEditar(t)}
+              onEliminar={() => handleEliminar(t)}
               onAprobar={() => handleAprobar(t)}
               onRechazar={() => handleRechazar(t)}
               onCopiarZoom={() => handleCopiarZoom(t)}
-              disabled={processingTurno === t.id}
+              disabled={processingTurno === t.id || deletingId === t.id}
             />
             ))
           ) : (

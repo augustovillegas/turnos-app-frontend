@@ -16,12 +16,14 @@ import { useModal } from "../context/ModalContext";
 import { CreateUsers } from "./CreateUsers";
 import { SolicitudesTurnos } from "./SolicitudesTurnos";
 import { UsuariosPendientes } from "./UsuariosPendientes";
+import { DashboardKpiSection } from "../components/metrics/DashboardKpiSection";
 
 export const DashboardSuperadmin = () => {
   // --- Contexto global con acceso a todo el sistema ---
   const {
     turnos,
     usuarios,
+    entregas,
     loadTurnos,
     loadEntregas,
     loadUsuarios,
@@ -91,7 +93,7 @@ export const DashboardSuperadmin = () => {
             id: "usuarios",
             label: "Gestión de Usuarios",
             icon: "/icons/users_key-4.png",
-          },
+          },          
           {
             id: "turnos",
             label: "Solicitudes de Turnos",
@@ -111,6 +113,11 @@ export const DashboardSuperadmin = () => {
             id: "cargar-usuarios",
             label: "Cargar Usuarios",
             icon: "/icons/address_book_pad_users.png",
+          },
+           {
+            id: "metricas",
+            label: "Métricas",
+            icon: "/icons/chart1-4.png",
           },         
         ]}
         active={active}
@@ -130,6 +137,19 @@ export const DashboardSuperadmin = () => {
             usuarios={usuarios}
             isLoading={isLoading("usuarios")}
             itemsPerPage={ITEMS_PER_PAGE}
+            withWrapper={false}
+          />
+        )}
+
+        {/* =========================
+          SECCIÓN: MÉTRICAS
+        ========================== */}
+        {active === "metricas" && (
+          <DashboardKpiSection
+            role="superadmin"
+            usuarios={usuarios}
+            turnos={turnos}
+            entregas={entregas}
             withWrapper={false}
           />
         )}
