@@ -16,6 +16,7 @@ import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
 import { ensureModuleLabel } from "../utils/moduleMap";
+import { PanelFiltro } from "../components/ui/PanelFiltro";
 
 const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Módulo", "Estado", "Acciones"];
 
@@ -100,14 +101,27 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
           Usuarios Pendientes
         </h2>
 
-        <SearchBar
-          data={usuariosPendientes}
-          fields={["nombre", "rol", "estado", "modulo", "module"]}
-          placeholder="Buscar usuarios pendientes"
-          onSearch={(results) => {
-            setUsuariosBuscados(results);
-          }}
-        />
+        {isSuperadmin ? (
+          <PanelFiltro
+            data={usuariosPendientes}
+            onChange={(results) => {
+              setUsuariosBuscados(results);
+              paginated.resetPage();
+            }}
+            className="mt-2"
+            searchFields={["nombre", "rol", "estado", "modulo", "module", "email", "cohorte"]}
+            testId="panel-filtro-usuarios-pendientes"
+          />
+        ) : (
+          <SearchBar
+            data={usuariosPendientes}
+            fields={["nombre", "rol", "estado", "modulo", "module"]}
+            placeholder="Buscar usuarios pendientes"
+            onSearch={(results) => {
+              setUsuariosBuscados(results);
+            }}
+          />
+        )}
 
         {/* Tabla Desktop */}
         <div className="hidden md:block">

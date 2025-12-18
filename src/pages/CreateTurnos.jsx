@@ -6,8 +6,11 @@ import { TurnoForm } from "../components/turnos/TurnoForm";
 import { TurnoEdit } from "../components/turnos/TurnoEdit";
 import { TurnoDetail } from "../components/turnos/TurnoDetail";
 import { TurnosList } from "../components/turnos/TurnosList";
+import { useAuth } from "../context/AuthContext";
 
 export const CreateTurnos = ({ withWrapper = true }) => {
+  const { usuario } = useAuth();
+  const role = String(usuario?.rol ?? usuario?.role ?? "profesor").toLowerCase();
   // --- Estado que determina la vista activa dentro del flujo ---
   const [modo, setModo] = useState("listar");
   const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
@@ -28,6 +31,7 @@ export const CreateTurnos = ({ withWrapper = true }) => {
     <Container {...containerProps}>
       {modo === "listar" && (
         <TurnosList
+          role={role}
           onCrear={() => {
             setModo("crear");
             setTurnoSeleccionado(null);

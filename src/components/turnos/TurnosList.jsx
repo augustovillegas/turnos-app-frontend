@@ -6,7 +6,6 @@ import { useLoading } from "../../context/LoadingContext";
 import { Table } from "../ui/Table";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
-import { ReviewFilter } from "../ui/ReviewFilter";
 import { CardTurnosCreados } from "../ui/CardTurnosCreados";
 import { Pagination } from "../ui/Pagination";
 import { SearchBar } from "../ui/SearchBar";
@@ -18,6 +17,7 @@ import { formatDateForTable } from "../../utils/formatDateForTable";
 import { useApproval } from "../../hooks/useApproval";
 import { useAuth } from "../../context/AuthContext";
 import { ensureModuleLabel } from "../../utils/moduleMap";
+import { PanelFiltro } from "../ui/PanelFiltro";
 
 export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   // --- Datos globales y estado de la lista ---
@@ -78,6 +78,8 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
   );
   const turnosLoading = isLoading("turnos");
   const showLoader = turnosLoading;
+
+  const searchFields = ["sala", "fecha", "horario", "estado", "review", "comentarios", "modulo"];
 
   // --- AprobaciÍn / rechazo de turnos solicitados ---
   const { handleApprove, handleReject, processingId: approvingId } = useApproval({
@@ -150,33 +152,23 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-3 sm:mb-4">
-          {/* Izquierda: Search fluida */}
-          <div className="order-1 sm:order-none flex-1 min-w-0">
-            <SearchBar
-              fluid
-              className="w-full"
-              inputClassName="h-10"
+          {/* Izquierda: Search/Filters */}
+          <div className="order-1 sm:order-none flex-1 min-w-0 w-full">
+            <PanelFiltro
               data={turnosFiltrados}
-              fields={[
-                "sala",
-                "fecha",
-                "horario",
-                "estado",
-                "review",
-                "comentarios",
-              ]}
-              placeholder="Buscar por sala, fecha o estado"
-              onSearch={(results) => {
+              onChange={(results) => {
                 setTurnosBuscados(results);
                 setPage(1);
               }}
+              className="w-full"
+              searchFields={searchFields}
+              showAlphaSort={false}
+              reviewField="review"
+              testId="panel-filtro-turnos"
             />
           </div>
 
-          {/* ReviewFilter*/}
-          <div className="order-2 sm:order-none shrink-0">
-            <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-          </div>
+          {/* ReviewFilter removido: el PanelFiltro incluye filtro de Review */}
         </div>
 
         <Table

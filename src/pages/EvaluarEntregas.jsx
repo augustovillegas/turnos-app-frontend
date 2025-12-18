@@ -11,7 +11,7 @@ import { DropdownActions } from "../components/ui/DropdownActions";
 import { Status } from "../components/ui/Status";
 import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
-import { SearchBar } from "../components/ui/SearchBar";
+import { PanelFiltro } from "../components/ui/PanelFiltro";
 import { Pagination } from "../components/ui/Pagination";
 import { showToast } from "../utils/feedback/toasts";
 import { paginate } from "../utils/pagination";
@@ -94,6 +94,8 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
   const containerProps = withWrapper
     ? { className: containerClass }
     : { className: `w-full flex flex-col gap-6 ${containerClass}` };
+  const cellClass =
+    "border border-[#111827] dark:border-[#333] p-2 text-center text-[#111827] dark:text-gray-200";
 
   return (
     <Container {...containerProps}>
@@ -101,9 +103,14 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
           Evaluar Entregables
         </h2>
 
-        <SearchBar
+        <PanelFiltro
           data={entregasFiltradasPorEstado}
-          fields={[
+          onChange={(results) => {
+            setEntregasBuscadas(results);
+            setPage(1);
+          }}
+          className="mt-2"
+          searchFields={[
             "sprint",
             "alumno",
             "githubLink",
@@ -111,11 +118,9 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
             "comentarios",
             "reviewStatus",
           ]}
-          placeholder="Buscar entregables"
-          onSearch={(results) => {
-            setEntregasBuscadas(results);
-            setPage(1);
-          }}
+          dateFields={["fechaEntrega", "createdAt", "updatedAt"]}
+          sprintField="sprint"
+          testId="panel-filtro-entregas"
         />
 
         <Table
@@ -138,11 +143,11 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
           emptyMessage="No hay entregas pendientes."
           renderRow={(e) => (
             <>
-              <td className="border p-2 text-center">Sprint {e.sprint}</td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>Sprint {e.sprint}</td>
+              <td className={cellClass}>
                 {e.alumno || "Sin asignar"}
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 {e.githubLink ? (
                   <a
                     href={e.githubLink}
@@ -156,7 +161,7 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
                   "No entregado"
                 )}
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 {e.renderLink ? (
                   <a
                     href={e.renderLink}
@@ -170,16 +175,16 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
                   "No entregado"
                 )}
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 {e.comentarios || "-"}
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 {formatDateForTable(e.fechaEntrega) || "-"}
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 <Status status={getEstadoUI(e)} />
               </td>
-              <td className="border p-2 text-center">
+              <td className={cellClass}>
                 {esPendiente(e) ? (
                   <DropdownActions
                     options={[

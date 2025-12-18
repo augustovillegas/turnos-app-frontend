@@ -5,12 +5,12 @@ import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
 import { Skeleton } from "../components/ui/Skeleton";
 import { Pagination } from "../components/ui/Pagination";
-import { ReviewFilter } from "../components/ui/ReviewFilter";
+import { PanelFiltro } from "../components/ui/PanelFiltro";
 import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { SuperadminActions } from "../components/ui/SuperadminActions";
-import { SearchBar } from "../components/ui/SearchBar";
+// SearchBar ahora se usa dentro de PanelFiltro
 import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
 import { Suspense, lazy } from "react";
@@ -38,8 +38,6 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
-  // ---- Estado de filtros ----
-  const [filtroReview, setFiltroReview] = useState("todos");
   const ITEMS_PER_PAGE = itemsPerPage;
 
   const [modo, setModo] = useState("listar");
@@ -59,18 +57,12 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     [turnos]
   );
 
-  const filtrados = useMemo(() => {
-    if (filtroReview === "todos") return turnosSolicitados;
-    return turnosSolicitados.filter((t) => t.review === Number(filtroReview));
-  }, [turnosSolicitados, filtroReview]);
+  // Estado para resultados (filtrado + búsqueda) a partir de PanelFiltro
+  const [turnosBuscados, setTurnosBuscados] = useState(turnosSolicitados);
 
-  // Estado para resultados de búsqueda (parte del pipeline de filtrado)
-  const [turnosBuscados, setTurnosBuscados] = useState(filtrados);
-
-  // Actualizar base de búsqueda cuando cambian filtros externos
   useEffect(() => {
-    setTurnosBuscados(filtrados);
-  }, [filtrados]);
+    setTurnosBuscados(turnosSolicitados);
+  }, [turnosSolicitados]);
 
   // Hook de paginación sobre el resultado final (filtrado + búsqueda)
   const paginated = usePagination(turnosBuscados, ITEMS_PER_PAGE);
@@ -79,20 +71,10 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
       ? turnosSolicitados.slice(0, 1)
       : paginated.items;
 
-  // Resetear página cuando cambia el filtro
-  useEffect(() => {
-    paginated.resetPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroReview]);
+  // Resetear página cuando cambia dataset base o filtros
+  // (PanelFiltro ya hace reset explícito en onChange)
 
-  // Handler de búsqueda desde SearchBar
-  const handleSearch = useCallback(
-    (results) => {
-      setTurnosBuscados(Array.isArray(results) ? results : filtrados);
-      paginated.resetPage();
-    },
-    [filtrados, paginated]
-  );
+  // Búsqueda integrada en PanelFiltro
 
   // Hook de aprobación/rechazo
   const { handleApprove, handleReject, processingId } = useApproval({
@@ -207,16 +189,19 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
           </div>
         )}
 
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col gap-2">
-          <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-          <SearchBar
-            data={filtrados}
-            fields={["horario", "sala", "zoomLink", "estado"]}
-            onSearch={handleSearch}
-            placeholder="Buscar por horario, sala, zoom o estado"
-          />
-        </div>
+        {/* Panel de filtros y búsqueda (profesor y superadmin) */}
+        <PanelFiltro
+          data={turnosSolicitados}
+          onChange={(results) => {
+            setTurnosBuscados(Array.isArray(results) ? results : turnosSolicitados);
+            paginated.resetPage();
+          }}
+          className="mt-2"
+          searchFields={["horario", "sala", "zoomLink", "estado", "modulo"]}
+          reviewField="review"
+          showAlphaSort={false}
+          testId="panel-filtro-solicitudes-turnos"
+        />
 
         {/* Desktop */}
         <div className="hidden md:block">

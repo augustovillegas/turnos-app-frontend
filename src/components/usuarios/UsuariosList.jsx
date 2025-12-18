@@ -17,6 +17,7 @@ import { showToast } from "../../utils/feedback/toasts";
 import { mapUsuario } from "../../utils/usuarios/helpers";
 import { paginate } from "../../utils/pagination";
 import { ensureModuleLabel } from "../../utils/moduleMap";
+import { PanelFiltro } from "../ui/PanelFiltro";
 
 const USER_TABLE_COLUMNS = ["Nombre", "Tipo", "Email", "Cohorte", "Modulo", "Acciones"];
 const ITEMS_PER_PAGE = 8;
@@ -51,6 +52,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
   }, [loggedRole]);
 
   const canManageUsers = allowedRoles.length > 0;
+  const searchFields = ["nombre", "email", "tipo", "rol", "role", "modulo", "cohorte"];
 
   useEffect(() => {
     if (canManageUsers) {
@@ -139,12 +141,25 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
           </Button>
         </div>
 
-        <SearchBar
-          data={usuarios}
-          fields={["nombre", "email", "tipo", "modulo", "cohorte"]}
-          onSearch={handleSearch}
-          placeholder="Buscar por nombre, email, rol o módulo"
-        />
+        {loggedRole === "superadmin" ? (
+          <PanelFiltro
+            data={personas}
+            searchFields={searchFields}
+            onChange={(results) => {
+              setFiltered(Array.isArray(results) ? results : personas);
+              setPage(1);
+            }}
+            className="w-full"
+            testId="panel-filtro-usuarios"
+          />
+        ) : (
+          <SearchBar
+            data={usuarios}
+            fields={searchFields}
+            onSearch={handleSearch}
+            placeholder="Buscar por nombre, email, rol o módulo"
+          />
+        )}
 
         {/* Vista Desktop - Tabla */}
         <div className="hidden md:block">
