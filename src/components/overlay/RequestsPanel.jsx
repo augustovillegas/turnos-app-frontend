@@ -26,7 +26,8 @@ const RequestsPanelComponent = () => {
   const [pagina, establecerPagina] = useState(1);
 
   // Ocultar panel si el usuario no es profesor/superadmin
-  const puedeVerPanel = user?.role === "profesor" || user?.role === "superadmin";
+  const rol = user?.rol ?? user?.role;
+  const puedeVerPanel = rol === "profesor" || rol === "superadmin";
   const turnosList = useMemo(() => (Array.isArray(turnos) ? turnos : []), [turnos]);
 
   const solicitudesPendientes = useMemo(

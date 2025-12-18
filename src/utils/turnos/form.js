@@ -1,4 +1,5 @@
 // Helpers centrales para construir, validar y mapear datos de turnos.
+import { ensureModuleLabel, MODULE_LABELS } from "../moduleMap";
 
 const asegurarDosDigitos = (valor) => valor.toString().padStart(2, "0");
 
@@ -31,8 +32,6 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, 
   const inicio = construirFechaIso(valores.fecha, valores.horaInicio);
   const fin = construirFechaIso(valores.fecha, valores.horaFin);
   const fechaNormalizada = normalizarFecha(valores.fecha);
-  const [yyyy, mm, dd] = fechaNormalizada.split('-');
-  const fechaDDMMYYYY = yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : fechaNormalizada;
   const toHM = (iso) => new Date(iso).toISOString().slice(11, 16);
   const duracion = Math.max(0, Math.round((new Date(fin) - new Date(inicio)) / 60000));
   const estadoActual = valores.estado ?? valores.status;
@@ -52,15 +51,13 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, 
   const payload = {
     review: Number(valores.review),
     reviewNumber: Number(valores.review),
-    fecha: fechaDDMMYYYY,
-    date: fechaNormalizada,
+    fecha: fechaNormalizada,
     horario: formatearHorario(inicio, fin),
     sala: numericSala,
-    room: numericSala,
     zoomLink: valores.zoomLink.trim(),
     start: inicio,
     end: fin,
-    dateISO: inicio.slice(0, 10),
+    fechaISO: new Date(inicio).toISOString().slice(0, 10),
     startTime: toHM(inicio),
     endTime: toHM(fin),
     duracion,
@@ -71,33 +68,19 @@ export const construirPayloadTurnoDesdeFormulario = (valores, creadorInfo = {}, 
 
   // En creación, usar defaults; en edición, preservar valores existentes
   if (isCreating) {
-    const VALID_MODULES = ["HTML-CSS", "JAVASCRIPT", "FRONTEND - REACT", "BACKEND - NODE"];
-    const FALLBACK_MODULE = "HTML-CSS";
-    
-    const moduloCandidato =
-      valores.modulo?.trim?.() ||
-      valores.moduleLabel?.trim?.() ||
-      valores.module?.trim?.() ||
-      valores.moduloLabel?.trim?.() ||
-      FALLBACK_MODULE;
-    
-    // Validar que sea un valor del enum
-    const moduloNormalizado = String(moduloCandidato).trim().toUpperCase();
-    const moduloValido = VALID_MODULES.find((m) => m.toUpperCase() === moduloNormalizado);
-    
+    const FALLBACK_MODULE = MODULE_LABELS?.[0] || "HTML-CSS";
+
+    const moduloCandidato = valores.modulo?.trim?.() || FALLBACK_MODULE;
+    const moduloValido = ensureModuleLabel(moduloCandidato) || FALLBACK_MODULE;
+
     payload.titulo = valores.titulo?.trim?.() || "Turno Test";
     payload.descripcion = valores.descripcion?.trim?.() || "Generado por pruebas";
-    payload.modulo = moduloValido ?? FALLBACK_MODULE;
+    payload.modulo = moduloValido;
     payload.comentarios = valores.comentarios?.trim?.() || "";
     payload.estado = estadoActual || "Disponible";
   } else {
     // En modo edición, propagar módulo si viene del formulario o de aliases para cumplir el backend
-    payload.modulo =
-      valores.modulo?.trim?.() ||
-      valores.moduleLabel?.trim?.() ||
-      valores.module?.trim?.() ||
-      valores.moduloLabel?.trim?.() ||
-      undefined;
+    payload.modulo = valores.modulo?.trim?.() || undefined;
     // En modo edición, solo incluir comentarios que el formulario controla.
     // titulo y descripcion NO se envían para preservar los valores existentes en el backend.
     payload.comentarios = valores.comentarios?.trim?.() ?? "";
@@ -144,7 +127,7 @@ export const obtenerValoresFormularioDesdeTurno = (turno) => {
   const [horaInicio = "", horaFin = ""] = (turno.horario || "").split(" - ");
   const fechaResultante =
     turno.start || turno.fecha ? fechaFormateada : fechaHoy;
-  const salaSource = turno.room ?? turno.sala ?? "";
+  const salaSource = turno.sala ?? "";
   const salaForForm =
     typeof salaSource === "string" && /^sala/i.test(salaSource)
       ? salaSource.replace(/^sala\s*/i, "")
@@ -192,7 +175,6 @@ export const validarFormularioTurno = (valores) => {
   return errores;
 };
 
-// Alias temporales para mantener compatibilidad con el resto del codigo.
 export const buildTurnoPayloadFromForm = construirPayloadTurnoDesdeFormulario;
 export const formValuesFromTurno = obtenerValoresFormularioDesdeTurno;
 export const validateTurnoForm = validarFormularioTurno;

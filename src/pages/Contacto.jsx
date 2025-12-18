@@ -32,7 +32,7 @@ export default function Contacto() {
         {/* Barra superior (coincide con Login) */}
         <div className="bg-[#1E3A8A] dark:bg-[#0A2E73] text-white px-4 py-2 rounded-t-md shadow">
           <div className="flex items-center gap-2">
-            <img src="public/icons/mail-2.png" alt="" className="w-5 h-5" />
+            <img src="/icons/mail-2.png" alt="" className="w-5 h-5" />
             <h1 className="font-bold text-sm">Contacto</h1>
           </div>
         </div>

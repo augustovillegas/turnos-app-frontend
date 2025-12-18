@@ -42,9 +42,8 @@ export const Login = () => {
         return;
       }
 
-      iniciarSesion(datos.token, datos.user);
-
-      const rol = datos.user?.role;
+      const rol = datos.user?.rol ?? datos.user?.role;
+      iniciarSesion(datos.token, { ...datos.user, rol: rol, role: rol });
       navigate(rutaInicioPorRol(rol));
     } catch (error) {
       const esErrorRed =
@@ -149,5 +148,3 @@ export const Login = () => {
     </div>
   );
 };
-
-

@@ -84,10 +84,7 @@ export const TurnoEdit = ({ turno, turnoId, onVolver }) => {
   const manejarEnvio = () => {
     const moduloFallback =
       valoresFormulario.modulo?.trim() ||
-      sessionUser?.moduleLabel ||
       sessionUser?.modulo ||
-      sessionUser?.module ||
-      sessionUser?.moduleNumber ||
       "";
 
     const valoresConModulo = {

@@ -20,12 +20,9 @@ import {
   updateTurno as apiUpdateTurno,
   deleteTurno as apiDeleteTurno,
   actualizarEstadoSlot,
-} from "../services/turnosService";
-import {
-  getSlots,
   solicitarSlot,
   cancelarSlot,
-} from "../services/slotsService";
+} from "../services/turnosService";
 import {
   getEntregas,
   createEntrega as apiCreateEntrega,
@@ -34,7 +31,6 @@ import {
 } from "../services/entregasService"; // Panel admin (profesor/superadmin)
 import {
   getSubmissionsByUser,
-  createSubmission,
   updateSubmission,
   deleteSubmission,
 } from "../services/submissionsService"; // Flujo alumno
@@ -44,8 +40,10 @@ import {
   updateUsuarioEstado as apiUpdateUsuarioEstado,
   createUsuario as apiCreateUsuario,
   updateUsuario as apiUpdateUsuario,
+  updateUsuarioAuth as apiUpdateUsuarioAuth,
   deleteUsuario as apiDeleteUsuario,
 } from "../services/usuariosService";
+import { ensureModuleLabel } from "../utils/moduleMap";
 import { showToast } from "../utils/feedback/toasts";
 import { formatErrorMessage } from "../utils/feedback/errorExtractor"; // ⬅️ añadido
 import { normalizeUsuario, normalizeUsuariosCollection } from "../utils/usuarios/normalizeUsuario";
@@ -88,6 +86,12 @@ const normalizeCollection = (collection, type = "generic") =>
   Array.isArray(collection) ? collection.map((item) => normalizeItem(item, type)) : [];
 
 const AppContext = createContext();
+
+const getRol = (user) =>
+  user?.rol ??
+  user?.role ??
+  user?.tipo ??
+  null;
 
 // --- Provider principal: expone estado compartido y acciones ---
 
@@ -175,13 +179,11 @@ export const AppProvider = ({ children }) => {
           }
           return 0;
         };
-        // Si el usuario es alumno, debe consumir /slots en lugar de /turnos (panel admin)
-        const esAlumno = usuario?.role === "alumno";
-        const remoteTurnos = esAlumno ? await getSlots(params) : await getTurnos(params);
+        const remoteTurnos = await getTurnos(params);
         const normalized = normalizeCollection(remoteTurnos, "turno").sort(
           (a, b) =>
-            parseDateSafe(b.start ?? b.fecha ?? b.date ?? b.dateISO) -
-            parseDateSafe(a.start ?? a.fecha ?? a.date ?? a.dateISO)
+            parseDateSafe(b.fecha ?? b.fechaISO ?? b.start) -
+            parseDateSafe(a.fecha ?? a.fechaISO ?? a.start)
         );
         setTurnos(normalized);
         return normalized;
@@ -204,7 +206,7 @@ export const AppProvider = ({ children }) => {
       }
       start("entregas");
       try {
-        const esAlumno = usuario?.role === "alumno";
+        const esAlumno = getRol(usuario) === "alumno";
         let data;
         if (esAlumno) {
           // Para alumno, listar propias entregas vía /submissions/:userId
@@ -215,7 +217,7 @@ export const AppProvider = ({ children }) => {
             data = await getSubmissionsByUser(userId);
           }
         } else {
-          // Profesor / superadmin usan panel /entregas
+          // Profesor / superadmin usan panel /submissions
             data = await getEntregas(params);
         }
         const normalized = normalizeCollection(data, "entrega");
@@ -239,7 +241,8 @@ export const AppProvider = ({ children }) => {
         usuariosRef.current = [];
         return [];
       }
-      if (usuario?.role !== "superadmin" && usuario?.role !== "profesor") {
+      const rolActual = getRol(usuario);
+      if (rolActual !== "superadmin" && rolActual !== "profesor") {
         return usuariosRef.current;
       }
       start("usuarios");
@@ -262,15 +265,13 @@ export const AppProvider = ({ children }) => {
     async (payload) => {
       start("entregas");
       try {
-        const esAlumno = usuario?.role === "alumno";
-        let created;
-        if (esAlumno) {
-          const slotId = payload.slotId || payload.turnoId || payload.slot || null;
-          if (!slotId) throw new Error("Falta slotId para crear la entrega del alumno.");
-          created = await createSubmission(slotId, payload);
-        } else {
-          created = await apiCreateEntrega(payload);
+        const esAlumno = getRol(usuario) === "alumno";
+        if (!esAlumno) {
+          throw new Error("Solo los alumnos pueden registrar entregas.");
         }
+        const slotId = payload.slotId || payload.turnoId || payload.slot || null;
+        if (!slotId) throw new Error("Falta slotId para crear la entrega del alumno.");
+        const created = await apiCreateEntrega({ ...payload, slotId });
         const normalized = normalizeItem(created, "entrega");
         if (normalized) {
           setEntregas((prev) => {
@@ -298,7 +299,7 @@ export const AppProvider = ({ children }) => {
         const currentList = entregasRef.current;
         const current = currentList.find((item) => String(item.id) === String(id));
         const requestPayload = current ? { ...current, ...payload } : payload;
-        const esAlumno = usuario?.role === "alumno";
+        const esAlumno = getRol(usuario) === "alumno";
         const updated = esAlumno
           ? await updateSubmission(id, requestPayload)
           : await apiUpdateEntrega(id, requestPayload);
@@ -334,7 +335,7 @@ export const AppProvider = ({ children }) => {
     async (id) => {
       start("entregas");
       try {
-        const esAlumno = usuario?.role === "alumno";
+        const esAlumno = getRol(usuario) === "alumno";
         if (esAlumno) {
           await deleteSubmission(id);
         } else {
@@ -494,16 +495,19 @@ export const AppProvider = ({ children }) => {
     async (id, payload = {}) => {
       start("usuarios-update");
       try {
-        const actualizado = await apiUpdateUsuario(id, payload);
-        const normalizado = normalizeUsuario(actualizado);
-        
-        // WORKAROUND: Si el backend no devuelve cohorte pero se envió, persistir localmente
-        const cohortDelPayload = payload.cohorte ?? payload.cohort;
-        if (cohortDelPayload != null && (normalizado.cohorte == null && normalizado.cohort == null)) {
-          normalizado.cohorte = cohortDelPayload;
-          normalizado.cohort = cohortDelPayload;
+        let actualizado;
+        try {
+          actualizado = await apiUpdateUsuario(id, payload);
+        } catch (err) {
+          // Si el endpoint admin devuelve 403 (profesor sin permisos), reintentar con /auth/usuarios
+          if (err?.response?.status === 403) {
+            actualizado = await apiUpdateUsuarioAuth(id, payload);
+          } else {
+            throw err;
+          }
         }
-        
+        const normalizado = normalizeUsuario(actualizado);
+
         setUsuarios((prev) => {
           const base = normalizeUsuariosCollection(prev);
           return base.map((usuario) =>
@@ -553,40 +557,17 @@ export const AppProvider = ({ children }) => {
     async (payload) => {
       start("turnos");
       try {
-        // Forzar envío de módulo según el usuario/profesor autenticado
-        // Para superadmin sin módulo asignado, usar fallback válido del enum backend
-        const VALID_MODULES = ["HTML-CSS", "JAVASCRIPT", "FRONTEND - REACT", "BACKEND - NODE"];
-        const FALLBACK_MODULE = "HTML-CSS";
-        
-        const moduloCandidato =
-          payload?.modulo ??
-          payload?.module ??
-          usuario?.modulo ??
-          usuario?.module ??
-          usuario?.moduleLabel ??
-          usuario?.moduloLabel ??
-          null;
-
-        // Validar que el módulo sea uno de los valores del enum, si no usar fallback
-        const moduloNormalizado = String(moduloCandidato ?? "").trim().toUpperCase();
-        const moduloValido = VALID_MODULES.find(
-          (m) => m.toUpperCase() === moduloNormalizado
-        );
-        const moduloResuelto = moduloValido ?? FALLBACK_MODULE;
-
+        const moduloCandidato = payload?.modulo ?? usuario?.modulo ?? null;
+        const moduloResuelto = ensureModuleLabel(moduloCandidato);
         const payloadConModulo = {
           ...payload,
-          modulo: payload?.modulo ?? moduloResuelto,
-          module: payload?.module ?? moduloResuelto,
+          ...(moduloResuelto ? { modulo: moduloResuelto } : {}),
         };
-
-        console.log("[AppContext] createTurno - módulo resuelto:", moduloResuelto);
-        console.log("[AppContext] createTurno - payload enviado:", payloadConModulo);
 
         const nuevo = await apiCreateTurno(payloadConModulo);
         const normalized = normalizeItem(nuevo);
         if (!normalized) {
-          throw new Error("Respuesta inválida al crear turno.");
+          throw new Error("Respuesta invalida al crear turno.");
         }
         setTurnos((prev) => {
           const base = Array.isArray(prev) ? prev : [];
@@ -602,9 +583,8 @@ export const AppProvider = ({ children }) => {
         stop("turnos");
       }
     },
-    [setTurnos, start, stop]
+    [setTurnos, start, stop, usuario]
   );
-
   const updateTurno = useCallback(
     async (id, payload = {}) => {
       start("turnos");
@@ -614,7 +594,6 @@ export const AppProvider = ({ children }) => {
           (turno) => String(turno.id) === String(id)
         );
 
-        // Mezcla preservando valores existentes para campos requeridos
         const mergeField = (field) => {
           const incoming = payload?.[field];
           if (incoming === undefined) return existente?.[field];
@@ -637,8 +616,6 @@ export const AppProvider = ({ children }) => {
             }
           : payload;
 
-        // PRESERVAR CAMPOS ACADÉMICOS: incluir siempre titulo/modulo/descripcion
-        // Si el payload no los trae o están vacíos, usar los del turno existente.
         const cleanedPayload = { ...requestPayload };
         const ensureField = (field) => {
           const incoming = cleanedPayload?.[field];
@@ -649,7 +626,7 @@ export const AppProvider = ({ children }) => {
         ensureField("titulo");
         ensureField("modulo");
         ensureField("descripcion");
-        // Asegurar autoría correcta: si no viene profesorId, preservar el existente
+
         if (
           cleanedPayload.profesorId === undefined ||
           cleanedPayload.profesorId === null ||
@@ -657,43 +634,40 @@ export const AppProvider = ({ children }) => {
         ) {
           cleanedPayload.profesorId = existente?.profesorId ?? cleanedPayload.profesorId;
         }
-        // Compatibilidad: algunos backends usan createdBy
         if (
           cleanedPayload.createdBy === undefined ||
           cleanedPayload.createdBy === null ||
           (typeof cleanedPayload.createdBy === "string" && cleanedPayload.createdBy.trim() === "")
         ) {
-          cleanedPayload.createdBy = cleanedPayload.profesorId ?? existente?.createdBy ?? existente?.profesorId ?? cleanedPayload.createdBy;
+          cleanedPayload.createdBy =
+            cleanedPayload.profesorId ??
+            existente?.createdBy ??
+            existente?.profesorId ??
+            cleanedPayload.createdBy;
         }
-        // Normalizar room/sala: enviar room numérico siempre
-        const salaVal = cleanedPayload.sala ?? existente?.sala ?? existente?.room;
-        const salaNum = Number(salaVal);
-        if (!Number.isNaN(salaNum) && salaNum > 0) {
-          cleanedPayload.sala = salaNum; // Number per backend schema
-          cleanedPayload.room = salaNum; // explicit numeric per schema
-        } else if (typeof salaVal === "string" && salaVal.trim() !== "") {
-          const num = Number(salaVal.replace(/[^0-9]/g, ""));
-          if (!Number.isNaN(num) && num > 0) {
-            cleanedPayload.sala = num;
-            cleanedPayload.room = num;
+
+        const salaVal = cleanedPayload.sala ?? existente?.sala;
+        if (salaVal !== undefined) {
+          const salaNum = Number(salaVal);
+          if (!Number.isNaN(salaNum) && salaNum > 0) {
+            cleanedPayload.sala = salaNum;
           }
         }
-        // Asegurar reviewNumber alias
+
         if (cleanedPayload.review !== undefined && cleanedPayload.reviewNumber === undefined) {
           cleanedPayload.reviewNumber = cleanedPayload.review;
         }
-        // Asegurar date derivado de start/end si falta
-        try {
-          const iso = cleanedPayload.start ?? cleanedPayload.end ?? existente?.start ?? existente?.end;
-          if (iso && !cleanedPayload.date) {
-            const isoPart = new Date(iso).toISOString().slice(0, 10);
-            cleanedPayload.date = isoPart;
-            const [yyyy, mm, dd] = isoPart.split("-");
-            if (yyyy && mm && dd && !cleanedPayload.fecha) {
-              cleanedPayload.fecha = `${dd}/${mm}/${yyyy}`;
+
+        if (!cleanedPayload.fecha) {
+          try {
+            const iso = cleanedPayload.start ?? cleanedPayload.end ?? existente?.start ?? existente?.end;
+            if (iso) {
+              cleanedPayload.fecha = new Date(iso).toISOString().slice(0, 10);
             }
+          } catch (e) {
+            // Ignorar derivacion de fecha si falla
           }
-        } catch {}
+        }
 
         const actualizado = await apiUpdateTurno(id, cleanedPayload);
         const normalized = normalizeItem(actualizado, "turno");
@@ -733,17 +707,94 @@ export const AppProvider = ({ children }) => {
     },
     [setTurnos, start, stop]
   );
-
-  // Cambio de estado de turno (usando endpoint dedicado /slots/:id/estado)
   const updateTurnoEstado = useCallback(
     async (id, estado) => {
       start("turnos");
       try {
-        const actualizado = await actualizarEstadoSlot(id, estado);
+        const normalizeEstadoInput = (value) =>
+          String(value ?? "").trim().toLowerCase();
+        const mapToBackendEstado = (value) => {
+          const normalized = normalizeEstadoInput(value);
+          if (normalized === "aprobado" || normalized === "approved") return "aprobado";
+          if (
+            normalized === "rechazado" ||
+            normalized === "desaprobado" ||
+            normalized === "cancelado" ||
+            normalized === "canceled" ||
+            normalized === "cancelled"
+          ) {
+            return "cancelado";
+          }
+          if (
+            normalized === "pendiente" ||
+            normalized === "pending" ||
+            normalized === "a revisar" ||
+            normalized === "por revisar"
+          ) {
+            return "pendiente";
+          }
+          return value;
+        };
+        const mapToUiEstado = (value) => {
+          const normalized = normalizeEstadoInput(value);
+          if (normalized === "aprobado" || normalized === "approved") return "Aprobado";
+          if (
+            normalized === "cancelado" ||
+            normalized === "rechazado" ||
+            normalized === "desaprobado" ||
+            normalized === "canceled" ||
+            normalized === "cancelled"
+          ) {
+            return "Rechazado";
+          }
+          if (
+            normalized === "pendiente" ||
+            normalized === "pending" ||
+            normalized === "a revisar" ||
+            normalized === "por revisar"
+          ) {
+            return "Pendiente";
+          }
+          return value;
+        };
+        const mapReviewStatus = (value) => {
+          const normalized = normalizeEstadoInput(value);
+          if (normalized === "aprobado" || normalized === "approved") return "Aprobado";
+          if (
+            normalized === "cancelado" ||
+            normalized === "rechazado" ||
+            normalized === "desaprobado" ||
+            normalized === "canceled" ||
+            normalized === "cancelled"
+          ) {
+            return "Desaprobado";
+          }
+          if (
+            normalized === "pendiente" ||
+            normalized === "pending" ||
+            normalized === "a revisar" ||
+            normalized === "por revisar"
+          ) {
+            return "A revisar";
+          }
+          return null;
+        };
+
+        const backendEstado = mapToBackendEstado(estado);
+        const fallbackUiEstado = mapToUiEstado(backendEstado || estado);
+
+        const actualizado = await actualizarEstadoSlot(id, backendEstado);
         const normalizado = normalizeItem(actualizado, "turno");
         const targetId = normalizado?.id ?? id;
+        const resolvedReviewStatus = normalizado?.reviewStatus ?? mapReviewStatus(backendEstado);
+        const resolvedUiEstado = normalizado?.estado ?? fallbackUiEstado;
         const nextTurno = targetId != null
-          ? { ...normalizado, id: targetId, estado: normalizado?.estado ?? estado }
+          ? {
+              ...normalizado,
+              id: targetId,
+              estado: resolvedUiEstado,
+              ...(resolvedReviewStatus ? { reviewStatus: resolvedReviewStatus } : {}),
+            }
           : null;
         if (!nextTurno) throw new Error("No se pudo resolver el turno actualizado.");
 
@@ -883,7 +934,6 @@ export const AppProvider = ({ children }) => {
         approveUsuario: approveUsuarioRemoto,
         updateUsuarioEstado: updateUsuarioEstadoRemoto,
         updateUsuario: updateUsuarioRemoto,
-        updateUsuarioRemoto,
         createTurno,
         updateTurno,
         updateTurnoEstado,
@@ -948,7 +998,6 @@ export const AppProvider = ({ children }) => {
         },
         // === Operaciones remotas (API) ===
         createUsuarioRemoto,
-        updateUsuarioRemoto,
         deleteUsuarioRemoto,
       }}
     >

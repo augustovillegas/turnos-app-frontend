@@ -34,9 +34,6 @@ export const EntregaForm = ({
     if (valoresActuales.comentarios !== comentarios) setValue("comentarios", comentarios);
   }, [sprint, githubLink, renderLink, comentarios, setValue, valoresActuales]);
   return (
-    // 🔧 Se eliminó el fondo de color sólido (#017F82) para integrar visualmente
-    // con el fondo general del DashboardAlumno y evitar doble color de fondo.
-    // Se ajustó el padding para ser adaptable en móvil y desktop.
     <div className="w-full p-4 sm:p-6 flex justify-center bg-transparent">
       <div className="w-full max-w-3xl flex flex-col gap-6">
         {/* Contenedor principal del formulario */}

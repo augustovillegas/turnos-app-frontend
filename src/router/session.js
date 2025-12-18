@@ -6,6 +6,12 @@ const INICIO_POR_ROL = {
   superadmin: "/dashboard/superadmin",
 };
 
+const getRol = (user) =>
+  user?.rol ??
+  user?.role ??
+  user?.tipo ??
+  null;
+
 const obtenerStorage = () => {
   if (typeof window !== "undefined" && window.localStorage) {
     return window.localStorage;
@@ -46,7 +52,7 @@ export const requerirAutenticacion = (roles = []) => {
     throw redirect("/login");
   }
 
-  const rol = sesion.user?.role;
+  const rol = getRol(sesion.user);
   if (roles.length > 0 && (!rol || !roles.includes(rol))) {
     throw redirect(rutaInicioPorRol(rol));
   }
@@ -56,8 +62,11 @@ export const requerirAutenticacion = (roles = []) => {
 
 export const redirigirSiAutenticado = () => {
   const sesion = obtenerSesionAlmacenada();
-  if (sesion?.user?.role) {
-    throw redirect(rutaInicioPorRol(sesion.user.role));
+  if (!sesion) return null;
+
+  const rol = getRol(sesion.user);
+  if (rol) {
+    throw redirect(rutaInicioPorRol(rol));
   }
   return null;
 };

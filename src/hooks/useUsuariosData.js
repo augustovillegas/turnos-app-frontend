@@ -9,7 +9,7 @@ export const useUsuariosData = () => {
     approveUsuario,
     updateUsuarioEstado,
     createUsuarioRemoto,
-    updateUsuarioRemoto,
+    updateUsuario,
     deleteUsuarioRemoto,
   } = useAppData();
   return useMemo(() => ({
@@ -18,7 +18,7 @@ export const useUsuariosData = () => {
     approveUsuario,
     updateUsuarioEstado,
     createUsuarioRemoto,
-    updateUsuarioRemoto,
+    updateUsuario,
     deleteUsuarioRemoto,
-  }), [usuarios, loadUsuarios, approveUsuario, updateUsuarioEstado, createUsuarioRemoto, updateUsuarioRemoto, deleteUsuarioRemoto]);
+  }), [usuarios, loadUsuarios, approveUsuario, updateUsuarioEstado, createUsuarioRemoto, updateUsuario, deleteUsuarioRemoto]);
 };

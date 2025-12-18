@@ -7,7 +7,6 @@ import { ensureModuleLabel } from "../moduleMap";
 import { normalizeUsuario } from "./normalizeUsuario";
 
 const DEFAULT_COHORT = 1;
-const DEFAULT_MODULE = "HTML-CSS";
 
 /**
  * Genera un ID único para usuario temporal
@@ -33,15 +32,16 @@ export const mapUsuario = (entry) => {
   const tipo = String(
     normalized.rol ?? normalized.role ?? "alumno"
   ).toLowerCase();
+  
   return {
     id: normalized.id ?? normalized._id ?? generateId(),
     tipo,
     nombre: normalized.nombre ?? normalized.name ?? "",
     email: normalized.email ?? "",
     identificador: normalized.identificador ?? "",
-    // Mostrar cohorte real si existe; fallback a DEFAULT_COHORT solo en UI cuando sea null
+    // Cohorte: solo identificador visual de camada, devolver valor real si existe
     cohorte: (() => {
-      const value = normalized.cohorte ?? normalized.cohort;
+      const value = normalized.cohorte;
       // Si tiene un valor real (incluso 0), devolverlo como string
       if (value != null) {
         return String(value);
@@ -49,9 +49,7 @@ export const mapUsuario = (entry) => {
       // Si es null/undefined, devolver null para que UsuariosList aplique fallback "1"
       return null;
     })(),
-    modulo:
-      ensureModuleLabel(normalized.modulo ?? normalized.module) ??
-      DEFAULT_MODULE,
+    modulo: ensureModuleLabel(normalized.modulo),
     estado: normalized.estado ?? normalized.status ?? "",
   };
 };

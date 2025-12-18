@@ -182,7 +182,7 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
         <Table
           responsive
           testId="turnos-list"
-          columns={["Review", "Fecha", "Horario", "Sala", "Zoom", "Estado", "Acción"]}
+          columns={["Review", "Fecha", "Horario", "Sala", "Módulo", "Zoom", "Estado", "Acción"]}
           data={paginatedTurnos || []}
           minWidth="min-w-[680px]"
           containerClass="px-4"
@@ -201,6 +201,9 @@ export const TurnosList = ({ role = "profesor", onCrear, onEditar, onVer }) => {
               </td>
               <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
                 {turno.sala}
+              </td>
+              <td className="border border-[#111827] p-2 dark:border-[#333] dark:text-gray-200">
+                {ensureModuleLabel(turno.modulo) || "N/A"}
               </td>
               <td className="border p-2 text-center dark:border-[#333]">
                 {turno.zoomLink && (

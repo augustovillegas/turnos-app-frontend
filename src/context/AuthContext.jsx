@@ -6,11 +6,24 @@ import { showToast } from "../utils/feedback/toasts"; // ⬅️ añadido
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const normalizeUser = (user) => {
+    if (!user || typeof user !== "object") return null;
+    const role = user.rol ?? user.role ?? user.tipo ?? null;
+    const moduloGuardado = user.modulo ?? null;
+    return {
+      ...user,
+      ...(role ? { rol: role, role } : {}),
+      modulo: moduloGuardado,
+    };
+  };
+
   // --- Estado inicial: recupera usuario y token guardados si existen ---
   const [usuario, establecerUsuario] = useState(() => {
     const almacenado = localStorage.getItem("user");
     try {
-      return almacenado ? JSON.parse(almacenado) : null;
+      if (!almacenado) return null;
+      const parsed = JSON.parse(almacenado);
+      return normalizeUser(parsed);
     } catch (error) {
       console.error("No se pudo leer el usuario almacenado", error);
       showToast("Error al leer el usuario almacenado", "error");
@@ -26,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       if (evento.key === "user") {
         if (evento.newValue) {
           try {
-            establecerUsuario(JSON.parse(evento.newValue));
+            establecerUsuario(normalizeUser(JSON.parse(evento.newValue)));
           } catch (error) {
             console.error(
               "No se pudo interpretar el usuario desde storage",
@@ -54,6 +67,7 @@ export const AuthProvider = ({ children }) => {
   // --- Función auxiliar para persistir o limpiar sesión ---
   const actualizarSesion = (siguienteToken, siguienteUsuario) => {
     try {
+      const normalizado = normalizeUser(siguienteUsuario);
       if (siguienteToken) {
         localStorage.setItem("token", siguienteToken);
         establecerToken(siguienteToken);
@@ -62,9 +76,9 @@ export const AuthProvider = ({ children }) => {
         establecerToken(null);
       }
 
-      if (siguienteUsuario) {
-        localStorage.setItem("user", JSON.stringify(siguienteUsuario));
-        establecerUsuario(siguienteUsuario);
+      if (normalizado) {
+        localStorage.setItem("user", JSON.stringify(normalizado));
+        establecerUsuario(normalizado);
       } else {
         localStorage.removeItem("user");
         establecerUsuario(null);
@@ -103,4 +117,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-

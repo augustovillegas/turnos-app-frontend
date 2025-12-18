@@ -1,12 +1,33 @@
-import { screen, waitFor, within } from "@testing-library/react";
+﻿import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, describe, expect, it } from "vitest";
+import { beforeAll } from "vitest";
 import { renderApp } from "../utils/renderWithProviders.jsx";
-import { testApi } from "../utils/testApi";
+import { testApi } from "../utils/testApi.mjs";
 import { requireRoles } from "../utils/e2eEnv";
 
 const resolveId = (entity) =>
   entity?.id ?? entity?._id ?? entity?._id?.$oid ?? null;
+
+// Silenciar warnings de React sobre act() en este suite sin afectar el resto
+let originalError;
+let originalWarn;
+beforeAll(() => {
+  originalError = console.error;
+  originalWarn = console.warn;
+  const shouldFilter = (args) => {
+    const msg = String(args?.[0] ?? "");
+    return /not wrapped in act\(\)|is not configured to support act\(\)/i.test(msg);
+  };
+  console.error = (...args) => {
+    if (shouldFilter(args)) return;
+    originalError?.(...args);
+  };
+  console.warn = (...args) => {
+    if (shouldFilter(args)) return;
+    originalWarn?.(...args);
+  };
+});
 
 const buildEmail = () =>
   `usuario.e2e.${Date.now()}-${Math.random().toString(16).slice(2, 6)}@example.com`;
@@ -68,7 +89,7 @@ const createSeedUsuario = async (overrides = {}) => {
       email: overrides.email ?? `seed.qa.${suffix}@example.com`,
       password: overrides.password ?? `Seed-${suffix}!`,
       rol: overrides.role ?? "alumno",
-      cohort: typeof overrides.cohort === 'number' ? overrides.cohort : 1,
+      cohorte: typeof overrides.cohort === 'number' ? overrides.cohort : 1,
       modulo: overrides.modulo ?? "FRONTEND - REACT",
       approved: overrides.approved ?? true,
     });
@@ -81,7 +102,7 @@ const createSeedUsuario = async (overrides = {}) => {
       email: `seed.qa.fbk.${suffix}@example.com`,
       password: `Seed-${suffix}!`,
       rol: "alumno",
-      cohort: 1,
+      cohorte: 1,
       modulo: "FRONTEND - REACT",
     });
     scheduleCleanup(usuario);

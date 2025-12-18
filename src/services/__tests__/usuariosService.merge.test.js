@@ -1,48 +1,38 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-const getMock = vi.fn();
-
-vi.mock("../apiClient", () => ({
-  apiClient: {
-    get: getMock,
-  },
-}));
-
+import { describe, it, expect } from "vitest";
 import { getUsuarios } from "../usuariosService";
+import { apiClient, setApiBaseUrl } from "../apiClient";
 
-describe("getUsuarios enrichment", () => {
-  beforeEach(() => {
-    getMock.mockReset();
+const BASE_URL = "http://localhost:3000";
+const SUPERADMIN = {
+  email: "superadmin.diplomatura@gmail.com",
+  password: "Superadmin#2025",
+};
+
+const loginAsSuperadmin = async () => {
+  setApiBaseUrl(BASE_URL);
+  const res = await apiClient.post("/auth/login", {
+    email: SUPERADMIN.email,
+    password: SUPERADMIN.password,
   });
+  const token = res?.data?.token;
+  if (!token) throw new Error("No se obtuvo token de login");
+  if (globalThis.localStorage) {
+    globalThis.localStorage.setItem("token", token);
+  }
+  return token;
+};
 
-  it("enriquece cohorte/modulo con el endpoint alternativo cuando faltan en el principal", async () => {
-    // Primera llamada (primary) sin cohorte/modulo
-    getMock
-      .mockResolvedValueOnce({
-        data: [{ id: "1", email: "a@test.com", nombre: "A", cohorte: null, modulo: null }],
-      })
-      // Segunda llamada (secondary) con datos completos
-      .mockResolvedValueOnce({
-        data: [{ id: "1", email: "a@test.com", nombre: "A", cohorte: 3, modulo: "JAVASCRIPT" }],
-      });
+describe("getUsuarios integración real", () => {
+  it("retorna usuarios con módulo/cohorte presentes desde el servidor", async () => {
+    const token = await loginAsSuperadmin();
+    expect(token).toBeTruthy();
 
-    const result = await getUsuarios({}, { preferAuth: false });
+    const lista = await getUsuarios({}, { preferAuth: true });
+    expect(Array.isArray(lista)).toBe(true);
+    const algunoConModulo = lista.some((u) => u.modulo);
+    const algunoConCohorte = lista.some((u) => u.cohorte != null);
 
-    expect(getMock).toHaveBeenCalledTimes(2);
-    expect(result[0].cohorte).toBe(3);
-    expect(result[0].cohort).toBe(3);
-    expect(result[0].modulo).toBe("JAVASCRIPT");
-  });
-
-  it("no hace llamada extra si el primary ya trae cohorte", async () => {
-    getMock.mockResolvedValueOnce({
-      data: [{ id: "1", email: "a@test.com", nombre: "A", cohorte: 2, modulo: "HTML-CSS" }],
-    });
-
-    const result = await getUsuarios({}, { preferAuth: false });
-
-    expect(getMock).toHaveBeenCalledTimes(1);
-    expect(result[0].cohorte).toBe(2);
-    expect(result[0].modulo).toBe("HTML-CSS");
+    expect(algunoConModulo).toBe(true);
+    expect(algunoConCohorte).toBe(true);
   });
 });

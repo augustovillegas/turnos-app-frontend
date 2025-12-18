@@ -1,23 +1,26 @@
 // === Turnos Service ===
-// Clientes HTTP para CRUD de turnos.
-// MIGRADO: Ahora usa /slots en lugar de /turnos (consolidación backend Nov 2025)
+// Clientes HTTP para CRUD de turnos (slots).
 import { apiClient } from "./apiClient";
-/**
- * Convierte a número si es posible, devolviendo el valor original si no.
- * @param {any} value
- * @returns {any}
- */
 
 const RESOURCE = "/slots";
 
-const toNumberIfPossible = (value) => {
-  if (value === undefined) return undefined;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? value : parsed;
+const normalizeFechaIso = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toISOString().slice(0, 10);
+  }
+  if (typeof value === "string" && value.includes("/")) {
+    const [dd, mm, yyyy] = value.split("/").map(Number);
+    if (dd && mm && yyyy) {
+      return new Date(yyyy, mm - 1, dd).toISOString().slice(0, 10);
+    }
+  }
+  return null;
 };
 
 /**
- * Construye el payload del turno mapeando alias y valores derivados.
+ * Construye el payload del turno con los campos vigentes del backend.
  * @param {Object} payload
  * @param {Object} options
  * @param {boolean} options.includeDefaults
@@ -27,71 +30,41 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
   const { includeDefaults = false } = options;
   const result = {};
 
-  const resolvedReview = payload.review ?? payload.reviewNumber;
-  const reviewValue = toNumberIfPossible(resolvedReview);
-  if (reviewValue !== undefined) {
-    result.review = reviewValue;
-    // Alias comun en algunos despliegues
-    result.reviewNumber = reviewValue;
+  const resolvedReview = payload.reviewNumber ?? payload.review;
+  const reviewNumber = resolvedReview != null ? Number(resolvedReview) : undefined;
+  if (!Number.isNaN(reviewNumber)) {
+    result.reviewNumber = reviewNumber;
   } else if (includeDefaults) {
-    result.review = 0;
+    result.reviewNumber = 1;
   }
 
-  const maybeAssign = (key, value, allowDefault = false) => {
-    if (value !== undefined) {
-      result[key] = value;
-    } else if (includeDefaults && allowDefault) {
-      result[key] = "";
-    }
-  };
-
-  // Backend almacena 'fecha' como DD/MM/YYYY; acepta 'date' en payload.
-  // Conservar 'date' si viene explícito para evitar desfases de zona horaria con start/end.
-  maybeAssign("date", payload.date);
-  if (payload.date && !payload.fecha) {
-    result.fecha = payload.date;
-  } else {
-    maybeAssign("fecha", payload.fecha);
+  const fechaIso = normalizeFechaIso(payload.fecha ?? payload.start ?? payload.end);
+  if (fechaIso) {
+    result.fecha = fechaIso;
+  } else if (includeDefaults) {
+    result.fecha = "";
   }
-  maybeAssign("horario", payload.horario);
-  // Backend espera 'sala' como Number
+
+  if (payload.horario !== undefined) {
+    result.horario = payload.horario;
+  }
+
   if (payload.sala !== undefined) {
-    const salaText = String(payload.sala).trim();
-    const digits = salaText.replace(/[^0-9]/g, "");
-    const numSala = Number(digits);
-    result.sala = Number.isFinite(numSala) && numSala > 0 ? numSala : payload.sala;
+    const salaNum = Number(String(payload.sala).trim());
+    result.sala = Number.isFinite(salaNum) && salaNum > 0 ? salaNum : payload.sala;
   } else if (includeDefaults) {
-    result.sala = 0;
+    result.sala = 1;
   }
-  // Mapear 'room' numerico requerido por backend (ReviewSlot)
-  if (payload.room !== undefined) {
-    const roomNum = Number(payload.room);
-    result.room = Number.isNaN(roomNum) ? payload.room : roomNum;
+
+  if (payload.zoomLink !== undefined) {
+    result.zoomLink = payload.zoomLink?.trim?.() ?? payload.zoomLink;
   }
-  maybeAssign("zoomLink", payload.zoomLink?.trim?.() ?? payload.zoomLink, true);
-  maybeAssign("start", payload.start);
-  maybeAssign("end", payload.end);
-  // Mapear 'date' ISO segment si no viene explícito (para validación Path `date` is required)
-  if (!result.date && (payload.start || payload.end)) {
-    try {
-      const iso = payload.start || payload.end;
-      if (iso) {
-        const isoPart = new Date(iso).toISOString().slice(0, 10);
-        result.date = isoPart;
-        // También mapear a formato DD/MM/YYYY si backend lo transforma a fecha interna 'fecha'
-        const [yyyy, mm, dd] = isoPart.split("-");
-        if (yyyy && mm && dd && !result.fecha) {
-          result.fecha = `${dd}/${mm}/${yyyy}`;
-        }
-      }
-    } catch {
-      // Ignorar si no puede derivar fecha
-    }
-  }
-  // Derivar HH:mm cuando sea posible (algunos backends lo esperan)
+
+  if (payload.start !== undefined) result.start = payload.start;
+  if (payload.end !== undefined) result.end = payload.end;
+
   try {
-    const deriveHM = (iso) =>
-      new Date(iso).toISOString().slice(11, 16);
+    const deriveHM = (iso) => new Date(iso).toISOString().slice(11, 16);
     if (payload.start && !payload.startTime) {
       result.startTime = deriveHM(payload.start);
     }
@@ -99,15 +72,21 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
       result.endTime = deriveHM(payload.end);
     }
   } catch {
-    // Si falla el parseo, continuar sin comentario derivado
+    // Ignorar derivación fallida de start/end time
   }
-  maybeAssign("comentarios", payload.comentarios ?? payload.comment, true);
 
-  const resolvedEstado =
-    payload.estado ?? payload.reviewStatus ?? (includeDefaults ? "Disponible" : undefined);
+  if (payload.comentarios !== undefined || payload.comment !== undefined) {
+    result.comentarios = payload.comentarios ?? payload.comment ?? "";
+  }
+
+  const resolvedEstado = payload.estado ?? payload.reviewStatus;
   if (resolvedEstado !== undefined) {
     result.estado = resolvedEstado;
-    result.reviewStatus = payload.reviewStatus ?? resolvedEstado;
+  } else if (includeDefaults) {
+    result.estado = "Disponible";
+  }
+  if (payload.reviewStatus !== undefined) {
+    result.reviewStatus = payload.reviewStatus;
   }
 
   if (payload.titulo !== undefined || payload.title !== undefined) {
@@ -117,51 +96,16 @@ const mapTurnoPayload = (payload = {}, options = {}) => {
     result.descripcion = payload.descripcion ?? payload.description ?? "";
   }
 
-  const duracionValue = toNumberIfPossible(payload.duracion ?? payload.duration);
-  if (duracionValue !== undefined) {
-    result.duracion = duracionValue;
+  if (payload.modulo !== undefined) {
+    result.modulo = payload.modulo;
   }
 
-  // Alias de módulo: aceptar moduleLabel/moduloLabel además de modulo/module
-  const resolvedModulo = payload.modulo ?? payload.module;
-  if (resolvedModulo !== undefined) {
-    result.modulo = resolvedModulo;
-    result.module = resolvedModulo; // enviar alias directo por si el backend mapea ambos
-  } else if (includeDefaults) {
-    result.modulo = "";
-    result.module = "";
-  }
-
-  if (
-    payload.solicitanteId !== undefined ||
-    payload.student !== undefined ||
-    payload.alumnoId !== undefined
-  ) {
-    result.solicitanteId = payload.solicitanteId ?? payload.student ?? payload.alumnoId;
-  }
-
-  if (
-    payload.profesorId !== undefined ||
-    payload.profesor !== undefined ||
-    payload.createdBy !== undefined
-  ) {
-    result.profesorId = payload.profesorId ?? payload.profesor ?? payload.createdBy;
-  }
-
-  // Calcular duracion si no viene provista
-  if ((result.start || payload.start) && (result.end || payload.end)) {
-    try {
-      const startDate = new Date(result.start || payload.start);
-      const endDate = new Date(result.end || payload.end);
-      const minutes = Math.max(0, Math.round((endDate - startDate) / 60000));
-      if (minutes && result.duracion === undefined) {
-        result.duracion = minutes;
-      }
-    } catch {
-      // DerivaciИn de duraciИn fallida; continuar sin ajustar
+  if (payload.cohorte !== undefined) {
+    const parsed = Number(payload.cohorte);
+    if (Number.isFinite(parsed)) {
+      result.cohorte = Math.trunc(parsed);
     }
   }
-
 
   return result;
 };
@@ -192,8 +136,6 @@ export const getTurnoById = (id) =>
  */
 export const createTurno = (payload) => {
   const mapped = mapTurnoPayload(payload, { includeDefaults: true });
-  console.log("[turnosService] createTurno input:", payload);
-  console.log("[turnosService] createTurno mapped:", mapped);
   return apiClient.post(RESOURCE, mapped).then((response) => response.data);
 };
 
@@ -215,7 +157,6 @@ export const deleteTurno = (id) =>
   apiClient.delete(`${RESOURCE}/${id}`).then((response) => response.data);
 
 // === Operaciones de slots (alumno) ===
-// Estas funciones estaban en slotsService, ahora unificadas aquí tras consolidación backend
 
 /** Solicita un slot como alumno. */
 export const solicitarSlot = (id) =>

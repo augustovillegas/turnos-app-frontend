@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/Button";
 import { Status } from "../ui/Status";
-import { ensureModuleLabel, labelToModule } from "../../utils/moduleMap";
+import { ensureModuleLabel } from "../../utils/moduleMap";
 
 export const UsuarioDetail = ({ usuario, onVolver }) => {
   const [currentUsuario, setCurrentUsuario] = useState(usuario ?? null);
@@ -29,39 +29,14 @@ export const UsuarioDetail = ({ usuario, onVolver }) => {
     superadmin: "Superadmin",
   };
 
-  const resolveModuleLabel = (user) => {
-    if (!user) return null;
-    const candidates = [
-      user.modulo,
-      user.module,
-      user.moduleLabel,
-      user.moduloSlug,
-      user.moduleCode,
-      user.moduleNumber,
-      user.datos?.modulo,
-      user.datos?.module,
-    ];
-    return candidates.map(ensureModuleLabel).find(Boolean) || null;
-  };
+  const resolveModuleLabel = (user) => ensureModuleLabel(user?.modulo);
 
   const resolveCohort = (user) => {
     if (!user) return null;
-    const candidates = [
-      user.cohorte,
-      user.cohort,
-      user.cohortId,
-      user.moduleNumber,
-      user.moduleCode,
-      user.datos?.cohort,
-    ];
-    for (const value of candidates) {
-      if (value == null) continue;
-      const numeric = Number(String(value).trim());
-      if (Number.isFinite(numeric)) return Math.trunc(numeric);
-      const fromLabel = labelToModule(value);
-      if (fromLabel != null) return fromLabel;
-    }
-    return null;
+    const value = user.cohorte;
+    if (value == null) return null;
+    const numeric = Number(String(value).trim());
+    return Number.isFinite(numeric) ? Math.trunc(numeric) : null;
   };
 
   const moduleLabel = resolveModuleLabel(currentUsuario);

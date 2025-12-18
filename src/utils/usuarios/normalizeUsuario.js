@@ -1,51 +1,41 @@
 // === normalizeUsuario ===
-// Normaliza la forma de un usuario para su consumo consistente en la UI.
-// Deriva campos faltantes de variantes usadas en distintas respuestas (name vs nombre, role vs rol, etc.)
-// Garantiza estado textual a partir de status/estado.
+// Normaliza la forma de un usuario según el contrato actualizado del backend.
+// DTO esperado: {id, nombre, email, rol, estado, isApproved, modulo, cohorte, creadoEn}
+
 export const normalizeUsuario = (raw = {}) => {
   if (!raw || typeof raw !== "object") return raw;
-  const estadoDerivado =
-    raw?.estado ??
-    raw?.status ??
-      "Pendiente";
 
-  // Determinar id: no usar email como id persistente, si falta _id/id marcar como temporal
+  const estado = raw.estado ?? raw.status ?? "Pendiente";
   const resolvedId = raw.id ?? raw._id ?? raw.$id ?? null;
-  const temporalId = !resolvedId ? `temp-${crypto?.randomUUID?.() || Date.now()}` : resolvedId;
+  const temporalId = resolvedId ?? `temp-${crypto?.randomUUID?.() || Date.now()}`;
+  const moduloFinal = raw.modulo ?? null;
+  const cohorteFinal =
+    raw.cohorte != null
+      ? Number.isFinite(Number(raw.cohorte))
+        ? Number(raw.cohorte)
+        : null
+      : null;
 
   return {
-    ...raw,
     id: temporalId,
-    nombre: raw.nombre ?? raw.name ?? raw.email ?? "",
-    rol: raw.rol ?? raw.role ?? "alumno",
-    estado: estadoDerivado,
-    status: estadoDerivado,
-    cohort:
-      raw.cohort ??
-      raw.cohorte ??
-      raw.cohortId ??
-      raw.datos?.cohort ??
-      raw.datos?.cohorte ??
-      null,
-    cohorte:
-      raw.cohorte ??
-      raw.cohort ??
-      raw.cohortId ??
-      raw.datos?.cohorte ??
-      raw.datos?.cohort ??
-      null,
-    modulo:
-      raw.modulo ??
-      raw.module ??
-      raw.moduleLabel ??
-      raw.moduloSlug ??
-      raw.moduleCode ??
-      raw.moduleNumber ??
-      raw.datos?.modulo ??
-      raw.datos?.module ??
-      null,
+    temporalId,
+    nombre: raw.nombre ?? raw.name ?? "",
+    name: raw.nombre ?? raw.name ?? "",
+    email: raw.email ?? raw.correo ?? "",
+    rol: raw.rol ?? raw.role ?? "",
+    role: raw.rol ?? raw.role ?? "",
+    estado,
+    status: estado,
+    isApproved: raw.isApproved ?? estado === "Aprobado",
+    modulo: moduloFinal,
+    cohorte: cohorteFinal,
+    creadoEn: raw.creadoEn ?? raw.createdAt ?? null,
   };
 };
 
-export const normalizeUsuariosCollection = (arr) =>
-  Array.isArray(arr) ? arr.map((u) => normalizeUsuario(u)) : [];
+// === normalizeUsuariosCollection ===
+// Normaliza un array de usuarios
+export const normalizeUsuariosCollection = (usuarios = []) => {
+  if (!Array.isArray(usuarios)) return [];
+  return usuarios.map(normalizeUsuario);
+};

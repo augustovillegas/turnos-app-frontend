@@ -10,7 +10,7 @@ import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
 import { showToast } from "../utils/feedback/toasts";
-import { ensureModuleLabel, labelToModule, coincideModulo, moduleToLabel } from "../utils/moduleMap";
+import { ensureModuleLabel, coincideModulo } from "../utils/moduleMap";
 
 // === Secciones del dashboard ===
 import { CreateTurnos } from "./CreateTurnos";
@@ -37,77 +37,26 @@ export const DashboardProfesor = () => {
   const [active, setActive] = useState("solicitudes");
 
   // === Deducción del módulo del profesor ===
+  // ARQUITECTURA: modulo es STRING ENUM - es la fuente primaria de identidad del profesor
   const moduloEtiqueta = useMemo(() => {
     if (!usuarioActual) return null;
-    const etiquetaDirecta = [
-      ensureModuleLabel(usuarioActual.modulo),
-      ensureModuleLabel(usuarioActual.module),
-      ensureModuleLabel(usuarioActual.moduleLabel),
-      ensureModuleLabel(usuarioActual.moduloSlug),
-      ensureModuleLabel(usuarioActual.moduleCode),
-      ensureModuleLabel(usuarioActual.moduleNumber),
-    ].find(Boolean);
-    if (etiquetaDirecta) return etiquetaDirecta;
-
-    const desdeCohorte = [
-      usuarioActual.cohort,
-      usuarioActual.cohorte,
-      usuarioActual.cohortId,
-    ]
-      .map(moduleToLabel)
-      .find(Boolean);
-
-    return desdeCohorte ?? null;
+    return ensureModuleLabel(usuarioActual.modulo);
   }, [usuarioActual]);
 
-  const cohortAsignado = useMemo(() => {
-    if (!usuarioActual) return null;
-    const candidatos = [
-      usuarioActual.cohort,
-      usuarioActual.cohorte,
-      usuarioActual.cohortId,
-      usuarioActual.moduleCode,
-      usuarioActual.moduleNumber,
-    ];
-    for (const candidato of candidatos) {
-      if (candidato == null) continue;
-      const numeroDirecto = Number(String(candidato).trim());
-      if (Number.isFinite(numeroDirecto) && numeroDirecto > 0) {
-        return Math.trunc(numeroDirecto);
-      }
-      const numeroDesdeEtiqueta = labelToModule(candidato);
-      if (numeroDesdeEtiqueta != null) return numeroDesdeEtiqueta;
-    }
-    if (moduloEtiqueta) {
-      const numeroDesdeModulo = labelToModule(moduloEtiqueta);
-      if (numeroDesdeModulo != null) return numeroDesdeModulo;
-    }
-    return null;
-  }, [usuarioActual, moduloEtiqueta]);
 
   // === Filtrado de datos por módulo ===
   const turnosDelModulo = useMemo(
     () => {
       if (!turnos || turnos.length === 0) return [];
-      // Si hay módulo definido, filtrar turnos que coincidan
-      if (moduloEtiqueta) {
-        return turnos.filter((turno) => {
-          // Comparar con múltiples formas posibles del módulo
-          const turnoModulo = String(turno.modulo ?? "").trim().toUpperCase();
-          const targetModulo = String(moduloEtiqueta).trim().toUpperCase();
-          return turnoModulo === targetModulo || 
-                 // También aceptar si tiene el número del módulo
-                 (cohortAsignado && turno.modulo === cohortAsignado);
-        });
-      }
-      return turnos;
+      if (!moduloEtiqueta) return turnos;
+      return turnos.filter((turno) => coincideModulo(turno, moduloEtiqueta));
     },
-    [turnos, moduloEtiqueta, cohortAsignado]
+    [turnos, moduloEtiqueta]
   );
 
   const usuariosDelModulo = useMemo(
-    () => (usuarios || []).filter((obj) => coincideModulo(obj, moduloEtiqueta, cohortAsignado)),
-    [usuarios, moduloEtiqueta, cohortAsignado]
+    () => (usuarios || []).filter((obj) => coincideModulo(obj, moduloEtiqueta)),
+    [usuarios, moduloEtiqueta]
   );
 
   // === Carga inicial de datos del módulo ===
@@ -115,7 +64,7 @@ export const DashboardProfesor = () => {
     if (
       !usuarioActual ||
       !token ||
-      usuarioActual.role !== "profesor"
+      (usuarioActual?.rol ?? usuarioActual?.role) !== "profesor"
     )
       return;
     (async () => {
@@ -123,14 +72,7 @@ export const DashboardProfesor = () => {
         // Backend filtra automáticamente por módulo del usuario autenticado
         // Los turnos ahora se crean con el modulo correcto del profesor
         const turnosParams = {};
-        const usuariosParams = {
-          rol: "alumno",
-          ...(cohortAsignado != null
-            ? { cohort: cohortAsignado }
-            : moduloEtiqueta
-              ? { modulo: moduloEtiqueta }
-              : {}),
-        };
+        const usuariosParams = moduloEtiqueta ? { modulo: moduloEtiqueta } : {};
 
         await Promise.all([
           loadTurnos(turnosParams),
@@ -148,7 +90,6 @@ export const DashboardProfesor = () => {
     usuarioActual,
     token,
     moduloEtiqueta,
-    cohortAsignado,
     loadTurnos,
     loadEntregas,
     loadUsuarios,

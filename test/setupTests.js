@@ -29,6 +29,22 @@ import { resolve } from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import { unstable_setFutureFlags } from "react-router";
 
+// Filtro global para warnings de React sobre act() en suites E2E que disparan updates async
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+const shouldSilenceAct = (args) => {
+  const msg = String(args?.[0] ?? "");
+  return /not wrapped in act\(\)|is not configured to support act\(\)/i.test(msg);
+};
+console.error = (...args) => {
+  if (shouldSilenceAct(args)) return;
+  originalConsoleError?.(...args);
+};
+console.warn = (...args) => {
+  if (shouldSilenceAct(args)) return;
+  originalConsoleWarn?.(...args);
+};
+
 if (typeof unstable_setFutureFlags === "function") {
   unstable_setFutureFlags({
     v7_startTransition: true,
@@ -36,7 +52,7 @@ if (typeof unstable_setFutureFlags === "function") {
   });
 }
 
-const LOG_DIR = resolve(process.cwd(), "test", "logs");
+const LOG_DIR = resolve(process.cwd(), "test-reports", "logs");
 const LOG_FILE = resolve(LOG_DIR, "test-run.log");
 
 let isLogInitialised = false;

@@ -90,7 +90,7 @@ export const Configuracion = ({ withWrapper = true }) => {
   const userName = sessionUser?.nombre || sessionUser?.name || "Usuario";
   const userEmail = sessionUser?.email || "correo@ejemplo.com";
   const userRole = sessionUser?.rol || sessionUser?.role || "alumno";
-  const userCohort = sessionUser?.cohort || sessionUser?.cohorte || "N/A";
+  const userCohort = sessionUser?.cohorte || "N/A";
   const userModule = sessionUser?.modulo || "N/A";
 
   const baseClass =

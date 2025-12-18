@@ -1,10 +1,10 @@
 // Module mapping helpers aligned with backend utils/moduleMap.mjs
-const MODULE_LABELS = Object.freeze({
-  1: "HTML-CSS",
-  2: "JAVASCRIPT",
-  3: "BACKEND - NODE JS",
-  4: "FRONTEND - REACT",
-});
+const MODULE_LABELS = Object.freeze([
+  "HTML-CSS",
+  "JAVASCRIPT",
+  "BACKEND - NODE JS",
+  "FRONTEND - REACT",
+]);
 
 const normalizeLabelKey = (value) => {
   if (typeof value !== "string") return null;
@@ -14,9 +14,8 @@ const normalizeLabelKey = (value) => {
   return collapsedHyphen.replace(/[_\s]+/g, "-").replace(/-{2,}/g, "-").toUpperCase();
 };
 
-const NUMBER_TO_LABEL = Object.freeze({ ...MODULE_LABELS });
 const NORMALIZED_LABEL_TO_LABEL = Object.freeze(
-  Object.values(MODULE_LABELS).reduce((acc, label) => {
+  MODULE_LABELS.reduce((acc, label) => {
     const normalized = normalizeLabelKey(label);
     if (normalized) {
       acc[normalized] = label;
@@ -24,37 +23,31 @@ const NORMALIZED_LABEL_TO_LABEL = Object.freeze(
     return acc;
   }, {})
 );
-const LABEL_TO_NUMBER = Object.freeze(
-  Object.entries(MODULE_LABELS).reduce((acc, [num, label]) => {
-    acc[label] = Number(num);
-    return acc;
-  }, {})
-);
+// Alias flexibles para valores comunes que llegan desde emails, slugs u otras variantes
+const MODULE_ALIAS = Object.freeze({
+  BACKEND: "BACKEND - NODE JS",
+  "BACK-END": "BACKEND - NODE JS",
+  NODE: "BACKEND - NODE JS",
+  NODEJS: "BACKEND - NODE JS",
+  "NODE-JS": "BACKEND - NODE JS",
+  FRONTEND: "FRONTEND - REACT",
+  "FRONT-END": "FRONTEND - REACT",
+  REACT: "FRONTEND - REACT",
+  JS: "JAVASCRIPT",
+  JAVASCRIPT: "JAVASCRIPT",
+  HTML: "HTML-CSS",
+  CSS: "HTML-CSS",
+  "HTML-CSS": "HTML-CSS",
+});
 
 export const moduleToLabel = (value) => {
   if (value == null) return null;
-  const numeric = Number(String(value).trim());
-  if (Number.isFinite(numeric)) {
-    const normalized = Math.trunc(numeric);
-    return NUMBER_TO_LABEL[normalized] ?? null;
-  }
   const normalizedLabel = normalizeLabelKey(String(value));
   if (!normalizedLabel) return null;
-  return NORMALIZED_LABEL_TO_LABEL[normalizedLabel] ?? null;
+  return NORMALIZED_LABEL_TO_LABEL[normalizedLabel] ?? MODULE_ALIAS[normalizedLabel] ?? null;
 };
 
 export const ensureModuleLabel = moduleToLabel;
-
-export const labelToModule = (value) => {
-  if (value == null) return null;
-  const numericCandidate = Number(String(value).trim());
-  if (Number.isFinite(numericCandidate) && NUMBER_TO_LABEL[Math.trunc(numericCandidate)]) {
-    return Math.trunc(numericCandidate);
-  }
-  const label = ensureModuleLabel(value);
-  if (!label) return null;
-  return LABEL_TO_NUMBER[label] ?? null;
-};
 
 export const matchesModule = (value, targetLabel) => {
   const target = ensureModuleLabel(targetLabel);
@@ -64,87 +57,27 @@ export const matchesModule = (value, targetLabel) => {
 };
 
 /**
- * Verifica si un objeto coincide con un módulo/cohorte específico.
- * Utilizado para filtrar datos por módulo en dashboards de profesor/alumno.
+ * Verifica si un objeto coincide con un módulo específico (STRING ENUM).
+ * ARQUITECTURA: El filtrado por módulo (String) es el criterio principal.
+ * La cohorte (Number) es solo metadato, NO se usa para filtrado.
  * 
  * @param {Object} obj - Objeto a verificar
- * @param {string|null} moduloEtiqueta - Etiqueta del módulo (ej: "JAVASCRIPT")
- * @param {number|null} cohortAsignado - Número de cohorte
+ * @param {string|null} moduloEtiqueta - Etiqueta del módulo (ej: "JAVASCRIPT", "HTML-CSS")
  * @returns {boolean} True si coincide
  */
-export const coincideModulo = (obj, moduloEtiqueta, cohortAsignado) => {
+export const coincideModulo = (obj, moduloEtiqueta) => {
   if (!obj || typeof obj !== "object") return false;
-  if (!moduloEtiqueta && cohortAsignado == null) return true;
+  if (!moduloEtiqueta) return true;
 
-  const normalizeScalar = (valor) => {
-    if (valor == null) return null;
-    const texto = String(valor).trim();
-    return texto.length ? texto : null;
-  };
+  // Buscar modulo en el objeto (prioridad: modulo explícito)
+  const campos = [obj?.modulo];
 
-  const campos = [
-    normalizeScalar(obj?.modulo),
-    normalizeScalar(obj?.module),
-    normalizeScalar(obj?.moduloSlug),
-    normalizeScalar(obj?.moduleCode),
-    normalizeScalar(obj?.moduleNumber),
-    normalizeScalar(obj?.cohort),
-    normalizeScalar(obj?.cohorte),
-    normalizeScalar(obj?.cohortId),
-    obj?.moduloId,
-    normalizeScalar(obj?.datos?.modulo),
-    normalizeScalar(obj?.datos?.module),
-    normalizeScalar(obj?.datos?.moduloSlug),
-    normalizeScalar(obj?.datos?.moduleCode),
-    normalizeScalar(obj?.datos?.moduleNumber),
-    normalizeScalar(obj?.datos?.cohort),
-  ];
-
-  const cohortes = [
-    normalizeScalar(obj?.cohort),
-    normalizeScalar(obj?.cohorte),
-    normalizeScalar(obj?.cohortId),
-    normalizeScalar(obj?.datos?.cohort),
-  ];
-
-  const hasModuleMeta = campos.some((valor) => valor != null);
-  const hasCohortMeta = cohortes.some((valor) => {
-    if (valor == null) return false;
-    const numero = Number(valor);
-    if (Number.isFinite(numero)) return numero > 0;
-    const normalizado = labelToModule(valor);
-    return normalizado != null;
-  });
-  const hasMetaInfo = hasModuleMeta || hasCohortMeta;
-
-  // Verificar coincidencia por etiqueta de módulo
-  if (moduloEtiqueta && campos.some((valor) => matchesModule(valor, moduloEtiqueta))) {
-    return true;
-  }
-
-  // Verificar coincidencia por número de cohorte
-  if (cohortAsignado != null) {
-    const matchesCohort = cohortes.some((valor) => {
-      if (valor == null) return false;
-      const numero = Number(valor);
-      if (Number.isFinite(numero) && numero > 0) {
-        return Math.trunc(numero) === cohortAsignado;
-      }
-      const normalizado = labelToModule(valor);
-      return normalizado != null && normalizado === cohortAsignado;
-    });
-    if (matchesCohort) return true;
-  }
-
-  // Si el slot no trae metadatos de modulo/cohorte, no filtrar para evitar descartes
-  if (!hasMetaInfo) return true;
-
-  return false;
+  return campos.some((valor) => matchesModule(valor, moduloEtiqueta));
 };
 
 export const MODULE_OPTIONS = Object.freeze(
-  Object.entries(NUMBER_TO_LABEL).map(([moduleNumber, label]) => ({
-    value: Number(moduleNumber),
+  MODULE_LABELS.map((label) => ({
+    value: label,
     label,
   }))
 );

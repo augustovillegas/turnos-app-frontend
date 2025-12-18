@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
 import { Suspense, lazy } from "react";
 import { usePagination } from "../hooks/usePagination";
+import { ensureModuleLabel } from "../utils/moduleMap";
 import { useApproval } from "../hooks/useApproval";
 
 const TurnoDetail = lazy(() => import("../components/turnos/TurnoDetail"));
@@ -25,6 +26,7 @@ const SOLICITUDES_COLUMNS = [
   "Fecha",
   "Horario",
   "Sala",
+  "Módulo",
   "Zoom",
   "Estado",
   "Acciones",
@@ -34,7 +36,7 @@ import { showToast } from "../utils/feedback/toasts";
 export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, itemsPerPage = 5 }) => {
   const { updateTurnoEstado } = useAppData();
   const { usuario: usuarioActual } = useAuth();
-  const isSuperadmin = usuarioActual?.role === "superadmin";
+  const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
   // ---- Estado de filtros ----
   const [filtroReview, setFiltroReview] = useState("todos");
@@ -132,7 +134,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
   // Helper functions (must be before early returns)
   const resolveSalaTexto = useCallback((turno) => {
     if (!turno) return "";
-    const rawSala = turno.sala ?? turno.room ?? "";
+    const rawSala = turno.sala ?? "";
     const salaStr = String(rawSala).trim();
     if (!salaStr) return "";
     const base = /^sala/i.test(salaStr) ? salaStr : `Sala ${salaStr}`;
@@ -237,6 +239,9 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {resolveSalaTexto(t)}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {ensureModuleLabel(t.modulo) || "N/A"}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {t.zoomLink && (

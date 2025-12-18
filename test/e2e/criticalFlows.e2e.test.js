@@ -1,4 +1,4 @@
-// === Test E2E: Flujos Críticos por Rol ===
+﻿// === Test E2E: Flujos Críticos por Rol ===
 // Validación completa de funcionalidad según rol (Alumno, Profesor, Superadmin)
 // Actualizado Nov 2025: endpoints /slots, contrato de errores {message, errores?}
 
@@ -6,6 +6,7 @@ import "dotenv/config";
 import axios from "axios";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { getApiBaseUrl, resolveAuthSession } from "../utils/realBackendSession";
+import { buildSlotPayload, normalizeSlotPayload } from "../utils/slotPayload";
 
 // Ejecutar siempre contra servidor real (no skip condicional)
 const baseURL = getApiBaseUrl();
@@ -91,18 +92,8 @@ describe("Flujos Críticos: Rol Alumno", () => {
       const listResponse = await alumnoClient.get("/slots");
       let disponibles = (listResponse.data || []).filter((s) => s.estado === "Disponible");
       if (!disponibles.length) {
-        const creationPayload = {
-          review: 1,
-          fecha: "2025-04-01",
-          date: "2025-04-01",
-          horario: "12:00 - 13:00",
-          sala: Math.floor(Date.now() / 60000) % 500,
-          room: Math.floor(Date.now() / 60000) % 500,
-          estado: "Disponible",
-          start: "2025-04-01T12:00:00.000Z",
-          end: "2025-04-01T13:00:00.000Z",
-        };
-        const createResp = await profesorClient.post("/slots", creationPayload);
+        const creationPayload = buildSlotPayload({ review: 1, offsetDays: 7, modulo: "HTML-CSS" });
+        const createResp = await profesorClient.post("/slots", normalizeSlotPayload(creationPayload));
         if ([200, 201].includes(createResp.status) && createResp.data?.id) {
           scheduleSlotCleanup(createResp.data.id);
           disponibles = [createResp.data];
@@ -182,27 +173,8 @@ describe("Flujos Críticos: Rol Profesor", () => {
   it(
     "profesor puede crear turno (POST /slots)",
     async () => {
-      const now = Date.now();
-      const roomNumber = Math.floor(now / 60000);
-      
-      const payload = {
-        review: 10,
-        reviewNumber: 10,
-        fecha: "2025-04-01",
-        date: "2025-04-01",
-        horario: "14:00 - 15:00",
-        sala: roomNumber,
-        room: roomNumber,
-        estado: "Disponible",
-        start: "2025-04-01T14:00:00.000Z",
-        end: "2025-04-01T15:00:00.000Z",
-        startTime: "14:00",
-        endTime: "15:00",
-        duracion: 60,
-        comentarios: "Test profesor E2E",
-      };
-
-      const response = await profesorClient.post("/slots", payload);
+      const payload = buildSlotPayload({ review: 10, offsetDays: 7, modulo: "HTML-CSS" });
+      const response = await profesorClient.post("/slots", normalizeSlotPayload(payload));
 
       if (![200, 201].includes(response.status)) {
         console.error("[E2E][profesor] Error al crear slot:", response.data);
@@ -230,18 +202,8 @@ describe("Flujos Críticos: Rol Profesor", () => {
       const listResponse = await profesorClient.get("/slots");
       let solicitados = (listResponse.data || []).filter((s) => s.estado === "Solicitado");
       if (!solicitados.length) {
-        const creationPayload = {
-          review: 2,
-          fecha: "2025-04-02",
-          date: "2025-04-02",
-          horario: "09:00 - 10:00",
-          sala: Math.floor(Date.now() / 60000) % 500,
-          room: Math.floor(Date.now() / 60000) % 500,
-          estado: "Disponible",
-          start: "2025-04-02T09:00:00.000Z",
-          end: "2025-04-02T10:00:00.000Z",
-        };
-        const createResp = await profesorClient.post("/slots", creationPayload);
+        const creationPayload = buildSlotPayload({ review: 2, offsetDays: 7, modulo: "HTML-CSS" });
+        const createResp = await profesorClient.post("/slots", normalizeSlotPayload(creationPayload));
         if ([200, 201].includes(createResp.status) && createResp.data?.id) {
           scheduleSlotCleanup(createResp.data.id);
           await alumnoClient.patch(`/slots/${createResp.data.id}/solicitar`);
@@ -256,7 +218,7 @@ describe("Flujos Críticos: Rol Profesor", () => {
       }
       const slotId = solicitados[0].id;
             // Usar endpoint específico de cambio de estado para evitar validaciones adicionales
-      const response = await profesorClient.patch(`/slots/${slotId}/estado`, { estado: "Aprobado" });
+      const response = await profesorClient.patch(`/slots/${slotId}/estado`, { estado: "aprobado" });
 
       if (![200, 201].includes(response.status)) {
         console.error("[E2E][profesor] Error al aprobar:", response.data);
@@ -306,7 +268,7 @@ describe("Flujos Críticos: Rol Superadmin", () => {
         nombre: `Test User ${timestamp}`,
         email: `test${timestamp}@example.com`,
         rol: "alumno",
-        cohort: 1,
+        cohorte: 1,
         modulo: "HTML-CSS",
         password: "Alumno-fullstack-2025", // Default password
       };
@@ -364,18 +326,8 @@ describe("Flujos Críticos: Rol Superadmin", () => {
       const listResponse = await superadminClient.get("/slots");
       let disponibles = (listResponse.data || []).filter((s) => s.estado === "Disponible");
       if (!disponibles.length) {
-        const creationPayload = {
-          review: 3,
-          fecha: "2025-04-03",
-          date: "2025-04-03",
-          horario: "16:00 - 17:00",
-          sala: Math.floor(Date.now() / 60000) % 500,
-          room: Math.floor(Date.now() / 60000) % 500,
-          estado: "Disponible",
-          start: "2025-04-03T16:00:00.000Z",
-          end: "2025-04-03T17:00:00.000Z",
-        };
-        const createResp = await superadminClient.post("/slots", creationPayload);
+        const creationPayload = buildSlotPayload({ review: 3, offsetDays: 7, modulo: "HTML-CSS" });
+        const createResp = await superadminClient.post("/slots", normalizeSlotPayload(creationPayload));
         if ([200, 201].includes(createResp.status) && createResp.data?.id) {
           scheduleSlotCleanup(createResp.data.id);
           disponibles = [createResp.data];
@@ -386,7 +338,7 @@ describe("Flujos Críticos: Rol Superadmin", () => {
       }
       const original = disponibles[0];
             // Minimizar payload enviando solo cambio de estado
-      const response = await superadminClient.patch(`/slots/${original.id}/estado`, { estado: "Solicitado" });
+      const response = await superadminClient.patch(`/slots/${original.id}/estado`, { estado: "aprobado" });
 
       if ([200, 201].includes(response.status)) {
         const updated = response.data;
@@ -408,18 +360,9 @@ describe("Validaciones Generales", () => {
     "case-sensitivity: backend maneja estados normalizados",
     async () => {
       // Intentar crear slot con estado en minúsculas
-      const payload = {
-        review: 11,
-        fecha: "2025-05-01",
-        horario: "10:00 - 11:00",
-        sala: 100,
-        room: 100,
-        estado: "disponible", // minúsculas (incorrecto)
-        start: "2025-05-01T10:00:00.000Z",
-        end: "2025-05-01T11:00:00.000Z",
-      };
-
-      const response = await superadminClient.post("/slots", payload);
+      const base = buildSlotPayload({ review: 11, offsetDays: 7, modulo: "HTML-CSS" });
+      const payload = { ...base, estado: "disponible" };
+      const response = await superadminClient.post("/slots", normalizeSlotPayload(payload));
 
       // El backend debería normalizar o rechazar
       if ([200, 201].includes(response.status)) {

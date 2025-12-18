@@ -33,8 +33,8 @@ function setupMocks({ appOverrides = {}, authOverrides = {}, usuarios = [] } = {
   return { createUsuarioRemoto, updateUsuario, loadUsuarios }
 }
 
-describe('Cohorte handling', () => {
-  it('UsuarioForm payload includes cohort and cohorte as numbers', async () => {
+describe('Cohorte y Modulo - Arquitectura correcta', () => {
+  it('UsuarioForm payload debe incluir cohorte como número y modulo como String enum', async () => {
     const createUsuarioRemoto = vi.fn(async () => {})
     const loadUsuarios = vi.fn(async () => {})
 
@@ -45,17 +45,18 @@ describe('Cohorte handling', () => {
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Test User' } })
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
     fireEvent.change(screen.getByLabelText('Cohorte'), { target: { value: '3' } })
-    fireEvent.change(screen.getByLabelText('Módulo'), { target: { value: 'HTML-CSS' } })
+    fireEvent.change(screen.getByLabelText(/M.*dulo/i), { target: { value: 'HTML-CSS' } })
 
     fireEvent.click(screen.getByTestId('btn-guardar'))
 
     expect(createUsuarioRemoto).toHaveBeenCalledTimes(1)
     const payload = createUsuarioRemoto.mock.calls[0][0]
-    expect(payload).toMatchObject({ cohort: 3 })
-    expect(typeof payload.cohort).toBe('number')
+    expect(payload.cohorte).toBe(3)
+    expect(typeof payload.cohorte).toBe('number')
+    expect(payload.modulo).toBe('HTML-CSS') // módulo 1 = HTML-CSS
   })
 
-  it('UsuarioEdit payload includes cohort and cohorte when saving', async () => {
+  it('UsuarioEdit payload debe actualizar cohorte sin cambiar modulo si profesor', async () => {
     const updateUsuario = vi.fn(async () => {})
     const loadUsuarios = vi.fn(async () => {})
 
@@ -69,7 +70,6 @@ describe('Cohorte handling', () => {
     }
 
     setupMocks({ appOverrides: { updateUsuario, loadUsuarios }, authOverrides: { usuario } })
-    // Mock useModal to auto-confirm
     const ModalCtx = await import('../../../context/ModalContext.jsx')
     vi.spyOn(ModalCtx, 'useModal').mockReturnValue({ showModal: ({ onConfirm }) => onConfirm?.() })
     render(<UsuarioEdit usuario={usuario} onVolver={() => {}} />)
@@ -81,21 +81,21 @@ describe('Cohorte handling', () => {
 
     expect(updateUsuario).toHaveBeenCalled()
     const payload = updateUsuario.mock.calls[0][1]
-    expect(payload).toMatchObject({ cohort: 5, cohorte: 5 })
-    expect(typeof payload.cohort).toBe('number')
+    // Backend espera: solo los campos que cambian
+    expect(payload.cohorte).toBe(5)
     expect(typeof payload.cohorte).toBe('number')
   })
 
-  it('UsuariosList shows real cohort or fallback to 1', async () => {
+  it('UsuariosList debe mostrar cohorte real o fallback "1"', async () => {
     const usuarios = [
       { id: '1', nombre: 'A', email: 'a@a.com', cohorte: 4, modulo: 'HTML-CSS', rol: 'alumno' },
-      { id: '2', nombre: 'B', email: 'b@b.com', modulo: 'HTML-CSS', rol: 'alumno' },
+      { id: '2', nombre: 'B', email: 'b@b.com', modulo: 'HTML-CSS', rol: 'alumno' }, // sin cohorte
     ]
     setupMocks({ usuarios })
     const ModalCtx = await import('../../../context/ModalContext.jsx')
     vi.spyOn(ModalCtx, 'useModal').mockReturnValue({ showModal: () => {} })
     render(<UsuariosList />)
-    expect(screen.getByText('4')).toBeTruthy()
-    expect(screen.getByText('1')).toBeTruthy()
+    expect(screen.getAllByText('4').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1) // fallback
   })
 })

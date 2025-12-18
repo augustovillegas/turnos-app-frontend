@@ -14,6 +14,8 @@ import { useAuth } from "../../context/AuthContext";
 
 import { useModal } from "../../context/ModalContext";
 
+import { useUsuarioValidation } from "../../hooks/useUsuarioValidation";
+
 import { Button } from "../ui/Button";
 
 import { showToast } from "../../utils/feedback/toasts";
@@ -29,8 +31,6 @@ import { validateSelections } from "../../utils/usuarios/helpers";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 const DEFAULT_COHORT = 1;
-
-const DEFAULT_MODULE = MODULE_OPTIONS[0]?.label ?? "HTML-CSS";
 
 
 
@@ -88,9 +88,9 @@ const buildEditForm = (usuario) => ({
 
   identificador: usuario?.identificador ?? "",
 
-  cohorte: String(usuario?.cohort ?? usuario?.cohorte ?? DEFAULT_COHORT),
+  cohorte: String(usuario?.cohorte ?? DEFAULT_COHORT),
 
-  modulo: ensureModuleLabel(usuario?.modulo) ?? DEFAULT_MODULE,
+  modulo: ensureModuleLabel(usuario?.modulo) ?? "",
 
   password: "",
 
@@ -112,10 +112,16 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
   const { showModal } = useModal();
 
+  const { validateCustomPassword: validatePassword, validateEmailUnique } = useUsuarioValidation();
+
 
 
   const loggedRole = String(sessionUser?.rol ?? sessionUser?.role ?? "").toLowerCase();
-
+  const professorModuleLabel = ensureModuleLabel(sessionUser?.modulo);
+  console.log("[UsuarioEdit] Resolviendo modulo del profesor", {
+    modulo: sessionUser?.modulo,
+    professorModuleLabel,
+  });
 
 
   const allowedRoles = useMemo(() => {
@@ -162,7 +168,13 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
     setUsuarioActual(usuario);
 
-    setFormValues(buildEditForm(usuario));
+    setFormValues((prev) => {
+      const next = buildEditForm(usuario);
+      if (loggedRole === "profesor") {
+        return { ...next, modulo: professorModuleLabel };
+      }
+      return next;
+    });
 
     setNotFound(false);
 
@@ -198,7 +210,13 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
         setUsuarioActual(result);
 
-        setFormValues(buildEditForm(result));
+        setFormValues((prev) => {
+          const next = buildEditForm(result);
+          if (loggedRole === "profesor") {
+            return { ...next, modulo: professorModuleLabel };
+          }
+          return next;
+        });
 
         setNotFound(false);
 
@@ -240,6 +258,10 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
     const { name, value } = event.target;
 
+    if (loggedRole === "profesor" && name === "modulo") {
+      return;
+    }
+
     if (name === "tipo" && value && !allowedRoles.includes(String(value))) {
 
       showToast("No tienes permisos para cambiar a ese rol", "error");
@@ -256,63 +278,25 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
 
 
-  const validateEmailUnique = useCallback((email, currentId) => {
-
-    return !usuarios.some(
-
-      (u) => u.id !== currentId && u.email.toLowerCase() === email.toLowerCase()
-
-    );
-
-  }, [usuarios]);
-
-
-
-  const validateCustomPassword = useCallback((password, confirm) => {
-
-    if (!password && !confirm) return null;
-
-    if (!password || !confirm) {
-
-      showToast("Completa y confirma la password si deseas cambiarla", "error");
-
-      return false;
-
-    }
-
-    if (password.length < 8) {
-
-      showToast("Password mínimo 8 caracteres", "error");
-
-      return false;
-
-    }
-
-    if (password !== confirm) {
-
-      showToast("Las passwords no coinciden", "error");
-
-      return false;
-
-    }
-
-    return password;
-
-  }, []);
   const persistirCambios = useCallback(async () => {
     const nombre = formValues.nombre.trim();
     const email = formValues.email.trim();
     const identificador = formValues.identificador.trim();
     const cohorteRaw = formValues.cohorte.trim();
-    const moduloLabel = ensureModuleLabel(formValues.modulo) ?? DEFAULT_MODULE;
+    const moduloLabel = loggedRole === "profesor"
+      ? professorModuleLabel
+      : ensureModuleLabel(formValues.modulo);
     const cohortNumber = Number.parseInt(cohorteRaw, 10);
     const targetRole = formValues.tipo || allowedRoles[0] || "alumno";
+
+    // IMPORTANTE: Cohorte y módulo son independientes
+    // - cohorte: camada de alumnos (1, 2, 3...) - Solo identificador visual
+    // - modulo: materia/contenido (HTML-CSS, JAVASCRIPT, etc.) - CLAVE DE FILTRADO con enum
 
     const payload = {
       nombre,
       email,
       rol: targetRole,
-      cohort: cohortNumber,
       cohorte: cohortNumber,
       modulo: moduloLabel,
       ...(identificador ? { identificador } : {}),
@@ -321,17 +305,21 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
     const passwordValue = formValues.password.trim();
     const passwordConfirm = formValues.passwordConfirm.trim();
 
-    const customPasswordResult = validateCustomPassword(passwordValue, passwordConfirm);
+    const customPasswordResult = validatePassword(passwordValue, passwordConfirm);
     if (customPasswordResult === false) return;
     if (customPasswordResult) {
       payload.password = customPasswordResult;
     }
 
+    console.log('[UsuarioEdit] Payload a enviar:', {
+      cohorte: payload.cohorte,
+      modulo: payload.modulo,
+      payload
+    });
+
     try {
       setFormErrors({});
       const response = await updateUsuario(identificadorEfectivo, payload);
-      console.log('🔍 Respuesta del backend después de actualizar:', response);
-      console.log('🔍 Cohorte en respuesta:', response?.cohorte, response?.cohort);
       showToast("Cambios guardados. Usuario actualizado correctamente.", "success");
       await loadUsuarios?.();
       onVolver?.();
@@ -347,12 +335,14 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
   }, [
     formValues,
     allowedRoles,
-    validateCustomPassword,
+    validatePassword,
     identificadorEfectivo,
     updateUsuario,
     loadUsuarios,
     onVolver,
     pushError,
+    professorModuleLabel,
+    loggedRole,
   ]);
 
 
@@ -371,7 +361,7 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
     const cohorteRaw = formValues.cohorte.trim();
 
-    const moduloLabel = ensureModuleLabel(formValues.modulo) ?? DEFAULT_MODULE;
+    const moduloLabel = ensureModuleLabel(formValues.modulo);
 
 
 
@@ -391,7 +381,7 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
     }
 
-    if (!validateEmailUnique(email, identificadorEfectivo)) {
+    if (!validateEmailUnique(email, usuarios, identificadorEfectivo)) {
 
       showToast("Email ya registrado por otro usuario", "error");
 
@@ -742,13 +732,18 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
 
                 value={formValues.modulo}
 
+                disabled={loggedRole === "profesor"}
+
                 onChange={handleFieldChange}
 
-                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                className="mt-1 block w-full rounded border border-[#111827]/40 bg-white px-3 py-2 text-sm text-[#111827] shadow-sm focus:border-[#1E3A8A] focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-[#1A1A1A] disabled:cursor-not-allowed"
 
               >
 
-                {MODULE_OPTIONS.map((option) => (
+                {(loggedRole === "profesor"
+                  ? [{ value: professorModuleLabel, label: professorModuleLabel }]
+                  : MODULE_OPTIONS
+                ).map((option) => (
 
                   <option key={option.value} value={option.label}>
 
@@ -855,10 +850,6 @@ export const UsuarioEdit = ({ usuario, usuarioId, onVolver }) => {
   );
 
 };
-
-
-
-
 
 
 

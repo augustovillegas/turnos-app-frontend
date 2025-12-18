@@ -1,4 +1,4 @@
-import { ensureModuleLabel, labelToModule } from "../moduleMap";
+import { ensureModuleLabel } from "../moduleMap";
 
 const toNumber = (value) => {
   if (value == null) return null;
@@ -7,84 +7,49 @@ const toNumber = (value) => {
 };
 
 // Normaliza la forma de una entrega para consumo consistente en la UI.
-// Segun CONFIGURACION_FRONTEND.md: Submission DTO no tiene "estado", solo "reviewStatus".
+// DTO actualizado: {id, sprint, githubLink, renderLink, comentarios, reviewStatus, estado, alumno, alumnoId, student, modulo, cohorte, fechaEntrega}
 export const normalizeEntrega = (raw = {}) => {
   if (!raw || typeof raw !== "object") return raw;
 
-  const assignmentData =
-    raw.assignment && typeof raw.assignment === "object" ? raw.assignment : null;
+  const modulo =
+    ensureModuleLabel(raw.modulo) ??
+    ensureModuleLabel(raw.assignment?.modulo) ??
+    null;
 
-  // Deriva modulo y cohorte desde assignment cuando no vienen en el root
-  const resolvedModuleLabel =
-    [
-      raw.modulo,
-      raw.module,
-      raw.moduleLabel,
-      raw.moduleCode,
-      raw.moduleNumber,
-      assignmentData?.modulo,
-      assignmentData?.module,
-      assignmentData?.moduleLabel,
-      assignmentData?.moduleCode,
-      assignmentData?.moduleNumber,
-      assignmentData?.cohorte,
-      assignmentData?.cohort,
-      assignmentData?.cohortId,
-    ]
-      .map((value) => ensureModuleLabel(value))
-      .find(Boolean) || null;
+  const cohorte =
+    toNumber(raw.cohorte) ??
+    toNumber(raw.assignment?.cohorte) ??
+    null;
 
-  const resolvedModuleNumber =
-    labelToModule(resolvedModuleLabel) ??
-    labelToModule(
-      assignmentData?.moduleCode ??
-        assignmentData?.moduleNumber ??
-        raw.moduleCode ??
-        raw.moduleNumber
-    );
-
-  const resolvedCohort =
-    [
-      raw.cohorte,
-      raw.cohort,
-      raw.cohortId,
-      assignmentData?.cohorte,
-      assignmentData?.cohort,
-      assignmentData?.cohortId,
-    ]
-      .map((value) => toNumber(value))
-      .find((value) => value != null) ?? null;
-
-  const reviewStatus = raw.reviewStatus ?? "A revisar";
   const resolvedId = raw.id ?? raw._id ?? null;
-  const temporalId = !resolvedId ? `temp-${crypto?.randomUUID?.() || Date.now()}` : resolvedId;
+  const temporalId = resolvedId ?? `temp-${crypto?.randomUUID?.() || Date.now()}`;
+  const reviewStatus = raw.reviewStatus ?? raw.estado ?? "A revisar";
+  const alumnoNombre = raw.alumno ?? raw.alumnoNombre ?? raw.studentName ?? "-";
+  const alumnoId =
+    raw.alumnoId ??
+    (typeof raw.student === "object" ? raw.student?._id ?? raw.student?.id : raw.student) ??
+    raw.studentId ??
+    null;
 
-  const alumnoNombre = raw.alumnoNombre ?? "-";
-
-  const modulo = resolvedModuleLabel ?? raw.modulo ?? assignmentData?.modulo ?? null;
+  const sprintVal = toNumber(raw.sprint);
 
   return {
-    ...raw,
     id: temporalId,
     alumno: alumnoNombre,
-    alumnoId: raw.student ?? null, // Backend envia ObjectId del alumno como "student"
-    sprint: raw.sprint ?? null,
+    alumnoNombre,
+    alumnoId,
+    student: alumnoId,
+    sprint: sprintVal ?? raw.sprint ?? null,
     githubLink: raw.githubLink ?? "",
-    renderLink: raw.renderLink ?? "-", // Backend default: "-"
-    comentarios: raw.comentarios ?? "-", // Backend default: "-"
-    reviewStatus, // Estados: "Pendiente" | "A revisar" | "Aprobado" | "Desaprobado" | "Rechazado"
-    fechaEntrega: raw.createdAt ?? null, // Backend usa createdAt como fecha de entrega
+    renderLink: raw.renderLink ?? "",
+    comentarios: raw.comentarios ?? "",
+    reviewStatus,
+    estado: raw.estado ?? reviewStatus,
+    fechaEntrega: raw.fechaEntrega ?? raw.createdAt ?? null,
     createdAt: raw.createdAt ?? null,
     updatedAt: raw.updatedAt ?? null,
-    assignment: raw.assignment ?? null, // ObjectId o objeto de la asignacion (opcional)
     modulo,
-    module: modulo,
-    moduleLabel: modulo,
-    moduleCode: resolvedModuleNumber ?? raw.moduleCode ?? null,
-    moduleNumber: resolvedModuleNumber ?? raw.moduleNumber ?? null,
-    cohorte: resolvedCohort ?? raw.cohorte ?? null,
-    cohort: resolvedCohort ?? raw.cohort ?? null,
-    cohortId: resolvedCohort ?? raw.cohortId ?? null,
+    cohorte,
   };
 };
 

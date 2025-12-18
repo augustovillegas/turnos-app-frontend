@@ -122,7 +122,7 @@ const buildTurnoPayload = () => {
     endTime: formatHour(end),
     duracion: durationMinutes,
     comentarios: "Generado por apiHealthTest",
-    modulo: "NODE",
+    modulo: "BACKEND - NODE JS",
     cohort: 1,
     solicitanteId: null,
   };
@@ -136,7 +136,7 @@ const buildEntregaPayload = () => {
     renderLink: `https://example.com/render-${now}`,
     comentarios: "Smoke test",
     estado: "A revisar",
-    modulo: "NODE",
+    modulo: "BACKEND - NODE JS",
   };
 };
 

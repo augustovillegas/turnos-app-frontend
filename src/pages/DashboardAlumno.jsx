@@ -10,7 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { useLoading } from "../context/LoadingContext";
 import { useError } from "../context/ErrorContext";
-import { ensureModuleLabel, coincideModulo, labelToModule, moduleToLabel } from "../utils/moduleMap";
+import { ensureModuleLabel, coincideModulo } from "../utils/moduleMap";
 import { isEstado, anyEstado } from "../utils/turnos/normalizeEstado";
 import { useAlumnoTurnos } from "../hooks/useAlumnoTurnos";
 
@@ -59,40 +59,17 @@ export const DashboardAlumno = () => {
 
   const cohortAlumno = useMemo(() => {
     if (!usuarioActual) return null;
-    const candidatos = [
-      usuarioActual.cohort,
-      usuarioActual.cohorte,
-      usuarioActual.cohortId,
-      usuarioActual?.datos?.cohort,
-      usuarioActual.moduleCode,
-      usuarioActual.moduleNumber,
-    ];
-    for (const candidato of candidatos) {
-      const modulo = labelToModule(candidato);
-      if (modulo != null) return modulo;
-    }
-    const etiqueta = ensureModuleLabel(
-      usuarioActual.modulo ?? usuarioActual.module ?? usuarioActual.moduloSlug
-    );
-    if (etiqueta) {
-      const modulo = labelToModule(etiqueta);
-      if (modulo != null) return modulo;
+    const valor = usuarioActual.cohorte;
+    if (valor != null) {
+      const n = Number(valor);
+      return Number.isFinite(n) ? n : null;
     }
     return null;
   }, [usuarioActual]);
-
   const moduloAlumno = useMemo(() => {
     if (!usuarioActual) return null;
-    const etiquetaDirecta = [
-      ensureModuleLabel(usuarioActual.modulo),
-      ensureModuleLabel(usuarioActual.module),
-      ensureModuleLabel(usuarioActual.moduloSlug),
-      ensureModuleLabel(usuarioActual.moduleCode),
-      ensureModuleLabel(usuarioActual.moduleNumber),
-    ].find(Boolean);
-    if (etiquetaDirecta) return etiquetaDirecta;
-    return moduleToLabel(cohortAlumno);
-  }, [usuarioActual, cohortAlumno]);
+    return ensureModuleLabel(usuarioActual.modulo);
+  }, [usuarioActual]);
 
   const resolveComparableId = (value) => {
     if (!value) return null;
@@ -167,7 +144,8 @@ export const DashboardAlumno = () => {
   const hasLoadedRef = useRef(false);
   useEffect(() => {
     if (hasLoadedRef.current) return; // evita recarga múltiple si cambian dependencias estructurales
-    if (!usuarioActual || !token || usuarioActual.role !== "alumno") return;
+    const rol = usuarioActual?.rol ?? usuarioActual?.role;
+    if (!usuarioActual || !token || rol !== "alumno") return;
     // Backend filtra automáticamente por módulo del usuario; no enviar parámetros
     hasLoadedRef.current = true;
     (async () => {
@@ -229,7 +207,6 @@ export const DashboardAlumno = () => {
       githubLink: githubLink.trim(),
       renderLink: renderLink.trim(),
       comentarios: comentarios.trim(),
-      reviewStatus: "A revisar",  // Backend acepta solo reviewStatus (NO estado)
     });
     showToast("Entrega registrada correctamente", "success");
   };
@@ -260,14 +237,13 @@ export const DashboardAlumno = () => {
   };
 
   const turnosFiltradosPorModulo = useMemo(() => {
-    if (!moduloAlumno && cohortAlumno == null) return turnos || [];
+    if (!moduloAlumno) return turnos || [];
     return (turnos || []).filter(
-      (turno) => coincideModulo(turno, moduloAlumno, cohortAlumno) || isTurnoDelAlumno(turno)
+      (turno) => coincideModulo(turno, moduloAlumno) || isTurnoDelAlumno(turno)
     );
   }, [
     turnos,
     moduloAlumno,
-    cohortAlumno,
     isTurnoDelAlumno,
   ]);
 
@@ -390,4 +366,3 @@ export const DashboardAlumno = () => {
     </div>
   );
 };
-

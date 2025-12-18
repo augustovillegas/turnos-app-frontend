@@ -1,12 +1,12 @@
 // === Submissions Service ===
-// Endpoints orientados al flujo del alumno (/submissions)
+// Endpoints orientados al flujo de entregas (/submissions)
 import { apiClient } from "./apiClient";
 
 // Listar entregas del usuario (alumno/profesor/superadmin con permisos)
 export const getSubmissionsByUser = (userId) =>
   apiClient.get(`/submissions/${userId}`).then((r) => r.data ?? []);
 
-// Obtener detalle (usado para edición / lectura puntual)
+// Obtener detalle (usado para ediciÇün / lectura puntual)
 export const getSubmissionDetail = (id) =>
   apiClient.get(`/submissions/detail/${id}`).then((r) => r.data);
 
@@ -22,7 +22,7 @@ export const updateSubmission = (id, payload = {}) =>
 export const deleteSubmission = (id) =>
   apiClient.delete(`/submissions/${id}`).then((r) => r.data);
 
-// Normaliza el payload para enviar sólo los campos esperados según backend
+// Normaliza el payload para enviar solo los campos esperados segÇ§n backend
 const mapSubmissionPayload = (payload = {}) => {
   const out = {};
   if (payload.githubLink !== undefined) out.githubLink = payload.githubLink?.trim() ?? "";
@@ -32,10 +32,12 @@ const mapSubmissionPayload = (payload = {}) => {
     const sprintVal = Number(payload.sprint);
     out.sprint = Number.isNaN(sprintVal) ? payload.sprint : sprintVal;
   }
-  // ⚠️ Backend Submission NO acepta 'estado', solo 'reviewStatus'
   // Estados: "Pendiente" | "A revisar" | "Aprobado" | "Desaprobado" | "Rechazado"
-  const reviewStatus = payload.reviewStatus ?? payload.estado ?? "A revisar";
-  out.reviewStatus = reviewStatus;
-  // NO enviamos 'estado' ni 'modulo' (backend no los acepta en Submission)
+  const reviewStatus = payload.reviewStatus ?? payload.estado;
+  if (reviewStatus !== undefined) {
+    out.reviewStatus = reviewStatus;
+  }
+  // NO enviamos 'estado' ni 'modulo' (backend los calcula en Submission)
   return out;
 };
+

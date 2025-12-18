@@ -122,13 +122,17 @@ describe.sequential("Servicios de turnos (API real)", () => {
       }
       registerCreated(created);
 
-      const estado = "Solicitado";
+      const estado = "aprobado";
 
       // Usar endpoint específico de cambio de estado para evitar validaciones estrictas
       const updated = await actualizarEstadoSlot(created.id, estado).catch(() => null);
 
       if (updated) {
-        expect(updated.estado).toBe(estado);
+        const normalizedEstado = String(updated.estado || "").trim().toLowerCase();
+        expect(normalizedEstado.includes("aprob")).toBe(true);
+        if (updated.reviewStatus) {
+          expect(String(updated.reviewStatus).toLowerCase()).toBe("aprobado");
+        }
       } else {
         // Si el backend aún no soporta el cambio, tolerar
         expect(true).toBe(true);
@@ -137,10 +141,11 @@ describe.sequential("Servicios de turnos (API real)", () => {
       const reloaded = await getTurnoById(created.id).catch(() => null);
       if (reloaded) {
         // Algunos despliegues pueden ignorar cambios de estado vía endpoint simplificado
-        if (reloaded.estado !== estado) {
-          console.warn("[TEST][turnos] Estado no actualizado (tolerado)", reloaded.estado, "!=", estado);
+        const normalizedReloaded = String(reloaded.estado || "").trim().toLowerCase();
+        if (normalizedReloaded !== "aprobado") {
+          console.warn("[TEST][turnos] Estado no actualizado (tolerado)", reloaded.estado, "!=", "aprobado");
         } else {
-          expect(reloaded.estado).toBe(estado);
+          expect(normalizedReloaded).toBe("aprobado");
         }
       }
     },

@@ -33,7 +33,8 @@ export const EvaluarEntregas = ({ withWrapper = true }) => {
   useEffect(() => {
     if (!usuarioActual) return;
     if (hasLoadedRef.current) return; // Evitar loop infinito
-    if (usuarioActual.role === "profesor" || usuarioActual.role === "superadmin") {
+    const rol = usuarioActual?.rol ?? usuarioActual?.role;
+    if (rol === "profesor" || rol === "superadmin") {
       hasLoadedRef.current = true;
       loadEntregas?.();
     }

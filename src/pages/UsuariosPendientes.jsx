@@ -15,13 +15,14 @@ import { useApproval } from "../hooks/useApproval";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
+import { ensureModuleLabel } from "../utils/moduleMap";
 
-const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Estado", "Acciones"];
+const USUARIOS_PENDIENTES_COLUMNS = ["Nombre", "Rol", "Módulo", "Estado", "Acciones"];
 
 export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = true }) => {
   const { approveUsuario, updateUsuarioEstado } = useAppData();
   const { usuario: usuarioActual } = useAuth();
-  const isSuperadmin = usuarioActual?.role === "superadmin";
+  const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
   const [usuariosBuscados, setUsuariosBuscados] = useState([]);
   const [modo, setModo] = useState("listar");
@@ -101,7 +102,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
 
         <SearchBar
           data={usuariosPendientes}
-          fields={["nombre", "rol", "estado"]}
+          fields={["nombre", "rol", "estado", "modulo", "module"]}
           placeholder="Buscar usuarios pendientes"
           onSearch={(results) => {
             setUsuariosBuscados(results);
@@ -123,6 +124,9 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {u.rol}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {ensureModuleLabel(u.modulo) || "N/A"}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     <Status status={u.estado} />
@@ -176,6 +180,9 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
                     </h3>
                     <p className="text-sm text-[#111827] dark:text-gray-200">
                       <strong>Rol:</strong> {u.rol}
+                    </p>
+                    <p className="text-sm text-[#111827] dark:text-gray-200">
+                      <strong>Módulo:</strong> {ensureModuleLabel(u.modulo) || "N/A"}
                     </p>
                   </div>
                   <Status status={u.estado} />

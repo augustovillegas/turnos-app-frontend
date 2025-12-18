@@ -75,6 +75,12 @@ function walk(dir) {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), forbidE2EVars()],
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), './src'),
+      '@test': path.resolve(process.cwd(), './test'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -99,9 +105,21 @@ export default defineConfig({
       ...(runRemoteTests ? [] : ['test/e2e/**', 'test/integration/**']),
     ],
     coverage: {
-      reporter: ['text', 'lcov'],
-      reportsDirectory: './test/coverage',
-      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      reporter: ['text', 'lcov', 'html'],
+      reportsDirectory: './test-reports/coverage',
+      include: ['src/**/*.{js,jsx}'],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.test.{js,jsx}',
+        'src/main.jsx',
+        'src/router/**',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 60,
+        branches: 60,
+        statements: 70,
+      },
     },
     testTimeout: 30_000,
     hookTimeout: 10_000,

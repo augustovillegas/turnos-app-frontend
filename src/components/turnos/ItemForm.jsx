@@ -7,7 +7,7 @@ const MODULOS_DISPONIBLES = [
   { value: "HTML-CSS", label: "HTML-CSS" },
   { value: "JAVASCRIPT", label: "JAVASCRIPT" },
   { value: "FRONTEND - REACT", label: "FRONTEND - REACT" },
-  { value: "BACKEND - NODE", label: "BACKEND - NODE" },
+  { value: "BACKEND - NODE JS", label: "BACKEND - NODE JS" },
 ];
 
 export const ItemForm = ({
@@ -20,7 +20,7 @@ export const ItemForm = ({
   alCancelar,
 }) => {
   const { usuario: sessionUser } = useAuth();
-  const esSuperadmin = sessionUser?.role === "superadmin" || sessionUser?.rol === "superadmin";
+  const esSuperadmin = sessionUser?.rol === "superadmin" || sessionUser?.role === "superadmin";
   const { control, handleSubmit, reset } = useForm({
     mode: "onChange",
     defaultValues: valores,
@@ -153,7 +153,7 @@ export const ItemForm = ({
 
         <div>
           <label className="mb-1 block text-sm font-bold text-[#111827] dark:text-gray-200">
-            Número de sala (room) *
+            Número de sala *
           </label>
           <Controller
             name="sala"
@@ -285,4 +285,3 @@ export const ItemForm = ({
     </form>
   );
 };
-

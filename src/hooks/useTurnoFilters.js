@@ -1,19 +1,19 @@
 // === useTurnoFilters ===
-// Hook compartido para filtrado de turnos por review, módulo, cohort y estado.
-// Previene duplicación de lógica de filtrado entre DashboardAlumno, DashboardProfesor, etc.
+// Hook compartido para filtrado de turnos por review, módulo y estado.
+// ARQUITECTURA: Filtra por modulo (String enum), no por cohorte (cohorte es solo metadato)
 import { useMemo, useState, useCallback } from 'react';
 import { coincideModulo } from '../utils/moduleMap';
 
-export const useTurnoFilters = ({ turnos = [], moduloEtiqueta = null, cohort = null }) => {
+export const useTurnoFilters = ({ turnos = [], moduloEtiqueta = null }) => {
   const [filtroReview, setFiltroReview] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState(null);
 
   const turnosFiltrados = useMemo(() => {
     let resultado = Array.isArray(turnos) ? turnos : [];
 
-    // Filtro por módulo/cohort
-    if (moduloEtiqueta || cohort != null) {
-      resultado = resultado.filter((t) => coincideModulo(t, moduloEtiqueta, cohort));
+    // Filtro por módulo STRING ENUM
+    if (moduloEtiqueta) {
+      resultado = resultado.filter((t) => coincideModulo(t, moduloEtiqueta));
     }
 
     // Filtro por review
@@ -30,7 +30,7 @@ export const useTurnoFilters = ({ turnos = [], moduloEtiqueta = null, cohort = n
     }
 
     return resultado;
-  }, [turnos, moduloEtiqueta, cohort, filtroReview, filtroEstado]);
+  }, [turnos, moduloEtiqueta, filtroReview, filtroEstado]);
 
   const resetFiltros = useCallback(() => {
     setFiltroReview('todos');

@@ -92,7 +92,7 @@
 ┌─────────────────▼──────────────────────────────────┐
 │         Backend (Node.js/Express)                  │
 ├─────────────────────────────────────────────────────┤
-│  • REST API (/turnos, /entregas, /usuarios)       │
+│  • REST API (/slots, /submissions|entregas, /usuarios)       │
 │  • JWT Authentication                              │
 │  • Validación de permisos                          │
 │  • MongoDB (persistencia)                          │
@@ -402,18 +402,40 @@ npm run lint:fix
 
 ### Scripts Utilitarios
 
+> **⚠️ Nota**: Los siguientes scripts son herramientas de desarrollo y debugging. No están incluidos en el build de producción.
+
 ```bash
 # Health check del API
 npm run scripts:api-health
+# Valida conectividad con el backend y contrato de errores
 
 # Probar payloads de turnos
 npm run scripts:probe-turnos
+# Debug de estructura de datos y validaciones
 
 # Crear usuarios y roles de prueba
 npm run scripts:crear-usuarios
+# Seed de datos para entorno de desarrollo
 
 # Generar reporte HTML de tests
 npm run scripts:render-report
+# Convierte resultados JSON a reporte visual
+
+# Test de caso específico
+npm run scripts:test-case
+# Reproduce escenario problemático documentado
+
+# Test de edición de turno
+npm run scripts:test-edit
+# Valida flujo de actualización completo
+```
+
+**Ubicación**: Todos los scripts de desarrollo están en [`scripts/`](scripts/) y pueden ejecutarse directamente:
+
+```bash
+node scripts/apiHealthTest.mjs
+node scripts/probeTurnosPayload.mjs
+node scripts/testProblematicCase.mjs
 ```
 
 ---
@@ -596,7 +618,7 @@ PATCH /slots/:id/estado
 Authorization: Bearer <token>
 
 {
-  "estado": "Aprobado"  // o "Rechazado"
+  "estado": "aprobado"  // valores permitidos: aprobado | pendiente | cancelado
 }
 
 # Solicitar turno (alumno)
@@ -773,7 +795,7 @@ import { Button } from "../components/ui/Button";
 **Solución:**
 ```bash
 # Verifica que el token está en localStorage
-window.localStorage.getItem("auth_token")
+window.localStorage.getItem("token")
 
 # Re-login con credenciales válidas
 ```
@@ -820,7 +842,7 @@ npm ci
 // Habilitar logs en desarrollo
 if (import.meta.env.DEV) {
   console.log("Estado actual:", state);
-  console.log("Token:", localStorage.getItem("auth_token"));
+  console.log("Token:", localStorage.getItem("token"));
 }
 
 // DevTools de React

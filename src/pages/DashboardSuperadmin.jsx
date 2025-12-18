@@ -39,7 +39,7 @@ export const DashboardSuperadmin = () => {
   // --- Carga inicial de datos globales ---
   useEffect(() => {
     if (!usuarioActual) return;
-    if (usuarioActual.role !== "superadmin") return;
+    if ((usuarioActual?.rol ?? usuarioActual?.role) !== "superadmin") return;
 
     const fetchData = async () => {
       try {

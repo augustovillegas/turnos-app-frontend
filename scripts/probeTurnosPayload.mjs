@@ -19,7 +19,7 @@ const login = async () => {
 };
 
 const tryCreate = async (label, payload) => {
-  const res = await http.post('/turnos', payload);
+  const res = await http.post('/slots', payload);
   const out = { label, status: res.status, data: res.data };
   console.log(`[probe] ${label}:`, JSON.stringify(out, null, 2));
 };

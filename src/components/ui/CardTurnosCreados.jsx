@@ -1,6 +1,7 @@
 import { Button } from "./Button";
 import { Status } from "./Status";
 import { isEstado } from "../../utils/turnos/normalizeEstado";
+import { ensureModuleLabel } from "../../utils/moduleMap";
 
 export const CardTurnosCreados = ({
   turno,
@@ -34,6 +35,12 @@ export const CardTurnosCreados = ({
         <p>
           <strong>Sala:</strong> {turno.sala}
         </p>
+
+        {ensureModuleLabel(turno.modulo) && (
+          <p>
+            <strong>Módulo:</strong> {ensureModuleLabel(turno.modulo)}
+          </p>
+        )}
 
         {turno.zoomLink && (
           <p className="mt-1">

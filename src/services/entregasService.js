@@ -1,15 +1,10 @@
 // === Entregas Service ===
-// Clientes HTTP para entregas.
+// Adaptado a los contratos vigentes de /submissions.
 import { apiClient } from "./apiClient";
-/**
- * Mapea payload de entrega para panel profesor/superadmin.
- * @param {Object} payload
- * @returns {Object}
- */
 
-const RESOURCE = "/entregas";
+const RESOURCE = "/submissions";
 
-// Panel /entregas (profesor/superadmin) - acepta más campos que /submissions
+// Mapea payload de entrega alineado a Submission.
 const mapEntregaPayload = (payload = {}) => {
   const result = {};
 
@@ -27,11 +22,13 @@ const mapEntregaPayload = (payload = {}) => {
     result.comentarios = payload.comentarios ?? "";
   }
 
-  // Panel /entregas puede aceptar reviewStatus
-  const reviewStatus = payload.reviewStatus ?? payload.estado ?? "A revisar";
-  result.reviewStatus = reviewStatus;
+  // Backend acepta reviewStatus opcional (alias estado).
+  const reviewStatus = payload.reviewStatus ?? payload.estado;
+  if (reviewStatus !== undefined) {
+    result.reviewStatus = reviewStatus;
+  }
 
-  // Panel /entregas puede requerir student (alumnoId)
+  // Identificador del alumno.
   if (payload.alumnoId !== undefined) {
     result.student = payload.alumnoId;
   } else if (payload.student !== undefined) {
@@ -42,7 +39,6 @@ const mapEntregaPayload = (payload = {}) => {
     result.student = payload.alumno._id;
   }
 
-  // assignment si está disponible
   if (payload.assignment !== undefined) {
     result.assignment = payload.assignment;
   }
@@ -50,47 +46,25 @@ const mapEntregaPayload = (payload = {}) => {
   return result;
 };
 
-/**
- * Lista entregas globales.
- * @param {Object} params
- * @returns {Promise<Array>}
- */
-export const getEntregas = (params = {}) => {
-  console.log("[entregasService] getEntregas: Llamando a", RESOURCE, "con params:", params);
-  return apiClient
-    .get(RESOURCE, { params })
-    .then((response) => {
-      console.log("[entregasService] getEntregas: Respuesta recibida:", {
-        status: response.status,
-        dataLength: response.data?.length ?? 0,
-        headers: response.headers
-      });
-      return response.data ?? [];
-    })
-    .catch((error) => {
-      console.error("[entregasService] getEntregas: Error:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      throw error;
-    });
-};
+/** Lista entregas globales (filtradas por rol automáticamente). */
+export const getEntregas = (params = {}) =>
+  apiClient.get(RESOURCE, { params }).then((response) => response.data ?? []);
 
-/** Crea una entrega. */
-export const createEntrega = (payload) =>
-  apiClient
-    .post(RESOURCE, mapEntregaPayload(payload))
+/** Crea una entrega (requiere slot reservado y rol alumno). */
+export const createEntrega = (payload = {}) => {
+  const slotId = payload.slotId ?? payload.turnoId ?? payload.slot;
+  if (!slotId) {
+    throw new Error("Falta slotId para registrar la entrega.");
+  }
+  return apiClient
+    .post(`${RESOURCE}/${slotId}`, mapEntregaPayload(payload))
     .then((response) => response.data);
+};
 
 /** Actualiza una entrega. */
 export const updateEntrega = (id, payload) =>
-  apiClient
-    .put(`${RESOURCE}/${id}`, mapEntregaPayload(payload))
-    .then((response) => response.data);
+  apiClient.put(`${RESOURCE}/${id}`, mapEntregaPayload(payload)).then((response) => response.data);
 
 /** Elimina una entrega. */
 export const deleteEntrega = (id) =>
-  apiClient
-    .delete(`${RESOURCE}/${id}`)
-    .then((response) => response.data);
+  apiClient.delete(`${RESOURCE}/${id}`).then((response) => response.data);

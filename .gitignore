@@ -32,3 +32,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local scratch files
+tmp.*
+temp.*
+*.tmp
+
+
+# Archivo de desarrollo
+SERVIDOR_BACKEND.md

@@ -3,17 +3,19 @@
 export const normalizeAssignment = (raw = {}) => {
   if (!raw || typeof raw !== "object") return raw;
   const resolvedId = raw.id ?? raw._id ?? raw.$id ?? null;
-  const temporalId = !resolvedId ? `temp-${crypto?.randomUUID?.() || Date.now()}` : resolvedId;
+  const temporalId = resolvedId ?? `temp-${crypto?.randomUUID?.() || Date.now()}`;
 
   return {
-    ...raw,
     id: temporalId,
-    modulo: raw.modulo ?? raw.module ?? null,
     title: raw.title ?? raw.titulo ?? "",
     description: raw.description ?? raw.descripcion ?? "",
     dueDate: raw.dueDate ?? raw.fecha ?? null,
+    modulo: raw.modulo ?? null,
+    cohorte:
+      raw.cohorte != null && Number.isFinite(Number(raw.cohorte))
+        ? Number(raw.cohorte)
+        : null,
     createdBy: raw.createdBy ?? raw.profesorId ?? null,
-    cohorte: raw.cohorte ?? raw.cohort ?? null,
   };
 };
 
