@@ -151,25 +151,16 @@ export const UsuariosList = ({ onCrear, onEditar, onVer }) => {
           </Button>
         </div>
 
-        {loggedRole === "superadmin" ? (
-          <PanelFiltro
-            data={personas}
-            searchFields={searchFields}
-            onChange={(results) => {
-              setFiltered(Array.isArray(results) ? results : personas);
-              setPage(1);
-            }}
-            className="w-full"
-            testId="panel-filtro-usuarios"
-          />
-        ) : (
-          <SearchBar
-            data={usuarios}
-            fields={searchFields}
-            onSearch={handleSearch}
-            placeholder="Buscar por nombre, email, rol o módulo"
-          />
-        )}
+        <PanelFiltro
+          data={personas}
+          searchFields={searchFields}
+          onChange={(results) => {
+            setFiltered(Array.isArray(results) ? results : personas);
+            setPage(1);
+          }}
+          className="w-full"
+          testId="panel-filtro-usuarios"
+        />
 
         {/* Vista Desktop - Tabla */}
         <div className="hidden md:block">

@@ -1,5 +1,5 @@
 // === Search Bar ===
-// Campo de busqueda reutilizable con filtrado in-memory segun los campos indicados.
+// Campo de búsqueda reutilizable, sin imponer layout; deja que el contenedor decida.
 import { useState, useEffect, useRef } from "react";
 import { filtrarDatos } from "../../utils/filterUtils";
 
@@ -10,6 +10,12 @@ export const SearchBar = ({
   onSearch,
   fields = [],
   placeholder = "Buscar...",
+  centered = false,
+  withBottomSpacing = false,
+  maxWidthClassName = "",
+  className = "",
+  containerClassName = "",
+  inputClassName = "",
 }) => {
   const [query, setQuery] = useState("");
   const latestOnSearch = useRef(onSearch);
@@ -23,15 +29,12 @@ export const SearchBar = ({
   useEffect(() => {
     latestData.current = data;
     if (!query.trim()) return;
-    
-    // Debounce para evitar filtrados excesivos mientras usuario escribe
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
       const handler = latestOnSearch.current;
       if (typeof handler !== "function") return;
       handler(filtrarDatos(data, fields, query));
     }, DEBOUNCE_MS);
-    
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
@@ -40,7 +43,6 @@ export const SearchBar = ({
   const handleChange = (event) => {
     const value = event.target.value;
     setQuery(value);
-
     const handler = latestOnSearch.current;
     if (typeof handler !== "function") return;
     const resultados = filtrarDatos(latestData.current, fields, value);
@@ -55,34 +57,43 @@ export const SearchBar = ({
     }
   };
 
+  const wrapperClasses = [
+    "w-full",
+    centered ? "flex justify-center" : "",
+    withBottomSpacing ? "mb-4" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const containerClasses = ["w-full", maxWidthClassName, containerClassName].filter(Boolean).join(" ");
+
   return (
-    <div className="w-full flex justify-center mb-4">
-      <div className="relative w-full max-w-md">
-        <input
-          type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder={placeholder}
-          className="w-full px-4 py-2 rounded-md border-2 border-[#111827] dark:border-[#444]
-                     bg-[#E5E5E5] dark:bg-[#2A2A2A] text-[#111827] dark:text-gray-200
-                     focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:focus:ring-[#B8860B]
-                     placeholder:text-gray-500 dark:placeholder:text-gray-400
-                     transition duration-200"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-7 top-1/2 -translate-y-1/2 text-[#111827] dark:text-gray-300 text-lg"
-            title="Limpiar"
-          >
-            ×
-          </button>
-        )}
-        <i
-          className="bi bi-search absolute right-3 top-1/2 -translate-y-1/2 text-[#111827] dark:text-gray-300 text-lg"
-          title="Buscar"
-        ></i>
+    <div className={wrapperClasses}>
+      <div className={containerClasses}>
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={handleChange}
+            placeholder={placeholder}
+            className={`w-full rounded-md border-2 border-[#111827] bg-[#E5E5E5] px-4 py-2 pl-10 text-[#111827] shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200 dark:focus:ring-[#B8860B] placeholder:text-gray-500 dark:placeholder:text-gray-400 ${inputClassName}`}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute right-7 top-1/2 -translate-y-1/2 text-lg text-[#111827] dark:text-gray-300"
+              title="Limpiar"
+            >
+              ×
+            </button>
+          )}
+          <i
+            className="bi bi-search absolute right-3 top-1/2 -translate-y-1/2 text-lg text-[#111827] dark:text-gray-300"
+            title="Buscar"
+          ></i>
+        </div>
       </div>
     </div>
   );

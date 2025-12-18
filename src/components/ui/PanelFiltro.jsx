@@ -186,34 +186,31 @@ export const PanelFiltro = ({
   return (
     <div data-testid={testId} className={`w-full px-4 ${className}`}>
       <div className="w-full rounded-md border-2 border-[#111827]/30 bg-white p-3 shadow-sm dark:border-[#333] dark:bg-[#1E1E1E]">
-        <div className="flex flex-col gap-3">
-          <div className="flex-1">
-            <SearchBar
-              data={data}
-              fields={searchFields}
-              placeholder="Buscar"
-              onSearch={handleSearch}
-            />
+        <div className="grid gap-2 lg:grid-cols-12 lg:items-center">
+          <div className="lg:col-span-10">
+            <SearchBar data={data} fields={searchFields} placeholder="Buscar" onSearch={handleSearch} />
           </div>
-          <button
-            type="button"
-            className="w-full flex items-center justify-between gap-3 rounded-md border-2 border-[#111827]/40 bg-[#F4F4F4] px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:border-[#1E3A8A] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#444] dark:bg-[#1E1E1E] dark:text-gray-100 dark:hover:border-[#93C5FD] dark:hover:bg-[#0F172A] dark:focus:ring-[#B8860B]"
-            onClick={() => setOpen((prev) => !prev)}
-            aria-expanded={open}
-            aria-controls={`${testId}-panel`}
-          >
-            <span className="flex items-center gap-2">
-              <i className="bi bi-filter"></i>
-              Filtros avanzados
-            </span>
-            <i className={`bi ${open ? "bi-chevron-up" : "bi-chevron-down"} text-base`}></i>
-          </button>
+          <div className="lg:col-span-2">
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-3 rounded-md border-2 border-[#111827]/40 bg-[#F4F4F4] px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:border-[#1E3A8A] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#444] dark:bg-[#1E1E1E] dark:text-gray-100 dark:hover:border-[#93C5FD] dark:hover:bg-[#0F172A] dark:focus:ring-[#B8860B]"
+              onClick={() => setOpen((prev) => !prev)}
+              aria-expanded={open}
+              aria-controls={`${testId}-panel`}
+            >
+              <span className="flex items-center gap-2">
+                <i className="bi bi-filter"></i>
+                Filtros
+              </span>
+              <i className={`bi ${open ? "bi-chevron-up" : "bi-chevron-down"} text-base`}></i>
+            </button>
+          </div>
         </div>
 
         {open && (
           <div id={`${testId}-panel`} className="mt-3 flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex flex-col gap-2 md:col-span-3">
+            <div className="grid gap-3 md:grid-cols-8">
+              <div className="flex flex-col gap-2 md:col-span-8">
                 <p className="text-xs font-bold text-[#111827] dark:text-gray-200">Modulo</p>
                 <div className="flex flex-wrap gap-2">
                   {MODULE_OPTIONS.map((m) => {
@@ -243,7 +240,7 @@ export const PanelFiltro = ({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:col-span-2">
                 <p className="text-xs font-bold text-[#111827] dark:text-gray-200">Cohorte</p>
                 <div className="flex flex-wrap gap-2">
                   {cohorteOptions.length === 0 ? (
@@ -290,22 +287,71 @@ export const PanelFiltro = ({
               </div>
 
               {sprintField && (
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="filtro-sprint" className="text-xs font-bold text-[#111827] dark:text-gray-200">Sprint</label>
-                  <input
-                    id="filtro-sprint"
-                    type="number"
-                    min={1}
-                    value={sprint}
-                    onChange={(e) => setSprint(e.target.value)}
-                    placeholder="Ej: 1"
-                    className="w-full rounded border border-[#111827]/40 px-2 py-2 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
-                  />
+                <div className="flex flex-col gap-2 md:col-span-4">
+                  <p className="text-xs font-bold text-[#111827] dark:text-gray-200">Sprint</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(
+                      new Set(
+                        (Array.isArray(data) ? data : [])
+                          .map((it) => it?.[sprintField])
+                          .filter((v) => v !== undefined && v !== null && v !== "")
+                          .map((v) => Number(v))
+                          .filter(Number.isFinite)
+                      )
+                    ).length > 0 ? (
+                      Array.from(
+                        new Set(
+                          (Array.isArray(data) ? data : [])
+                            .map((it) => it?.[sprintField])
+                            .filter((v) => v !== undefined && v !== null && v !== "")
+                            .map((v) => Number(v))
+                            .filter(Number.isFinite)
+                        )
+                      )
+                        .sort((a, b) => a - b)
+                        .map((opt) => {
+                          const active = String(opt) === String(sprint);
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => setSprint((prev) => (prev === String(opt) ? "" : String(opt)))}
+                              onKeyDown={(evt) => {
+                                if (evt.key === "Enter" || evt.key === " ") {
+                                  evt.preventDefault();
+                                  setSprint((prev) => (prev === String(opt) ? "" : String(opt)));
+                                }
+                              }}
+                              aria-label={`Sprint ${opt} ${active ? "seleccionado" : "no seleccionado"}`}
+                              className={`${chipBaseClass} ${active ? chipActiveClass : chipInactiveClass}`}
+                              aria-pressed={active}
+                            >
+                              <span
+                                className={`h-2 w-2 rounded-full ${
+                                  active ? "bg-[#0F3D3F] dark:bg-[#93C5FD]" : "bg-gray-400 dark:bg-gray-500"
+                                }`}
+                              ></span>
+                              Sprint {opt}
+                            </button>
+                          );
+                        })
+                    ) : (
+                      <input
+                        id="filtro-sprint"
+                        type="number"
+                        min={1}
+                        value={sprint}
+                        onChange={(e) => setSprint(e.target.value)}
+                        placeholder="Ej: 1"
+                        className="w-full rounded border border-[#111827]/40 px-2 py-2 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
               {reviewField && reviewOptions.length > 0 && (
-                <div className="flex flex-col gap-2 md:col-span-2">
+                <div className="flex flex-col gap-2 md:col-span-8">
                   <p className="text-xs font-bold text-[#111827] dark:text-gray-200">Review</p>
                   <div className="flex flex-wrap gap-2">
                     {reviewOptions.map((opt) => {
@@ -336,7 +382,7 @@ export const PanelFiltro = ({
                 </div>
               )}
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-2 md:col-span-2">
                 <label
                   htmlFor="filtro-orden"
                   className="text-xs font-bold text-[#111827] dark:text-gray-200"

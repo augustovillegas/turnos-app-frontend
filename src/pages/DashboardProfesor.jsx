@@ -59,6 +59,15 @@ export const DashboardProfesor = () => {
     [usuarios, moduloEtiqueta]
   );
 
+  // Solo usuarios pendientes (para la sección de aprobación)
+  const usuariosPendientesDelModulo = useMemo(
+    () =>
+      usuariosDelModulo.filter(
+        (u) => String(u.estado || u.status || "").toLowerCase() === "pendiente"
+      ),
+    [usuariosDelModulo]
+  );
+
   // === Carga inicial de datos del módulo ===
   useEffect(() => {
     if (
@@ -170,8 +179,8 @@ export const DashboardProfesor = () => {
           SECCION: SOLICITUD USUARIOS
         ========================== */}
         {active === "usuarios" && (
-          <UsuariosPendientes
-            usuarios={usuariosDelModulo}
+            <UsuariosPendientes
+            usuarios={usuariosPendientesDelModulo}
             isLoading={isLoading("usuarios")}
             itemsPerPage={ITEMS_PER_PAGE}
             withWrapper={false}

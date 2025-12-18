@@ -113,27 +113,16 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
           Usuarios Pendientes
         </h2>
 
-        {isSuperadmin ? (
-          <PanelFiltro
-            data={usuariosPendientes}
-            onChange={(results) => {
-              setUsuariosBuscados(results);
-              paginated.resetPage();
-            }}
-            className="mt-2"
-            searchFields={["nombre", "rol", "estado", "modulo", "module", "email", "cohorte"]}
-            testId="panel-filtro-usuarios-pendientes"
-          />
-        ) : (
-          <SearchBar
-            data={usuariosPendientes}
-            fields={["nombre", "rol", "estado", "modulo", "module"]}
-            placeholder="Buscar usuarios pendientes"
-            onSearch={(results) => {
-              setUsuariosBuscados(results);
-            }}
-          />
-        )}
+        <PanelFiltro
+          data={usuariosPendientes}
+          onChange={(results) => {
+            setUsuariosBuscados(Array.isArray(results) ? results : usuariosPendientes);
+            paginated.resetPage();
+          }}
+          className="mt-2"
+          searchFields={["nombre", "rol", "estado", "modulo", "module", "email", "cohorte"]}
+          testId="panel-filtro-usuarios-pendientes"
+        />
 
         {/* Tabla Desktop */}
         <div className="hidden md:block">
