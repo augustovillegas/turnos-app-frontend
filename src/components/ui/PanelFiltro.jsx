@@ -144,6 +144,22 @@ export const PanelFiltro = ({
     );
   };
 
+  const cohorteOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        (Array.isArray(data) ? data : [])
+          .map((it) => it?.cohorte)
+          .filter((v) => v !== undefined && v !== null && v !== "")
+          .map((v) => Number(v))
+          .filter(Number.isFinite)
+      )
+    ).sort((a, b) => a - b);
+  }, [data]);
+
+  const toggleCohorte = (value) => {
+    setCohorte((prev) => (prev === String(value) ? "" : String(value)));
+  };
+
   const reviewOptions = useMemo(() => {
     return Array.from(
       new Set(
@@ -227,17 +243,50 @@ export const PanelFiltro = ({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="filtro-cohorte" className="text-xs font-bold text-[#111827] dark:text-gray-200">Cohorte</label>
-                <input
-                  id="filtro-cohorte"
-                  type="number"
-                  min={1}
-                  value={cohorte}
-                  onChange={(e) => setCohorte(e.target.value)}
-                  placeholder="Ej: 3"
-                  className="w-full rounded border border-[#111827]/40 px-2 py-2 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
-                />
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-bold text-[#111827] dark:text-gray-200">Cohorte</p>
+                <div className="flex flex-wrap gap-2">
+                  {cohorteOptions.length === 0 ? (
+                    <input
+                      id="filtro-cohorte"
+                      type="number"
+                      min={1}
+                      value={cohorte}
+                      onChange={(e) => setCohorte(e.target.value)}
+                      placeholder="Ej: 3"
+                      className="w-full rounded border border-[#111827]/40 px-2 py-2 text-sm dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
+                    />
+                  ) : (
+                    cohorteOptions.map((opt) => {
+                      const active = String(opt) === String(cohorte);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => toggleCohorte(opt)}
+                          onKeyDown={(evt) => {
+                            if (evt.key === "Enter" || evt.key === " ") {
+                              evt.preventDefault();
+                              toggleCohorte(opt);
+                            }
+                          }}
+                          aria-label={`Cohorte ${opt} ${active ? "seleccionada" : "no seleccionada"}`}
+                          className={`${chipBaseClass} ${
+                            active ? chipActiveClass : chipInactiveClass
+                          }`}
+                          aria-pressed={active}
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              active ? "bg-[#0F3D3F] dark:bg-[#93C5FD]" : "bg-gray-400 dark:bg-gray-500"
+                            }`}
+                          ></span>
+                          Cohorte {opt}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               {sprintField && (
