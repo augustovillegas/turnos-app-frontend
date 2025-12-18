@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyRow } from "./EmptyRow";
 import { Skeleton } from "./Skeleton";
 
@@ -37,7 +38,27 @@ export const Table = ({
   const normalizedColumns = Array.isArray(columns) ? columns : [];
   const rows = Array.isArray(data) ? data : [];
   const hasData = rows.length > 0;
-  const showLoader = isLoading;
+
+  // Evitar mostrar loader cuando no hay cambios nuevos en datos ya cargados
+  const dataSignature = useMemo(() => JSON.stringify(rows), [rows]);
+  const lastSignatureRef = useRef(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [shouldShowLoader, setShouldShowLoader] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      const changed = !hasLoadedOnce || dataSignature !== lastSignatureRef.current;
+      if (changed) {
+        setShouldShowLoader(true);
+      }
+    } else {
+      setShouldShowLoader(false);
+      lastSignatureRef.current = dataSignature;
+      setHasLoadedOnce(true);
+    }
+  }, [isLoading, dataSignature, hasLoadedOnce]);
+
+  const showLoader = shouldShowLoader;
 
   // --- Modo clásico (retro compatible) ---
   if (!responsive) {
@@ -107,11 +128,7 @@ export const Table = ({
         <div className={`w-full overflow-x-auto sm:rounded-md ${containerClass}`}>
           {/* Mostrar skeleton encima pero mantener la tabla en el DOM para accesibilidad/testing */}
           {showLoader && (
-            <div className="space-y-3 py-6">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} height="2.75rem" />
-              ))}
-            </div>
+            <Skeleton lines={4} className="py-4" />
           )}
           <table
             role="table"
@@ -170,11 +187,7 @@ export const Table = ({
       {/* Mobile */}
       <div className="mt-4 space-y-4 md:hidden" data-testid={`${testId}-mobile`}>
         {showLoader ? (
-          <div className="space-y-3 py-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} height="4rem" />
-            ))}
-          </div>
+          <Skeleton lines={3} className="py-3" />
         ) : hasData && renderMobileCard ? (
           rows.map((item, index) => (
             <div key={item?.id ?? item?._id ?? `mobile-card-${index}`}>
