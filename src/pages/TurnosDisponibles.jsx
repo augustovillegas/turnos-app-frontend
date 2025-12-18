@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ReviewFilter } from "../components/ui/ReviewFilter";
-import { SearchBar } from "../components/ui/SearchBar";
 import { Table } from "../components/ui/Table";
-
 import { Status } from "../components/ui/Status";
 import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { formatDateForTable } from "../utils/formatDateForTable";
@@ -13,6 +10,7 @@ import { AlumnoActions } from "../components/ui/AlumnoActions";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { paginate } from "../utils/pagination";
 import { TurnoDetail } from "../components/turnos/TurnoDetail";
+import { PanelFiltro } from "../components/ui/PanelFiltro";
 
 const TURNOS_DISPONIBLES_COLUMNS = [
   "Review",
@@ -46,10 +44,6 @@ export const TurnosDisponibles = ({
     setPageTurnosDisponibles(1);
   }, [turnos, setPageTurnosDisponibles]);
 
-  useEffect(() => {
-    setPageTurnosDisponibles(1);
-  }, [filtroReview, setPageTurnosDisponibles]);
-
   const paginationData = useMemo(
     () => paginate(turnosBuscados, pageTurnosDisponibles, ITEMS_PER_PAGE),
     [turnosBuscados, pageTurnosDisponibles, ITEMS_PER_PAGE]
@@ -74,18 +68,24 @@ export const TurnosDisponibles = ({
         Listado de Turnos Disponibles
       </h2>
 
-      <div className="flex flex-col gap-2">
-        <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
-        <SearchBar
-          data={turnos}
-          fields={["sala", "fecha", "horario", "estado", "review", "comentarios"]}
-          placeholder="Buscar turnos disponibles"
-          onSearch={(results) => {
-            setTurnosBuscados(results);
-            setPageTurnosDisponibles(1);
-          }}
-        />
-      </div>
+      <PanelFiltro
+        data={turnos}
+        onChange={(results) => {
+          setTurnosBuscados(Array.isArray(results) ? results : turnos);
+          setPageTurnosDisponibles(1);
+        }}
+        className="mt-1"
+        searchFields={[]}
+        showModuloFilter={false}
+        showCohorteFilter={false}
+        showSprintFilter={false}
+        showReviewFilter={true}
+        showAlphaSort={false}
+        showOrderFilter={false}
+        reviewField="review"
+        dateFields={["fecha"]}
+        testId="panel-filtro-turnos-disponibles"
+      />
 
       <div className="hidden md:block">
         <Table

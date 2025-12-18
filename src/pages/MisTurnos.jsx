@@ -70,7 +70,7 @@ export const MisTurnos = ({
       </h2>
 
         {/* Filtros y búsqueda */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 px-4">
           <ReviewFilter value={filtroReview} onChange={setFiltroReview} />
           <SearchBar
             data={turnos}

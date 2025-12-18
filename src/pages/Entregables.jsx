@@ -69,22 +69,24 @@ export const Entregables = ({
           </h2>
 
           {/* Buscador */}
-          <SearchBar
-            data={entregas}
-            fields={[
-              "sprint",
-              "alumno",
-              "githubLink",
-              "renderLink",
-              "comentarios",
-              "reviewStatus",
-            ]}
-            placeholder="Buscar entregas"
-            onSearch={(results) => {
-              setEntregasBuscadas(results);
-              setPageEntregas(1);
-            }}
-          />
+          <div className="px-4">
+            <SearchBar
+              data={entregas}
+              fields={[
+                "sprint",
+                "alumno",
+                "githubLink",
+                "renderLink",
+                "comentarios",
+                "reviewStatus",
+              ]}
+              placeholder="Buscar entregas"
+              onSearch={(results) => {
+                setEntregasBuscadas(results);
+                setPageEntregas(1);
+              }}
+            />
+          </div>
 
           {/* ====== TABLA DESKTOP ====== */}
           <div className="hidden md:block">
