@@ -33,7 +33,8 @@ const ROLE_PERMISSIONS = {
   profesor: ["alumno"],
 };
 
-export const UsuariosList = ({ onCrear, onEditar }) => {
+// onVer: handler para mostrar el detalle del usuario seleccionado
+export const UsuariosList = ({ onCrear, onEditar, onVer }) => {
   const { usuarios, loadUsuarios, deleteUsuarioRemoto } = useAppData();
   const { isLoading } = useLoading();
   const { showModal } = useModal();
@@ -61,8 +62,17 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManageUsers]);
 
+  // Mostrar solo usuarios aprobados en Gestión de Usuarios para superadmin y profesor
   const personas = useMemo(
-    () => (Array.isArray(usuarios) ? usuarios.map(mapUsuario) : []),
+    () =>
+      Array.isArray(usuarios)
+        ? usuarios
+            .filter(
+              (u) =>
+                String(u.estado || u.status || "").toLowerCase() === "aprobado"
+            )
+            .map(mapUsuario)
+        : [],
     [usuarios]
   );
 
@@ -183,6 +193,12 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
                     <DropdownActions
                       options={[
                         {
+                          label: "Ver detalle",
+                          icon: "/icons/eye.png",
+                          onClick: () => onVer(persona),
+                          disabled: isBusy,
+                        },
+                        {
                           label: "Editar",
                           icon: "/icons/edit.png",
                           onClick: () => onEditar(persona),
@@ -223,6 +239,7 @@ export const UsuariosList = ({ onCrear, onEditar }) => {
                 usuario={persona}
                 onEditar={onEditar}
                 onEliminar={handleEliminar}
+                onVer={onVer}
                 disabled={isBusy}
               />
             ))

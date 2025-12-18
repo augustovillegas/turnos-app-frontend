@@ -120,7 +120,7 @@ const buildDefaultForm = (tipo = "alumno") => ({
 
 
 
-export const UsuarioForm = ({ onVolver }) => {
+export const UsuarioForm = ({ usuario, onVolver }) => {
 
   const { createUsuarioRemoto, loadUsuarios, usuarios } = useAppData();
 
@@ -166,15 +166,28 @@ export const UsuarioForm = ({ onVolver }) => {
 
   }, [loggedRole]);
 
-  // Inicializar formValues con módulo del profesor si corresponde
+
+  // Inicializar formValues con datos del usuario si está en modo edición
   const initialFormValues = useMemo(() => {
+    if (usuario) {
+      return {
+        tipo: usuario.rol || usuario.tipo || "",
+        nombre: usuario.nombre || "",
+        email: usuario.email || "",
+        identificador: usuario.identificador || "",
+        cohorte: String(usuario.cohorte ?? ""),
+        modulo: usuario.modulo || "",
+        password: "",
+        passwordConfirm: "",
+      };
+    }
     const defaultForm = buildDefaultForm(allowedRoles[0]);
     if (loggedRole === "profesor") {
-      // Si el profesor no trae módulo desde la sesión, habilitar selección manual
       return { ...defaultForm, modulo: professorModuleLabel || "" };
     }
     return defaultForm;
-  }, [allowedRoles, loggedRole, professorModuleLabel]);
+  }, [usuario, allowedRoles, loggedRole, professorModuleLabel]);
+
 
   const moduleOptions = useMemo(() => {
     if (loggedRole === "profesor" && professorHasModule) {
@@ -185,6 +198,11 @@ export const UsuarioForm = ({ onVolver }) => {
   }, [loggedRole, professorHasModule, professorModuleLabel]);
 
   const [formValues, setFormValues] = useState(initialFormValues);
+
+  // Sincronizar cuando cambia el usuario seleccionado
+  useEffect(() => {
+    setFormValues(initialFormValues);
+  }, [initialFormValues]);
 
   const [formErrors, setFormErrors] = useState({});
 

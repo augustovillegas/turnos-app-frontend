@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, Suspense, lazy } from "react";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
 import { LayoutWrapper } from "../components/layout/LayoutWrapper";
@@ -10,19 +10,24 @@ import { CardTurnosCreados } from "../components/ui/CardTurnosCreados";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { SuperadminActions } from "../components/ui/SuperadminActions";
-// SearchBar ahora se usa dentro de PanelFiltro
 import { useAuth } from "../context/AuthContext";
 import { useAppData } from "../context/AppContext";
-import { Suspense, lazy } from "react";
 import { usePagination } from "../hooks/usePagination";
 import { ensureModuleLabel } from "../utils/moduleMap";
 import { useApproval } from "../hooks/useApproval";
+import { showToast } from "../utils/feedback/toasts";
 
-const TurnoDetail = lazy(() => import("../components/turnos/TurnoDetail"));
+const TurnoDetail = lazy(() =>
+  import("../components/turnos/TurnoDetail").then((mod) => ({ default: mod.TurnoDetail }))
+);
+const TurnoEdit = lazy(() =>
+  import("../components/turnos/TurnoEdit").then((mod) => ({ default: mod.TurnoEdit }))
+);
 
 // Columnas estáticas (memo implícito al quedar fuera del componente)
 const SOLICITUDES_COLUMNS = [
   "Review",
+  "Alumno",
   "Fecha",
   "Horario",
   "Sala",
@@ -31,10 +36,14 @@ const SOLICITUDES_COLUMNS = [
   "Estado",
   "Acciones",
 ];
-import { showToast } from "../utils/feedback/toasts";
 
-export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, itemsPerPage = 5 }) => {
-  const { updateTurnoEstado } = useAppData();
+export const SolicitudesTurnos = ({
+  turnos = [],
+  isLoading,
+  withWrapper = true,
+  itemsPerPage = 5,
+}) => {
+  const { updateTurnoEstado, findUsuarioById } = useAppData();
   const { usuario: usuarioActual } = useAuth();
   const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
@@ -42,6 +51,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
 
   const [modo, setModo] = useState("listar");
   const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
+
   const goListar = () => {
     setModo("listar");
     setTurnoSeleccionado(null);
@@ -52,6 +62,11 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     setModo("detalle");
   };
 
+  const onEditar = (turno) => {
+    setTurnoSeleccionado(turno ?? null);
+    setModo("editar");
+  };
+
   const turnosSolicitados = useMemo(
     () => turnos.filter((t) => String(t.estado).toLowerCase() === "solicitado"),
     [turnos]
@@ -59,6 +74,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
 
   // Estado para resultados (filtrado + búsqueda) a partir de PanelFiltro
   const [turnosBuscados, setTurnosBuscados] = useState(turnosSolicitados);
+  const [solicitantesMap, setSolicitantesMap] = useState({});
 
   useEffect(() => {
     setTurnosBuscados(turnosSolicitados);
@@ -71,12 +87,6 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
       ? turnosSolicitados.slice(0, 1)
       : paginated.items;
 
-  // Resetear página cuando cambia dataset base o filtros
-  // (PanelFiltro ya hace reset explícito en onChange)
-
-  // Búsqueda integrada en PanelFiltro
-
-  // Hook de aprobación/rechazo
   const { handleApprove, handleReject, processingId } = useApproval({
     onApprove: async (t) => {
       await updateTurnoEstado?.(t.id, "Aprobado");
@@ -113,6 +123,63 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     }
   };
 
+  // Prefetch de nombres de solicitantes (alumno) vía usuarios
+  useEffect(() => {
+    let cancelado = false;
+    const fetchSolicitantes = async () => {
+      const ids = Array.from(
+        new Set(
+          turnosSolicitados
+            .map((t) => t?.solicitanteId || t?.student || t?.alumnoId)
+            .filter(Boolean)
+        )
+      );
+      const pendientes = ids.filter((id) => !solicitantesMap[id]);
+      if (!pendientes.length || !findUsuarioById) return;
+      const entries = await Promise.all(
+        pendientes.map(async (id) => {
+          try {
+            const usuario = await findUsuarioById(id);
+            return [id, usuario?.nombre || usuario?.name || null];
+          } catch {
+            return [id, null];
+          }
+        })
+      );
+      if (cancelado) return;
+      setSolicitantesMap((prev) => {
+        const next = { ...prev };
+        entries.forEach(([id, nombre]) => {
+          if (nombre && !next[id]) {
+            next[id] = nombre;
+          }
+        });
+        return next;
+      });
+    };
+    fetchSolicitantes();
+    return () => {
+      cancelado = true;
+    };
+  }, [turnosSolicitados, findUsuarioById, solicitantesMap]);
+
+  const getAlumnoNombre = useCallback(
+    (turno) => {
+      const candidatos = [
+        turno?.alumnoNombre,
+        turno?.solicitanteNombre,
+        turno?.alumno?.nombre,
+        turno?.solicitante?.nombre,
+        turno?.alumno,
+        turno?.solicitante,
+        solicitantesMap[turno?.solicitanteId || turno?.student || turno?.alumnoId],
+      ];
+      const nombre = candidatos.find((val) => typeof val === "string" && val.trim().length > 1);
+      return nombre ? nombre.trim() : "-";
+    },
+    [solicitantesMap]
+  );
+
   // Helper functions (must be before early returns)
   const resolveSalaTexto = useCallback((turno) => {
     if (!turno) return "";
@@ -141,6 +208,18 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
     return (
       <Suspense fallback={<div className="p-6"><Skeleton height="8rem" /></div>}>
         <TurnoDetail
+          turno={turnoSeleccionado}
+          turnoId={turnoSeleccionado?.id}
+          onVolver={goListar}
+        />
+      </Suspense>
+    );
+  }
+
+  if (modo === "editar") {
+    return (
+      <Suspense fallback={<div className="p-6"><Skeleton height="10rem" /></div>}>
+        <TurnoEdit
           turno={turnoSeleccionado}
           turnoId={turnoSeleccionado?.id}
           onVolver={goListar}
@@ -217,6 +296,9 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
                     {t.review}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
+                    {getAlumnoNombre(t)}
+                  </td>
+                  <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
                     {formatDateForTable(t.fecha)}
                   </td>
                   <td className="border border-[#111827] p-2 text-center dark:border-[#333]">
@@ -250,6 +332,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
                         onAprobar={handleAprobar}
                         onRechazar={handleRechazar}
                         onVer={onVer}
+                        onEditar={onEditar}
                         onCopiarZoom={handleCopiarZoom}
                         disabled={processingTurno === t.id}
                       />
@@ -259,6 +342,7 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
                         onAprobar={handleAprobar}
                         onRechazar={handleRechazar}
                         onVer={onVer}
+                        onEditar={onEditar}
                         onCopiarZoom={handleCopiarZoom}
                         disabled={processingTurno === t.id}
                       />
@@ -287,11 +371,12 @@ export const SolicitudesTurnos = ({ turnos = [], isLoading, withWrapper = true, 
               key={t.id}
               turno={{ ...t, sala: resolveSalaTexto(t) }}
               onVer={() => onVer(t)}
+              onEditar={() => onEditar(t)}
               onAprobar={() => handleAprobar(t)}
               onRechazar={() => handleRechazar(t)}
               onCopiarZoom={() => handleCopiarZoom(t)}
               disabled={processingTurno === t.id}
-              />
+            />
             ))
           ) : (
             <EmptyRow.Mobile message="No hay solicitudes de turnos." />

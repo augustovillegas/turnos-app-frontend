@@ -5,6 +5,7 @@ import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { UsuariosList } from "../components/usuarios/UsuariosList";
 import { UsuarioForm } from "../components/usuarios/UsuarioForm";
 import { UsuarioEdit } from "../components/usuarios/UsuarioEdit";
+import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
 
 export const CreateUsers = ({ withWrapper = true }) => {
   const [modo, setModo] = useState("listar");
@@ -34,7 +35,17 @@ export const CreateUsers = ({ withWrapper = true }) => {
   return (
     <Container {...containerProps}>
       {modo === "listar" && (
-        <UsuariosList onCrear={handleCrear} onEditar={handleEditar} />
+        <UsuariosList
+          onCrear={handleCrear}
+          onEditar={handleEditar}
+          onVer={(usuario) => {
+            setUsuarioSeleccionado(usuario);
+            setModo("detalle");
+          }}
+        />
+      )}
+      {modo === "detalle" && (
+        <UsuarioDetail usuario={usuarioSeleccionado} onVolver={handleVolver} />
       )}
       {modo === "crear" && <UsuarioForm onVolver={handleVolver} />}
       {modo === "editar" && (

@@ -15,6 +15,7 @@ import { useApproval } from "../hooks/useApproval";
 import { EmptyRow } from "../components/ui/EmptyRow";
 import { ProfesorActions } from "../components/ui/ProfesorActions";
 import { UsuarioDetail } from "../components/usuarios/UsuarioDetail";
+import { UsuarioEdit } from "../components/usuarios/UsuarioEdit";
 import { ensureModuleLabel } from "../utils/moduleMap";
 import { PanelFiltro } from "../components/ui/PanelFiltro";
 
@@ -26,7 +27,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
   const isSuperadmin = (usuarioActual?.rol ?? usuarioActual?.role) === "superadmin";
 
   const [usuariosBuscados, setUsuariosBuscados] = useState([]);
-  const [modo, setModo] = useState("listar");
+  const [modo, setModo] = useState("listar"); // 'listar' | 'detalle' | 'editar'
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
@@ -75,9 +76,15 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
   const handleRechazar = handleReject;
   const processingUsuarioId = processingId || processingRejectId;
 
+
   const onVer = (usuario) => {
     setUsuarioSeleccionado(usuario);
     setModo("detalle");
+  };
+
+  const onEditar = (usuario) => {
+    setUsuarioSeleccionado(usuario);
+    setModo("editar");
   };
 
   const goListar = () => {
@@ -85,8 +92,13 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
     setUsuarioSeleccionado(null);
   };
 
+
   if (modo === "detalle") {
     return <UsuarioDetail usuario={usuarioSeleccionado} onVolver={goListar} />;
+  }
+
+  if (modo === "editar") {
+    return <UsuarioEdit usuario={usuarioSeleccionado} onVolver={goListar} />;
   }
 
   const containerClass = "text-[#111827] transition-colors duration-300 dark:text-gray-100 rounded-lg";
@@ -153,6 +165,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
                         onAprobar={handleAprobar}
                         onRechazar={handleRechazar}
                         onVer={onVer}
+                        onEditar={onEditar}
                       />
                     ) : (
                       <ProfesorActions
@@ -161,6 +174,7 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
                         onAprobarUsuario={handleAprobar}
                         onRechazarUsuario={handleRechazar}
                         onVer={onVer}
+                        onEditarUsuario={onEditar}
                       />
                     )}
                   </td>
@@ -209,6 +223,14 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
                     disabled={isLoading || processingUsuarioId === u.id}
                   >
                     Ver detalle
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="w-full py-1"
+                    onClick={() => onEditar(u)}
+                    disabled={isLoading || processingUsuarioId === u.id}
+                  >
+                    Editar
                   </Button>
                   <Button
                     variant="success"
