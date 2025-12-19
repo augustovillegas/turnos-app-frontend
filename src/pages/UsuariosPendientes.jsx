@@ -1,4 +1,4 @@
-// === Seccion: Usuarios Pendientes (para DashboardProfesor) ===
+﻿// === Seccion: Usuarios Pendientes (para DashboardProfesor) ===
 import { useEffect, useMemo, useState } from "react";
 import { Table } from "../components/ui/Table";
 import { Status } from "../components/ui/Status";
@@ -61,8 +61,13 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
 
   // Hook de rechazo
   const { handleReject, processingId: processingRejectId } = useApproval({
-    onApprove: async (usuario) => {
+    onReject: async (usuario) => {
       await updateUsuarioEstado(usuario.id, "Rechazado");
+      setUsuariosBuscados((prev) =>
+        Array.isArray(prev)
+          ? prev.filter((item) => String(item.id) !== String(usuario.id))
+          : prev
+      );
     },
     messages: {
       approveTitle: "Rechazar usuario",
@@ -256,3 +261,5 @@ export const UsuariosPendientes = ({ usuarios = [], isLoading, withWrapper = tru
     </Container>
   );
 };
+
+
