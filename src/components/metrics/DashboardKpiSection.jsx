@@ -10,6 +10,8 @@ const DOMAIN_COLORS = {
   turnos: "#B45309", // naranja tostado para contrastar
 };
 
+const PIE_COLORS = ["#1E3A8A", "#0F766E", "#B8860B", "#10B981", "#EF4444", "#6366F1"];
+
 const RANGE_OPTIONS = [
   { value: "7d", label: "Últimos 7 días" },
   { value: "30d", label: "Últimos 30 días" },
@@ -89,15 +91,107 @@ const KpiCard = ({ kpi, domain, onInfo }) => {
 };
 
 const ChartPreview = ({ def, domain }) => {
+  const isPie = def.type === "pie";
+  const series = def.series || [];
+
+  const pieSeries = useMemo(() => {
+    if (!isPie) return [];
+    const total = series.reduce(
+      (sum, item) => sum + (Number(item.value) || 0),
+      0
+    );
+    let offset = 0;
+    const mapped = series.map((item, idx) => {
+      const pctSource =
+        item.percent != null
+          ? Number(item.percent)
+          : total > 0
+          ? ((Number(item.value) || 0) / total) * 100
+          : 0;
+      const percent = Math.max(0, Math.round(pctSource));
+      const from = offset;
+      const to = Math.min(100, offset + percent);
+      offset = to;
+      return {
+        ...item,
+        percent,
+        color: item.color || PIE_COLORS[idx % PIE_COLORS.length],
+        from,
+        to,
+      };
+    });
+    if (mapped.length > 0) {
+      mapped[mapped.length - 1] = { ...mapped[mapped.length - 1], to: 100 };
+    }
+    return mapped;
+  }, [isPie, series]);
+
+  const pieTotal = useMemo(
+    () => series.reduce((sum, item) => sum + (Number(item.value) || 0), 0),
+    [series]
+  );
+
   const max = useMemo(
     () =>
-      def.series.reduce(
+      series.reduce(
         (highest, item) =>
           item?.value != null && Number(item.value) > highest ? Number(item.value) : highest,
         0
       ) || 1,
-    [def.series]
+    [series]
   );
+
+  if (isPie) {
+    const hasPieData = pieSeries.some((seg) => seg.percent > 0);
+    const gradient = hasPieData
+      ? `conic-gradient(${pieSeries
+          .map((seg) => `${seg.color} ${seg.from}% ${seg.to}%`)
+          .join(", ")})`
+      : "linear-gradient(135deg, #e5e7eb, #cbd5e1)";
+
+    return (
+      <div className="rounded-lg border-2 border-[#111827] bg-[#F8FAFC] p-4 shadow-[4px_4px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-[#0f172a] dark:text-white">{def.title}</h4>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#0f172a]/70 dark:text-gray-300">
+            Mix %
+          </span>
+        </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div
+            className="relative mx-auto h-32 w-32 flex-shrink-0 rounded-full border border-[#cbd5e1] shadow-inner dark:border-[#444]"
+            style={{ background: gradient }}
+          >
+            <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-white text-center dark:bg-[#111827]">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-[#0f172a]/70 dark:text-gray-300">
+                Total
+              </span>
+              <span className="text-lg font-bold text-[#0f172a] dark:text-white">
+                {pieTotal.toLocaleString("es-AR")}
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 space-y-2">
+            {pieSeries.map((item) => (
+              <div
+                key={`${def.key}-${item.name}`}
+                className="flex items-center justify-between text-xs font-medium text-[#0f172a] dark:text-gray-200"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <span
+                    className="h-2.5 w-2.5 rounded-sm"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="truncate">{item.name}</span>
+                </div>
+                <span className="font-semibold">{Math.min(100, item.percent ?? 0)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border-2 border-[#111827] bg-[#F8FAFC] p-4 shadow-[4px_4px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
@@ -108,7 +202,7 @@ const ChartPreview = ({ def, domain }) => {
         </span>
       </div>
       <div className="space-y-3">
-        {def.series.map((item) => {
+        {series.map((item) => {
           const pct = Math.min(100, Math.round((Number(item.value || 0) / max) * 100));
           return (
             <div key={`${def.key}-${item.name}`} className="space-y-1">
