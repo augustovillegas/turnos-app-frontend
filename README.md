@@ -187,11 +187,13 @@ VITE_ENABLE_SOUND=true
 TEST_E2E_API_BASE_URL=http://localhost:3000
 TEST_E2E_SUPERADMIN_EMAIL=superadmin.diplomatura@gmail.com
 TEST_E2E_SUPERADMIN_PASSWORD=Superadmin#2025
-TEST_E2E_PROFESOR_EMAIL=laura.silva.htmlcss@gmail.com
-TEST_E2E_PROFESOR_PASSWORD=Prof-HTML-CSS-2025
-TEST_E2E_ALUMNO_EMAIL=abril.figueroa.htmlcss.14@gmail.com
-TEST_E2E_ALUMNO_PASSWORD=Alumno-HTML-CSS-14
+TEST_E2E_PROFESOR_EMAIL=laura.silva.htmlcss.prof.01@gmail.com
+TEST_E2E_PROFESOR_PASSWORD=Profesor-htmlcss-2025
+TEST_E2E_ALUMNO_EMAIL=abril.figueroa.htmlcss.alumno.14@gmail.com
+TEST_E2E_ALUMNO_PASSWORD=Alumno-htmlcss-14
 ```
+
+> Nota: `modulo` es el filtro central para segmentar datos (profesores/turnos/entregas). `cohorte` es un número de referencia interno y no reemplaza al módulo.
 
 ### Descripción de Variables
 
@@ -523,8 +525,8 @@ Acceso total al sistema, gestión global de recursos.
 Gestión de turnos y evaluación de entregas del módulo asignado.
 
 ```
-📧 Email:    laura.silva.htmlcss@gmail.com
-🔐 Password: Prof-HTML-CSS-2025
+📧 Email:    laura.silva.htmlcss.prof.01@gmail.com
+🔐 Password: Profesor-htmlcss-2025
 ```
 
 **Permisos:**
@@ -539,8 +541,8 @@ Gestión de turnos y evaluación de entregas del módulo asignado.
 Solicitar turnos y cargar entregas.
 
 ```
-📧 Email:    abril.figueroa.htmlcss.14@gmail.com
-🔐 Password: Alumno-HTML-CSS-14
+📧 Email:    abril.figueroa.htmlcss.alumno.14@gmail.com
+🔐 Password: Alumno-htmlcss-14
 ```
 
 **Permisos:**
@@ -549,7 +551,7 @@ Solicitar turnos y cargar entregas.
 - Cargar entregas
 - Ver estado de solicitudes
 
-**Módulo:** HTML-CSS | **Cohorte:** 14
+**Módulo:** HTML-CSS | **Cohorte (referencia num?rica):** 14
 
 ---
 
@@ -763,10 +765,10 @@ Para usar en tests E2E, configura tu `.env.e2e.local`:
 ```env
 TEST_E2E_SUPERADMIN_EMAIL=superadmin.diplomatura@gmail.com
 TEST_E2E_SUPERADMIN_PASSWORD=Superadmin#2025
-TEST_E2E_PROFESOR_EMAIL=laura.silva.htmlcss@gmail.com
-TEST_E2E_PROFESOR_PASSWORD=Prof-HTML-CSS-2025
-TEST_E2E_ALUMNO_EMAIL=abril.figueroa.htmlcss.14@gmail.com
-TEST_E2E_ALUMNO_PASSWORD=Alumno-HTML-CSS-14
+TEST_E2E_PROFESOR_EMAIL=laura.silva.htmlcss.prof.01@gmail.com
+TEST_E2E_PROFESOR_PASSWORD=Profesor-htmlcss-2025
+TEST_E2E_ALUMNO_EMAIL=abril.figueroa.htmlcss.alumno.14@gmail.com
+TEST_E2E_ALUMNO_PASSWORD=Alumno-htmlcss-14
 ```
 
 ---

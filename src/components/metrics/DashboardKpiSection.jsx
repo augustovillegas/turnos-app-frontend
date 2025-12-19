@@ -17,26 +17,76 @@ const RANGE_OPTIONS = [
   { value: "all", label: "Todo el histórico" },
 ];
 
+// Breves descripciones para mostrar en el ícono de información.
+const KPI_DESCRIPTIONS = {
+  sa_students_total: "Total de alumnos en plataforma (sin filtros de módulo/cohorte).",
+  prof_students_total: "Alumnos asignados al profesor actual.",
+  students_active: "Alumnos con estado activo/aprobado.",
+  students_inactive: "Alumnos con estado pendiente o inactivo.",
+  students_recent_30d: "Altas de alumnos en los últimos 30 días.",
+  students_recursantes: "Alumnos marcados como recursantes.",
+  deliverables_total_range: "Entregables creados dentro del rango seleccionado.",
+  deliverables_pending: "Entregables entregados pero aún sin corrección.",
+  deliverables_overdue: "Entregables vencidos sin aprobación.",
+  deliverables_approved: "Entregables aprobados.",
+  deliverables_rejected: "Entregables desaprobados o rechazados.",
+  deliverables_reviewed_7d: "Entregables corregidos en los últimos 7 días.",
+  appointments_next_7d: "Turnos agendados para los próximos 7 días.",
+  appointments_today: "Turnos agendados para hoy.",
+  appointments_approved: "Turnos en estado aprobado.",
+  appointments_cancelled: "Turnos cancelados/rechazados.",
+  appointments_occupancy: "Porcentaje de turnos ocupados sobre el total listados.",
+  appointments_noshow_rate: "Porcentaje de turnos marcados como no-show/ausente.",
+};
+
 const resolveAccent = (domain) => DOMAIN_COLORS[domain] || "#1F2937";
 
-const KpiCard = ({ kpi, domain }) => (
-  <div className="flex flex-col gap-2 rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-4 shadow-[4px_4px_0_#111827] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#111827] dark:border-[#0f172a] dark:bg-[#111827]">
-    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1f2937] dark:text-gray-200">
-      {kpi.group || "KPI"}
-    </span>
-    <h3 className="text-lg font-bold text-[#0f172a] dark:text-white">{kpi.label}</h3>
-    <div className="text-3xl font-black text-[#0b3b3c] dark:text-white">{kpi.display}</div>
-    {kpi.hint && (
-      <p className="text-xs text-[#0f172a]/80 dark:text-gray-300">
-        {kpi.hint}
-      </p>
-    )}
-    <div
-      className="h-1.5 w-full rounded-full"
-      style={{ backgroundColor: resolveAccent(domain) }}
-    />
-  </div>
-);
+const KpiCard = ({ kpi, domain, onInfo }) => {
+  const description = KPI_DESCRIPTIONS[kpi.key] || "Indicador calculado con los filtros y el alcance vigentes.";
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-4 shadow-[4px_4px_0_#111827] dark:border-[#0f172a] dark:bg-[#111827]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1f2937] dark:text-gray-200">
+        {kpi.group || "KPI"}
+      </span>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-lg font-bold text-[#0f172a] dark:text-white">{kpi.label}</h3>
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded-full border border-[#111827] bg-white text-xs font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100"
+          title={description}
+          aria-label={`Información: ${description}`}
+          onClick={() => onInfo?.(kpi, description)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onInfo?.(kpi, description);
+            }
+          }}
+          style={{ outline: "none", boxShadow: "none" }}
+          onFocus={(e) => {
+            e.currentTarget.style.boxShadow = "0 0 0 3px #FFD700";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
+          i
+        </button>
+      </div>
+      <div className="text-3xl font-black text-[#0b3b3c] dark:text-white">{kpi.display}</div>
+      {kpi.hint && (
+        <p className="text-xs text-[#0f172a]/80 dark:text-gray-300">
+          {kpi.hint}
+        </p>
+      )}
+      <div
+        className="h-1.5 w-full rounded-full"
+        style={{ backgroundColor: resolveAccent(domain) }}
+      />
+    </div>
+  );
+};
 
 const ChartPreview = ({ def, domain }) => {
   const max = useMemo(
@@ -93,6 +143,7 @@ export const DashboardKpiSection = ({
 }) => {
   const [range, setRange] = useState("30d");
   const [activeDomain, setActiveDomain] = useState("alumnos");
+  const [infoModal, setInfoModal] = useState(null);
 
   const filters = useMemo(() => ({ range }), [range]);
 
@@ -126,8 +177,8 @@ export const DashboardKpiSection = ({
     if (!scope) return null;
     const parts = [];
     if (scope.modulo) parts.push(`Módulo ${ensureModuleLabel(scope.modulo)}`);
-    if (scope.cohorte) parts.push(`Cohorte ${scope.cohorte}`);
-    return parts.length ? parts.join(" · ") : null;
+    if (scope.cohorte) parts.push(`Cohorte ref. ${scope.cohorte}`); // cohorte solo como referencia numérica
+    return parts.length ? `Contexto: ${parts.join(" · ")}` : null;
   }, [scope]);
 
   const currentKpis = kpisByDomain[activeDomain] || [];
@@ -205,7 +256,12 @@ export const DashboardKpiSection = ({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {currentKpis.map((kpi) => (
-              <KpiCard key={kpi.key} kpi={kpi} domain={activeDomain} />
+              <KpiCard
+                key={kpi.key}
+                kpi={kpi}
+                domain={activeDomain}
+                onInfo={(item, desc) => setInfoModal({ title: item.label, description: desc })}
+              />
             ))}
           </div>
         )}
@@ -222,6 +278,34 @@ export const DashboardKpiSection = ({
           )}
         </div>
       </div>
+      {infoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-[90%] max-w-md rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-5 shadow-[8px_8px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b]">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h3 className="text-lg font-bold text-[#0f172a] dark:text-white">
+                {infoModal.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setInfoModal(null)}
+                className="rounded-full border border-[#111827] bg-white px-2 text-sm font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] hover:bg-[#FFD700] focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-[#0f172a] dark:text-gray-200">{infoModal.description}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setInfoModal(null)}
+                className="rounded-md border-2 border-[#111827] bg-[#FFD700] px-4 py-1 text-sm font-semibold text-[#111827] shadow-[3px_3px_0_#111827] hover:translate-y-[-1px] dark:border-[#0f172a]"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Container>
   );
 };

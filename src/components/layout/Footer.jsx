@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeButton } from "../ui/ThemeButton";
+import { Window } from "../ui/Window";
 
 export const Footer = () => {
   const [open, setOpen] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -23,17 +25,22 @@ export const Footer = () => {
     { label: "Contacto", path: "/contacto" },
   ];
 
+  const desktopShortcut = {
+    label: "Landing",
+    path: "/",
+    icon: "/icons/escritorio.png",
+  };
+
+  const certificateShortcut = {
+    label: "Certificado",
+    icon: "/icons/certificado.png",
+  };
+
   return (
     <footer
       role="contentinfo"
       aria-label="Información del sitio y navegación principal"
-      className="
-        fixed bottom-0 left-0 w-full h-10 z-50
-        bg-[#C0C0C0] dark:bg-[#1E1E1E]
-        flex items-center justify-between px-2
-        border-t border-[#808080] dark:border-[#444]
-        text-sm font-sans transition-colors duration-300
-      "
+      className="fixed bottom-0 left-0 z-50 flex h-10 w-full items-center justify-between border-t border-[#808080] bg-[#C0C0C0] px-2 text-sm font-sans transition-colors duration-300 dark:border-[#444] dark:bg-[#1E1E1E]"
     >
       <div className="relative flex items-center gap-2" ref={menuRef}>
         <button
@@ -60,12 +67,41 @@ export const Footer = () => {
           </span>
         </button>
 
+        {/* Separador estilo Win98 */}
+        <div className="h-6 w-[2px] bg-[#808080] shadow-[1px_0_0_#fff]" aria-hidden="true" />
+
+        {/* Acceso rápido a landing */}
+        <button
+          onClick={() => navigate(desktopShortcut.path)}
+          aria-label="Ir a la landing"
+          className="flex items-center gap-1 px-1 py-1 bg-transparent border-none hover:bg-[#dcdcdc] dark:hover:bg-[#3A3A3A] focus:outline-none focus:ring-2 focus:ring-[#FFD700] transition-all"
+        >
+          <img
+            src={desktopShortcut.icon}
+            alt="Landing"
+            className="h-6 w-6 [image-rendering:pixelated]"
+          />
+        </button>
+
+        {/* Acceso rápido a certificado (misma estética que escritorio) */}
+        <button
+          onClick={() => setShowCertificate(true)}
+          aria-label="Ver certificado del proyecto"
+          className="flex items-center gap-1 px-1 py-1 bg-transparent border-none hover:bg-[#dcdcdc] dark:hover:bg-[#3A3A3A] focus:outline-none focus:ring-2 focus:ring-[#FFD700] transition-all"
+        >
+          <img
+            src={certificateShortcut.icon}
+            alt="Certificado"
+            className="h-6 w-6 [image-rendering:pixelated]"
+          />
+        </button>
+
         {open && (
           <div
             id="footer-menu"
-            className="absolute bottom-10 left-0 w-48 bg-[#E5E5E5] dark:bg-[#2A2A2A] border-2 border-[#111827] dark:border-[#555] shadow-lg rounded-md overflow-hidden animate-fadeIn"
+            className="absolute bottom-10 left-0 w-48 overflow-hidden rounded-md border-2 border-[#111827] bg-[#E5E5E5] shadow-lg animate-fadeIn dark:border-[#555] dark:bg-[#2A2A2A]"
           >
-            <div className="bg-[#1E3A8A] dark:bg-[#0A2E73] text-white px-3 py-1 font-bold text-sm">
+            <div className="bg-[#1E3A8A] px-3 py-1 text-sm font-bold text-white dark:bg-[#0A2E73]">
               Menú
             </div>
             <ul className="flex flex-col">
@@ -76,14 +112,14 @@ export const Footer = () => {
                       navigate(item.path);
                       setOpen(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-[#111827] dark:text-gray-200 hover:bg-[#FFD700] dark:hover:bg-[#B8860B] hover:text-black dark:hover:text-white transition"
+                    className="block w-full px-4 py-2 text-left text-[#111827] hover:bg-[#FFD700] hover:text-black transition dark:text-gray-200 dark:hover:bg-[#B8860B] dark:hover:text-white"
                   >
                     {item.label}
                   </button>
                 </li>
               ))}
               <li className="border-t border-[#808080] dark:border-[#444]">
-                <div className="p-2 flex justify-center items-center gap-3">
+                <div className="flex items-center justify-center gap-3 p-2">
                   <ThemeButton />
                 </div>
               </li>
@@ -93,16 +129,10 @@ export const Footer = () => {
       </div>
 
       <div
-        className="flex items-center gap-4 px-3 py-1 mr-1
-             bg-[#e5e5e570] dark:bg-[#2b2b2b] border-2 
-             border-t-[#808080] dark:border-t-[#444] 
-             border-l-[#808080] dark:border-l-[#444] 
-             border-b-white dark:border-b-[#222] 
-             border-r-white dark:border-r-[#222]
-             text-[#111827] dark:text-gray-300 transition-colors duration-300"
+        className="mr-1 flex items-center gap-4 px-3 py-1 border-2 border-t-[#808080] border-l-[#808080] border-b-white border-r-white bg-[#e5e5e570] text-[#111827] transition-colors duration-300 dark:border-t-[#444] dark:border-l-[#444] dark:border-b-[#222] dark:border-r-[#222] dark:bg-[#2b2b2b] dark:text-gray-300"
       >
         <a
-          className="text-xs text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+          className="text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           href="https://www.linkedin.com/in/augustovillegas/"
           target="_blank"
           rel="noopener noreferrer"
@@ -111,7 +141,29 @@ export const Footer = () => {
           Dev. Augusto Villegas
         </a>
       </div>
+
+      {showCertificate && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg">
+            <Window title="Certificado del Proyecto">
+              <p className="text-center text-sm leading-relaxed text-[#0f172a] dark:text-gray-200">
+                Este proyecto fue desarrollado como entrega final de la Diplomatura Full Stack en
+                Desarrollo Web de la Universidad Nacional de Catamarca, integrando los conocimientos
+                y prácticas adquiridas a lo largo de la cursada.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowCertificate(false)}
+                  className="rounded-md border-2 border-[#111827] bg-[#FFD700] px-4 py-1 text-sm font-semibold text-[#111827] shadow-[3px_3px_0_#111827] hover:-translate-y-0.5 dark:border-[#0f172a]"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </Window>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };
-
