@@ -45,7 +45,7 @@ const KpiCard = ({ kpi, domain, onInfo }) => {
   const description = KPI_DESCRIPTIONS[kpi.key] || "Indicador calculado con los filtros y el alcance vigentes.";
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-4 shadow-[4px_4px_0_#111827] dark:border-[#0f172a] dark:bg-[#111827]">
+    <div className="flex flex-col gap-2 rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-4 shadow-[4px_4px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
       <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1f2937] dark:text-gray-200">
         {kpi.group || "KPI"}
       </span>
@@ -53,7 +53,7 @@ const KpiCard = ({ kpi, domain, onInfo }) => {
         <h3 className="text-lg font-bold text-[#0f172a] dark:text-white">{kpi.label}</h3>
         <button
           type="button"
-          className="flex h-6 w-6 items-center justify-center rounded-full border border-[#111827] bg-white text-xs font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100"
+          className="flex h-6 w-6 items-center justify-center rounded-full border border-[#111827] bg-white text-xs font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-100"
           title={description}
           aria-label={`Información: ${description}`}
           onClick={() => onInfo?.(kpi, description)}
@@ -65,7 +65,7 @@ const KpiCard = ({ kpi, domain, onInfo }) => {
           }}
           style={{ outline: "none", boxShadow: "none" }}
           onFocus={(e) => {
-            e.currentTarget.style.boxShadow = "0 0 0 3px #FFD700";
+            e.currentTarget.style.boxShadow = "0 0 0 3px #B8860B";
           }}
           onBlur={(e) => {
             e.currentTarget.style.boxShadow = "none";
@@ -100,7 +100,7 @@ const ChartPreview = ({ def, domain }) => {
   );
 
   return (
-    <div className="rounded-lg border-2 border-[#111827] bg-[#F8FAFC] p-4 shadow-[4px_4px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b]">
+    <div className="rounded-lg border-2 border-[#111827] bg-[#F8FAFC] p-4 shadow-[4px_4px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-[#0f172a] dark:text-white">{def.title}</h4>
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#0f172a]/70 dark:text-gray-300">
@@ -116,7 +116,7 @@ const ChartPreview = ({ def, domain }) => {
                 <span className="truncate">{item.name}</span>
                 <span>{item.value ?? 0}</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-sm border border-[#cbd5e1] bg-[#e2e8f0] dark:border-[#1f2937] dark:bg-[#1f2937]">
+              <div className="h-2 w-full overflow-hidden rounded-sm border border-[#cbd5e1] bg-[#e2e8f0] dark:border-[#444] dark:bg-[#2A2A2A]">
                 <div
                   className="h-full"
                   style={{
@@ -186,7 +186,7 @@ export const DashboardKpiSection = ({
 
   return (
     <Container {...containerProps}>
-      <div className="rounded-xl border-2 border-[#111827] bg-[#C0C0C0] p-5 shadow-[6px_6px_0_#111827] dark:border-[#0f172a] dark:bg-[#1a1a1a]">
+      <div className="rounded-xl border-2 border-[#111827] bg-[#C0C0C0] p-5 shadow-[6px_6px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f172a] dark:text-gray-200">
@@ -200,12 +200,12 @@ export const DashboardKpiSection = ({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 rounded-md border-2 border-[#111827] bg-white px-2 py-1 text-xs font-semibold shadow-[3px_3px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100">
+            <label className="flex items-center gap-2 rounded-md border-2 border-[#111827] bg-white px-2 py-1 text-xs font-semibold shadow-[3px_3px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E] dark:text-gray-100">
               <span>Rango</span>
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value)}
-                className="rounded-sm border border-[#111827] bg-[#F1F5F9] px-2 py-1 text-xs font-semibold text-[#0f172a] outline-none dark:border-[#0f172a] dark:bg-[#111827] dark:text-gray-100"
+                className="rounded-sm border border-[#111827] bg-[#F1F5F9] px-2 py-1 text-xs font-semibold text-[#0f172a] outline-none dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-200"
               >
                 {RANGE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -215,31 +215,29 @@ export const DashboardKpiSection = ({
               </select>
             </label>
             {scopeLabel && (
-              <span className="rounded-md border-2 border-[#111827] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-[3px_3px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100">
+              <span className="rounded-md border-2 border-[#111827] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-[3px_3px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E] dark:text-gray-100">
                 {scopeLabel}
               </span>
             )}
-            <span className="rounded-md border-2 border-[#111827] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-[3px_3px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100">
+            <span className="rounded-md border-2 border-[#111827] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-[3px_3px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E] dark:text-gray-100">
               Rol: {role}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border-2 border-[#111827] bg-white p-4 shadow-[6px_6px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b]">
+      <div className="rounded-xl border-2 border-[#111827] bg-white p-4 shadow-[6px_6px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
         <div className="mb-4 flex flex-wrap gap-2">
           {domains.map((domain) => (
             <button
               key={domain}
               onClick={() => setActiveDomain(domain)}
-              className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
+              className={`rounded-md border-2 px-3 py-2 text-sm font-semibold transition bg-[#F3F4F6] dark:bg-[#1E1E1E] ${
                 activeDomain === domain
-                  ? "text-white shadow-[3px_3px_0_#111827]"
-                  : "border-2 border-[#111827] text-[#0f172a] hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#111827] dark:border-[#0f172a] dark:text-gray-100"
+                  ? "border-[#111827] text-white shadow-[3px_3px_0_#111827] dark:border-[#333] dark:shadow-[3px_3px_0_#000000]"
+                  : "border-[#111827] text-[#0f172a] hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#111827] dark:border-[#444] dark:text-gray-100 dark:hover:-translate-y-0.5 dark:hover:shadow-[3px_3px_0_#000000]"
               }`}
-              style={{
-                backgroundColor: activeDomain === domain ? resolveAccent(domain) : "#F3F4F6",
-              }}
+              style={activeDomain === domain ? { backgroundColor: resolveAccent(domain) } : undefined}
             >
               {domain === "alumnos" && "Alumnos"}
               {domain === "entregables" && "Entregables"}
@@ -250,7 +248,7 @@ export const DashboardKpiSection = ({
         </div>
 
         {currentKpis.length === 0 ? (
-          <div className="rounded-md border-2 border-dashed border-[#111827] bg-[#F8FAFC] p-6 text-center text-sm text-[#0f172a]/80 dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-300">
+          <div className="rounded-md border-2 border-dashed border-[#111827] bg-[#F8FAFC] p-6 text-center text-sm text-[#0f172a]/80 dark:border-[#333] dark:bg-[#1E1E1E] dark:text-gray-300">
             No hay KPIs disponibles para este dominio todavía.
           </div>
         ) : (
@@ -272,7 +270,7 @@ export const DashboardKpiSection = ({
               <ChartPreview key={chart.key} def={chart} domain={activeDomain} />
             ))
           ) : (
-            <div className="rounded-md border-2 border-dashed border-[#111827] bg-[#F8FAFC] p-6 text-center text-sm text-[#0f172a]/80 dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-200">
+            <div className="rounded-md border-2 border-dashed border-[#111827] bg-[#F8FAFC] p-6 text-center text-sm text-[#0f172a]/80 dark:border-[#333] dark:bg-[#1E1E1E] dark:text-gray-200">
               Próximamente gráficos interactivos. Los datos ya están listos para enchufar.
             </div>
           )}
@@ -280,7 +278,7 @@ export const DashboardKpiSection = ({
       </div>
       {infoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-[90%] max-w-md rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-5 shadow-[8px_8px_0_#111827] dark:border-[#0f172a] dark:bg-[#0b171b]">
+          <div className="w-[90%] max-w-md rounded-lg border-2 border-[#111827] bg-[#E5E7EB] p-5 shadow-[8px_8px_0_#111827] dark:border-[#333] dark:bg-[#1E1E1E]">
             <div className="mb-3 flex items-start justify-between gap-3">
               <h3 className="text-lg font-bold text-[#0f172a] dark:text-white">
                 {infoModal.title}
@@ -288,7 +286,7 @@ export const DashboardKpiSection = ({
               <button
                 type="button"
                 onClick={() => setInfoModal(null)}
-                className="rounded-full border border-[#111827] bg-white px-2 text-sm font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] hover:bg-[#FFD700] focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#0f172a] dark:bg-[#0b171b] dark:text-gray-100"
+                className="rounded-full border border-[#111827] bg-white px-2 text-sm font-bold text-[#0f172a] shadow-[2px_2px_0_#111827] hover:bg-[#FFD700] focus:outline-none focus:ring-2 focus:ring-[#FFD700] dark:border-[#444] dark:bg-[#2A2A2A] dark:text-gray-100"
               >
                 ✕
               </button>
@@ -298,7 +296,7 @@ export const DashboardKpiSection = ({
               <button
                 type="button"
                 onClick={() => setInfoModal(null)}
-                className="rounded-md border-2 border-[#111827] bg-[#FFD700] px-4 py-1 text-sm font-semibold text-[#111827] shadow-[3px_3px_0_#111827] hover:translate-y-[-1px] dark:border-[#0f172a]"
+                className="rounded-md border-2 border-[#111827] bg-[#FFD700] px-4 py-1 text-sm font-semibold text-[#111827] shadow-[3px_3px_0_#111827] hover:translate-y-[-1px] dark:border-[#555] dark:bg-[#C9A300] dark:text-white dark:shadow-[3px_3px_0_#000000]"
               >
                 Cerrar
               </button>
