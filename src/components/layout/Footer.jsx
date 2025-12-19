@@ -145,7 +145,7 @@ export const Footer = () => {
       {showCertificate && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-lg">
-            <Window title="Certificado del Proyecto">
+            <Window title="Dipl. Fullstack en Desarrollo Web">
               <p className="text-center text-sm leading-relaxed text-[#0f172a] dark:text-gray-200">
                 Este proyecto fue desarrollado como entrega final de la Diplomatura Full Stack en
                 Desarrollo Web de la Universidad Nacional de Catamarca, integrando los conocimientos

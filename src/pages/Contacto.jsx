@@ -23,7 +23,7 @@ export default function Contacto() {
       aria-label="Página de contacto"
       className="min-h-[calc(100vh-5rem)]
         flex items-start justify-center
-        px-4 py-8
+        px-4 py-8 pb-20 md:pb-12
         bg-[#017F82] dark:bg-[#0F3D3F]
         transition-colors duration-300
       "
