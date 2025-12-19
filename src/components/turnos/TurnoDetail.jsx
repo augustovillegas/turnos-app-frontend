@@ -102,6 +102,16 @@ export const TurnoDetail = ({ turno, turnoId, onVolver }) => {
           </p>
 
           <dl className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            {(currentTurno.creador || currentTurno.creadorId) && (
+              <div>
+                <dt className="text-xs font-semibold uppercase text-[#6B7280]">
+                  Creado por
+                </dt>
+                <dd className="text-lg font-semibold">
+                  {currentTurno.creador || `ID: ${currentTurno.creadorId}`}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs font-semibold uppercase text-[#6B7280]">
                 Review

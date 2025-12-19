@@ -132,11 +132,10 @@ export const UsuarioForm = ({ usuario, onVolver }) => {
 
   const { validateCustomPassword: validatePassword, validateEmailUnique } = useUsuarioValidation();
 
-  const professorModuleLabel =
-    ensureModuleLabel(
-      sessionUser?.modulo
-    );
+  const professorModuleLabel = ensureModuleLabel(sessionUser?.modulo);
   const professorHasModule = Boolean(professorModuleLabel);
+  const defaultSuperadminModule = MODULE_OPTIONS?.[0]?.value || "HTML-CSS";
+  const defaultSuperadminCohorte = DEFAULT_COHORT;
 
   const creadorId = sessionUser?.id || sessionUser?._id;
 
@@ -185,8 +184,15 @@ export const UsuarioForm = ({ usuario, onVolver }) => {
     if (loggedRole === "profesor") {
       return { ...defaultForm, modulo: professorModuleLabel || "" };
     }
+    if (loggedRole === "superadmin") {
+      return {
+        ...defaultForm,
+        modulo: defaultSuperadminModule,
+        cohorte: String(defaultSuperadminCohorte),
+      };
+    }
     return defaultForm;
-  }, [usuario, allowedRoles, loggedRole, professorModuleLabel]);
+  }, [usuario, allowedRoles, loggedRole, professorModuleLabel, defaultSuperadminModule]);
 
 
   const moduleOptions = useMemo(() => {
@@ -307,11 +313,12 @@ export const UsuarioForm = ({ usuario, onVolver }) => {
 
     const identificador = data.identificador.trim();
 
-    const cohorteRaw = data.cohorte.trim();
+    const cohorteRaw = data.cohorte.trim() || String(defaultSuperadminCohorte);
 
-    const moduloLabel = loggedRole === "profesor" && professorHasModule
-      ? professorModuleLabel
-      : ensureModuleLabel(data.modulo);
+    const moduloLabel =
+      loggedRole === "profesor" && professorHasModule
+        ? professorModuleLabel
+        : ensureModuleLabel(data.modulo) || defaultSuperadminModule;
 
     console.log('[UsuarioForm] Módulo calculado:', {
       rol: loggedRole,

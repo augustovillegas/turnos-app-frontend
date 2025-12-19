@@ -59,6 +59,8 @@ export const normalizeTurno = (raw = {}) => {
 
   return {
     id: temporalId,
+    creador: raw.creador ?? raw.createdByName ?? raw.creadorNombre ?? null,
+    creadorId: raw.creadorId ?? raw.createdBy ?? null,
     modulo: raw.modulo ?? null,
     titulo: raw.titulo ?? raw.title ?? null,
     descripcion: raw.descripcion ?? raw.description ?? "",

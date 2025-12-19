@@ -43,7 +43,7 @@ import {
   updateUsuarioAuth as apiUpdateUsuarioAuth,
   deleteUsuario as apiDeleteUsuario,
 } from "../services/usuariosService";
-import { ensureModuleLabel } from "../utils/moduleMap";
+import { ensureModuleLabel, MODULE_LABELS } from "../utils/moduleMap";
 import { showToast } from "../utils/feedback/toasts";
 import { formatErrorMessage } from "../utils/feedback/errorExtractor"; // ⬅️ añadido
 import { normalizeUsuario, normalizeUsuariosCollection } from "../utils/usuarios/normalizeUsuario";
@@ -471,7 +471,21 @@ export const AppProvider = ({ children }) => {
     async (payload = {}) => {
       start("usuarios-create");
       try {
-        const creado = await apiCreateUsuario(payload);
+        const moduloCandidato = payload?.modulo ?? usuario?.modulo ?? MODULE_LABELS?.[0] ?? null;
+        const moduloResuelto = ensureModuleLabel(moduloCandidato) ?? MODULE_LABELS?.[0];
+        const cohorteResuelto = (() => {
+          const n = Number(payload?.cohorte ?? usuario?.cohorte);
+          if (Number.isFinite(n) && n >= 1) return n;
+          return 1;
+        })();
+
+        const payloadConModulos = {
+          ...payload,
+          modulo: moduloResuelto,
+          cohorte: cohorteResuelto,
+        };
+
+        const creado = await apiCreateUsuario(payloadConModulos);
         const normalizado = normalizeUsuario(creado);
         setUsuarios((prev) => {
           const base = normalizeUsuariosCollection(prev);
@@ -495,13 +509,33 @@ export const AppProvider = ({ children }) => {
     async (id, payload = {}) => {
       start("usuarios-update");
       try {
+        const existenteUsuario = usuariosRef.current.find((u) => String(u.id) === String(id));
+        const moduloCandidato =
+          payload?.modulo ??
+          existenteUsuario?.modulo ??
+          usuario?.modulo ??
+          MODULE_LABELS?.[0] ??
+          null;
+        const moduloResuelto = ensureModuleLabel(moduloCandidato) ?? MODULE_LABELS?.[0];
+        const cohorteResuelto = (() => {
+          const n = Number(payload?.cohorte ?? existenteUsuario?.cohorte ?? usuario?.cohorte);
+          if (Number.isFinite(n) && n >= 1) return n;
+          return 1;
+        })();
+
+        const payloadConModulos = {
+          ...payload,
+          modulo: moduloResuelto,
+          cohorte: cohorteResuelto,
+        };
+
         let actualizado;
         try {
-          actualizado = await apiUpdateUsuario(id, payload);
+          actualizado = await apiUpdateUsuario(id, payloadConModulos);
         } catch (err) {
           // Si el endpoint admin devuelve 403 (profesor sin permisos), reintentar con /auth/usuarios
           if (err?.response?.status === 403) {
-            actualizado = await apiUpdateUsuarioAuth(id, payload);
+            actualizado = await apiUpdateUsuarioAuth(id, payloadConModulos);
           } else {
             throw err;
           }
@@ -557,11 +591,20 @@ export const AppProvider = ({ children }) => {
     async (payload) => {
       start("turnos");
       try {
-        const moduloCandidato = payload?.modulo ?? usuario?.modulo ?? null;
-        const moduloResuelto = ensureModuleLabel(moduloCandidato);
+        const moduloCandidato = payload?.modulo ?? usuario?.modulo ?? MODULE_LABELS?.[0] ?? null;
+        const moduloResuelto = ensureModuleLabel(moduloCandidato) ?? MODULE_LABELS?.[0];
+
+        const cohorteResuelto = (() => {
+          const raw = payload?.cohorte ?? usuario?.cohorte;
+          const n = Number(raw);
+          if (Number.isFinite(n) && n >= 1) return n;
+          return 1;
+        })();
+
         const payloadConModulo = {
           ...payload,
-          ...(moduloResuelto ? { modulo: moduloResuelto } : {}),
+          modulo: moduloResuelto,
+          cohorte: cohorteResuelto,
         };
 
         const nuevo = await apiCreateTurno(payloadConModulo);
@@ -654,15 +697,23 @@ export const AppProvider = ({ children }) => {
           }
         }
 
-        if (cleanedPayload.review !== undefined && cleanedPayload.reviewNumber === undefined) {
-          cleanedPayload.reviewNumber = cleanedPayload.review;
-        }
+      if (cleanedPayload.review !== undefined && cleanedPayload.reviewNumber === undefined) {
+        cleanedPayload.reviewNumber = cleanedPayload.review;
+      }
 
-        if (!cleanedPayload.fecha) {
-          try {
-            const iso = cleanedPayload.start ?? cleanedPayload.end ?? existente?.start ?? existente?.end;
-            if (iso) {
-              cleanedPayload.fecha = new Date(iso).toISOString().slice(0, 10);
+      const moduloCandidato =
+        ensureModuleLabel(cleanedPayload?.modulo ?? usuario?.modulo ?? MODULE_LABELS?.[0]) ??
+        MODULE_LABELS?.[0];
+      cleanedPayload.modulo = moduloCandidato;
+
+      const cohorteVal = Number(cleanedPayload?.cohorte ?? existente?.cohorte ?? usuario?.cohorte);
+      cleanedPayload.cohorte = Number.isFinite(cohorteVal) && cohorteVal >= 1 ? cohorteVal : 1;
+
+      if (!cleanedPayload.fecha) {
+        try {
+          const iso = cleanedPayload.start ?? cleanedPayload.end ?? existente?.start ?? existente?.end;
+          if (iso) {
+            cleanedPayload.fecha = new Date(iso).toISOString().slice(0, 10);
             }
           } catch (e) {
             // Ignorar derivacion de fecha si falla

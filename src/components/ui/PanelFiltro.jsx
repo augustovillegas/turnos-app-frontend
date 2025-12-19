@@ -42,83 +42,91 @@ export const PanelFiltro = ({
     setSearchResults(data);
   }, [data]);
 
+  const applyFiltersTo = useCallback(
+    (baseData) => {
+      const base = Array.isArray(baseData) ? baseData : [];
+      let out = base;
+
+      if (modulosSeleccionados.length > 0) {
+        const targetModules = modulosSeleccionados.map(ensureModuleLabel);
+        out = out.filter((item) => targetModules.includes(ensureModuleLabel(item?.modulo)));
+      }
+
+      if (cohorte) {
+        const c = Number(cohorte);
+        if (Number.isFinite(c)) {
+          out = out.filter((item) => Number(item?.cohorte) === c);
+        }
+      }
+
+      if (sprint && sprintField) {
+        const s = Number(sprint);
+        if (Number.isFinite(s)) {
+          out = out.filter((item) => Number(item?.[sprintField]) === s);
+        }
+      }
+
+      if (reviewsSeleccionadas.length > 0 && reviewField) {
+        const selectedReviews = reviewsSeleccionadas.map((v) => String(v).toLowerCase());
+        out = out.filter((item) => {
+          const val = item?.[reviewField];
+          if (val === undefined || val === null || val === "") return false;
+          return selectedReviews.includes(String(val).toLowerCase());
+        });
+      }
+
+      if (desde || hasta) {
+        const from = desde ? parseDate(desde) : null;
+        const to = hasta ? parseDate(hasta) : null;
+        out = out.filter((item) => {
+          const dateValue = (dateFields || DEFAULT_DATE_FIELDS)
+            .map((k) => parseDate(item?.[k]))
+            .find(Boolean);
+          if (!from && !to) return true;
+          if (!dateValue) return true;
+          if (from && dateValue < from) return false;
+          if (to && dateValue > to) return false;
+          return true;
+        });
+      }
+
+      if (showAlphaSort && orden !== "none") {
+        out = [...out].sort((a, b) => {
+          const A = String(a?.nombre ?? a?.name ?? a?.email ?? "").toLowerCase();
+          const B = String(b?.nombre ?? b?.name ?? b?.email ?? "").toLowerCase();
+          return orden === "asc" ? A.localeCompare(B) : B.localeCompare(A);
+        });
+      }
+
+      return out;
+    },
+    [
+      modulosSeleccionados,
+      reviewsSeleccionadas,
+      cohorte,
+      sprint,
+      reviewField,
+      sprintField,
+      desde,
+      hasta,
+      orden,
+      showAlphaSort,
+      dateFields,
+    ]
+  );
+
   const filtered = useMemo(() => {
     const base = Array.isArray(searchResults) ? searchResults : data;
-    let out = base;
-
-    if (modulosSeleccionados.length > 0) {
-      const targetModules = modulosSeleccionados.map(ensureModuleLabel);
-      out = out.filter((item) => targetModules.includes(ensureModuleLabel(item?.modulo)));
-    }
-
-    if (cohorte) {
-      const c = Number(cohorte);
-      if (Number.isFinite(c)) {
-        out = out.filter((item) => Number(item?.cohorte) === c);
-      }
-    }
-
-    if (sprint && sprintField) {
-      const s = Number(sprint);
-      if (Number.isFinite(s)) {
-        out = out.filter((item) => Number(item?.[sprintField]) === s);
-      }
-    }
-
-    if (reviewsSeleccionadas.length > 0 && reviewField) {
-      const selectedReviews = reviewsSeleccionadas.map((v) => String(v).toLowerCase());
-      out = out.filter((item) => {
-        const val = item?.[reviewField];
-        if (val === undefined || val === null || val === "") return false;
-        return selectedReviews.includes(String(val).toLowerCase());
-      });
-    }
-
-    if (desde || hasta) {
-      const from = desde ? parseDate(desde) : null;
-      const to = hasta ? parseDate(hasta) : null;
-      out = out.filter((item) => {
-        const dateValue = (dateFields || DEFAULT_DATE_FIELDS)
-          .map((k) => parseDate(item?.[k]))
-          .find(Boolean);
-        if (!from && !to) return true;
-        if (!dateValue) return true;
-        if (from && dateValue < from) return false;
-        if (to && dateValue > to) return false;
-        return true;
-      });
-    }
-
-    if (showAlphaSort && orden !== "none") {
-      out = [...out].sort((a, b) => {
-        const A = String(a?.nombre ?? a?.name ?? a?.email ?? "").toLowerCase();
-        const B = String(b?.nombre ?? b?.name ?? b?.email ?? "").toLowerCase();
-        return orden === "asc" ? A.localeCompare(B) : B.localeCompare(A);
-      });
-    }
-
-    return out;
-  }, [
-    searchResults,
-    modulosSeleccionados,
-    reviewsSeleccionadas,
-    cohorte,
-    sprint,
-    reviewField,
-    sprintField,
-    desde,
-    hasta,
-    orden,
-    data,
-    showAlphaSort,
-    dateFields,
-  ]);
+    return applyFiltersTo(base);
+  }, [searchResults, data, applyFiltersTo]);
 
   const handleSearch = useCallback(
     (results) => {
-      setSearchResults(Array.isArray(results) ? results : data);
+      const next = Array.isArray(results) ? results : data;
+      setSearchResults(next);
+      onChange?.(applyFiltersTo(next));
     },
-    [data]
+    [data, onChange, applyFiltersTo]
   );
 
   const handleApply = useCallback(() => {
