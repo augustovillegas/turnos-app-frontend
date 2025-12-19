@@ -764,35 +764,26 @@ export const AppProvider = ({ children }) => {
       try {
         const normalizeEstadoInput = (value) =>
           String(value ?? "").trim().toLowerCase();
+        const allowedBackendEstados = ["Aprobado", "Rechazado", "Solicitado", "Disponible", "Desaprobado"];
         const mapToBackendEstado = (value) => {
           const normalized = normalizeEstadoInput(value);
-          if (normalized === "aprobado" || normalized === "approved") return "aprobado";
-          if (
-            normalized === "rechazado" ||
-            normalized === "desaprobado" ||
-            normalized === "cancelado" ||
-            normalized === "canceled" ||
-            normalized === "cancelled"
-          ) {
-            return "cancelado";
-          }
-          if (
-            normalized === "pendiente" ||
-            normalized === "pending" ||
-            normalized === "a revisar" ||
-            normalized === "por revisar"
-          ) {
-            return "pendiente";
-          }
-          return value;
+          const match = allowedBackendEstados.find(
+            (item) => normalizeEstadoInput(item) === normalized
+          );
+          if (match) return match;
+          if (/^aprobado/.test(normalized)) return "Aprobado";
+          if (/^rechazado|^desaprobado|^cancelado/.test(normalized)) return "Rechazado";
+          if (/^solicitado/.test(normalized)) return "Solicitado";
+          if (/^disponible/.test(normalized)) return "Disponible";
+          return "Rechazado";
         };
         const mapToUiEstado = (value) => {
           const normalized = normalizeEstadoInput(value);
           if (normalized === "aprobado" || normalized === "approved") return "Aprobado";
           if (
-            normalized === "cancelado" ||
             normalized === "rechazado" ||
             normalized === "desaprobado" ||
+            normalized === "cancelado" ||
             normalized === "canceled" ||
             normalized === "cancelled"
           ) {
@@ -806,7 +797,7 @@ export const AppProvider = ({ children }) => {
           ) {
             return "Pendiente";
           }
-          return value;
+          return "Rechazado";
         };
         const mapReviewStatus = (value) => {
           const normalized = normalizeEstadoInput(value);
@@ -831,8 +822,8 @@ export const AppProvider = ({ children }) => {
           return null;
         };
 
-        const backendEstado = mapToBackendEstado(estado);
-        const fallbackUiEstado = mapToUiEstado(backendEstado || estado);
+        const backendEstado = mapToBackendEstado(estado || "Cancelado");
+        const fallbackUiEstado = mapToUiEstado(backendEstado || estado || "Cancelado");
 
         const actualizado = await actualizarEstadoSlot(id, backendEstado);
         const normalizado = normalizeItem(actualizado, "turno");
